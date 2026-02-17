@@ -99,32 +99,23 @@ if (c = '/') or (c = '$') then
 s:= '';
 SplitBySpace(CmdStr, s);
 
-if TrustedSource then
-    WriteLnToConsole('[IPC LEVEL3] TRUSTED Dispatch token=' + CmdStr + ' args=' + s)
-else
-    WriteLnToConsole('[IPC LEVEL3] UNTRUSTED Dispatch token=' + CmdStr + ' args=' + s);
-
 t:= Variables;
 while t <> nil do
     begin
     if t^.Name = CmdStr then
         begin
-        WriteLnToConsole('[IPC LEVEL3] FOUND handler for: ' + CmdStr);
         if TrustedSource or t^.Trusted then
             begin
-            WriteLnToConsole('[IPC LEVEL3] CALLING handler');
             if t^.Rand and (not CheckNoTeamOrHH) then
                 CheckSum:= CheckSum xor LongWord(SDLNet_Read32(@CmdStr)) xor LongWord(s[0]) xor GameTicks;
             t^.Handler(s);
-            end
-        else
-            WriteLnToConsole('[IPC LEVEL3] BLOCKED by trust check');
+            end;
         exit
         end
     else
         t:= t^.Next
     end;
-WriteLnToConsole('[IPC LEVEL3] UNKNOWN COMMAND: ' + CmdStr);
+WriteLnToConsole('Unknown command: ' + CmdStr);
 case c of
     '$': WriteLnToConsole(errmsgUnknownVariable + ': "$' + CmdStr + '"')
     else
