@@ -19,6 +19,7 @@ endif()
 
 #compile our rtl implementation
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/rtl)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 include_directories(${PHYSFS_INCLUDE_DIR})
 include_directories(${PHYSLAYER_INCLUDE_DIR})
 include_directories(${LUA_INCLUDE_DIR})
@@ -141,6 +142,7 @@ if(EMSCRIPTEN)
         -sSTACK_SIZE=5MB
         -sASYNCIFY
         -sASYNCIFY_STACK_SIZE=131072
+        -Wl,--wrap=hwengine_MainLoop
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
         "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal")
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")

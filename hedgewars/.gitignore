@@ -42,6 +42,8 @@ relre:^release/
 *.rej
 project_files/hwc/*.c
 project_files/hwc/*.h
+!project_files/hwc/web_entry.c
+!project_files/hwc/ipc_browser.c
 project_files/Android-build/SDL-android-project/jni/**
 project_files/Android-build/SDL-android-project/obj
 project_files/Android-build/SDL-android-project/libs/armeabi*
