@@ -6,6 +6,19 @@ var HWEngine = {
     outputBuffer: [],
     stderrBuffer: [],
     
+    // Read IPC bytes (called from C via EM_JS)
+    readIPC: function(bufPtr, maxLen) {
+        var count = 0;
+        while (count < maxLen && this.messageQueue.length > 0) {
+            Module.HEAPU8[bufPtr + count] = this.messageQueue.shift();
+            count++;
+        }
+        if (count > 0) {
+            console.log('[IPC] Provided', count, 'bytes to engine');
+        }
+        return count;
+    },
+    
     // Add a message to the queue (length-prefixed protocol)
     sendMessage: function(msg) {
         if (typeof msg === 'string') {
@@ -79,14 +92,19 @@ if (typeof Module === 'undefined') {
     var Module = {};
 }
 
+// Expose HWEngine globally for EM_JS access
+Module.HWEngine = HWEngine;
+
 // Prevent auto-run of main() - we'll queue messages first
 Module.noInitialRun = false;  // Let it run automatically
 
-// Set command-line arguments for the engine
+// Set command-line arguments for the engine (demo file approach)
 Module.arguments = [
-    '--internal',           // Use IPC mode (read from stdin)
     '--prefix', '/Data',
-    '--user-prefix', '/Data'
+    '--user-prefix', '/Data',
+    '--nomusic',
+    '--nosound',
+    'test.hwd'  // Demo file
 ];
 
 Module.preRun = Module.preRun || [];
@@ -136,6 +154,22 @@ Module.print = Module.print || function(text) {
 };
 
 Module.printErr = Module.printErr || function(text) {
+    // Suppress ALL verbose messages during development
+    if (!text) return;
+    
+    // Suppress dependency messages
+    if (text.includes('dependency: fp')) return;
+    
+    // Suppress "still waiting" messages
+    if (text.includes('still waiting on run dependencies')) return;
+    
+    // Suppress repeated assertion failures
+    if (text.includes('Aborted(Assertion failed)')) return;
+    
+    // Suppress callback after exit messages
+    if (text.includes('user callback triggered after runtime exited')) return;
+    
+    // Only log real errors
     console.error('[Engine Error]', text);
 };
 

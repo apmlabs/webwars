@@ -1,0 +1,9 @@
+eseed {test123}
+e$template_filter 0
+e$mapgen 0
+e$maze_size 0
+eaddteam <hash> 0 Red
+eaddhh 0 100 Player1
+eaddteam <hash> 1 Blue
+eaddhh 0 100 Player2
+?

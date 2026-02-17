@@ -41,6 +41,10 @@ procedure doPut(putX, putY: LongInt; fromAI: boolean);
 implementation
 uses uConsole, uConsts, uVariables, uCommands, uUtils, uDebug, uLocale, uSound;
 
+{$IFDEF EMSCRIPTEN}
+function hw_ipc_recv(buf: pointer; maxlen: LongInt): LongInt; cdecl; external;
+{$ENDIF}
+
 const
     cSendEmptyPacketTime = 1000;
     cSendBufferSize = 1024;
@@ -117,8 +121,14 @@ dispose(tmp)
 end;
 
 procedure InitIPC;
+{$IFNDEF EMSCRIPTEN}
 var ipaddr: TIPAddress;
+{$ENDIF}
 begin
+{$IFDEF EMSCRIPTEN}
+    WriteToConsole('Init browser IPC... ');
+    WriteLnToConsole(msgOK);
+{$ELSE}
     WriteToConsole('Init SDL_Net... ');
     SDLCheck(SDLNet_Init = 0, 'SDLNet_Init', true);
     fds:= SDLNet_AllocSocketSet(1);
@@ -131,6 +141,7 @@ begin
     IPCSock:= SDLNet_TCP_Open(ipaddr);
     SDLCheck(IPCSock <> nil, 'SDLNet_TCP_Open', true);
     WriteLnToConsole(msgOK)
+{$ENDIF}
 end;
 
 procedure ParseChatCommand(command: shortstring; message: shortstring;
@@ -223,6 +234,20 @@ procedure IPCCheckSock;
 var i: LongInt;
     s: shortstring;
 begin
+{$IFDEF EMSCRIPTEN}
+    // Browser: read from JS callback
+    i:= hw_ipc_recv(@s[1], 255);
+    if i > 0 then
+    begin
+        s[0]:= char(i);
+        SocketString:= SocketString + s;
+        while (Length(SocketString) > 1) and (Length(SocketString) > byte(SocketString[1])) do
+        begin
+            ParseIPCCommand(copy(SocketString, 2, byte(SocketString[1])));
+            Delete(SocketString, 1, Succ(byte(SocketString[1])))
+        end
+    end;
+{$ELSE}
     if IPCSock = nil then
         exit;
 
@@ -245,6 +270,7 @@ begin
     else
         OutError('IPC connection lost', true)
     end;
+{$ENDIF}
 end;
 
 procedure LoadRecordFromFile(fileName: shortstring);

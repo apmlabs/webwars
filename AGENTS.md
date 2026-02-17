@@ -1,13 +1,13 @@
 # Agent Status Tracking - WebWars (Hedgewars WASM Port)
 
 ## Current Status
-Last updated: 2026-02-17T12:29:00Z
+Last updated: 2026-02-17T16:00:00Z
 
 ### Project Status
-- **Phase**: Frontend Integration - Boot Flow Fixed
-- **Last Action**: Removed INVOKE_RUN=0 to allow auto-start, created systemd service
-- **Current Task**: Test stdin reading and IPC protocol
-- **Target**: Playable game in browser
+- **Phase**: IPC Protocol - First Read Success! 🎉
+- **Last Action**: Engine successfully read 149 bytes from JS callback
+- **Current Blocker**: Engine waiting for IPC reply, stuck in blocking call
+- **Target**: Complete protocol handshake, start game loop
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -18,27 +18,29 @@ Last updated: 2026-02-17T12:29:00Z
 | A | Asset Packaging | ✅ COMPLETE | 51MB essential assets packaged |
 | A | Browser Loading | ✅ COMPLETE | Engine loads and executes |
 | A | Boot Flow | ✅ COMPLETE | Auto-start with Module.arguments |
-| A | IPC Protocol | 🟡 IN PROGRESS | Testing stdin reading |
-| A | Browser MVP | NOT STARTED | Depends on IPC |
+| A | IPC Transport | ✅ COMPLETE | JS callback reads 149 bytes! |
+| A | IPC Protocol | 🟡 IN PROGRESS | Engine waiting for reply |
+| A | Browser MVP | NOT STARTED | Need complete handshake |
 | B | WebSocket Gateway | NOT STARTED | Gateway code ready |
 | B | Server Integration | NOT STARTED | Need hedgewars-server binary |
 | B | Multiplayer Test | NOT STARTED | Depends on server |
-| C | Deployment | 🟡 IN PROGRESS | Systemd service created |
+| C | Deployment | ✅ COMPLETE | Systemd service running |
 
-### Major Milestone: Boot Flow Fixed! 🎉
+### Major Milestone: IPC Transport Working! 🎉
 
-**Boot Flow Journey:**
-1. ❌ Initial: Called `_hwengine_RunEngine()` directly - bypassed argument parsing
-2. ❌ Tried: `Module.callMain()` - function doesn't exist in Emscripten output
-3. ❌ Tried: `Module.run()` in onRuntimeInitialized - caused re-entry assertion
-4. ✅ **Solution**: Remove `-sINVOKE_RUN=0`, let Emscripten auto-run with `Module.arguments`
+**The Breakthrough:**
+- ✅ Removed SDL_net, created browser IPC shim
+- ✅ Added `-d EMSCRIPTEN` to pas2c flags
+- ✅ Pascal conditionals now work correctly
+- ✅ `InitIPC()` uses browser path: "Init browser IPC... ok"
+- ✅ `IPCCheckSock()` calls `hw_ipc_recv()` → JS callback
+- ✅ **Engine read all 149 bytes from queue!**
 
-**Current Architecture:**
-- `Module.arguments` set in pre.js with `['--internal', '--prefix', '/Data']`
-- IPC messages queued in `Module.preRun` (before main starts)
-- stdin/stdout wired via `FS.init()` in preRun
-- Emscripten auto-runs main() with arguments
-- Engine should read from stdin (149 bytes queued)
+**Current Blocker:**
+Engine is stuck in `SendIPCAndWaitReply()` - waiting for response from frontend. Need to:
+1. Identify what response it expects (likely '!' pong)
+2. Send response from JS
+3. Or complete the protocol sequence
 
 **Output Files:**
 - `hwengine.html` - 22KB (loader page)
