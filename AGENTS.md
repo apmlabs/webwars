@@ -204,11 +204,16 @@ webwars/
 
 ## 🧠 AGENT WORKFLOW
 
-### After EVERY Coding Session
+### ⚠️ MANDATORY: Update Docs BEFORE Ending Session
+**DO NOT wait for the user to ask. DO NOT forget. DO NOT skip this.**
+The user has had to remind the agent MULTIPLE TIMES. This is unacceptable.
+
+After EVERY coding session, BEFORE saying "done" or wrapping up:
 1. ✅ Update **AmazonQ.md** with session summary and timestamp
 2. ✅ Update **AGENTS.md** if new permanent lesson learned
 3. ✅ Update **README.md** if user-facing changes
 4. ✅ Git commit with clear message
+5. ✅ **TELL THE USER** you updated docs (don't make them ask)
 
 ### Before STARTING New Work
 1. ✅ Review **AmazonQ.md** for current status
