@@ -1,13 +1,13 @@
 # Agent Status Tracking - WebWars (Hedgewars WASM Port)
 
 ## Current Status
-Last updated: 2026-02-17T21:26:00Z
+Last updated: 2026-02-17T21:47:00Z
 
 ### Project Status
-- **Phase**: Game Loop Running - Debugging Asset Loading & Rendering
-- **Last Action**: Game successfully runs for 360 ticks, detects win, plays sounds
-- **Current Blocker**: Build broken during debug output reduction attempt
-- **Target**: Verify rendering works, fix cleanup crash, reduce console spam
+- **Phase**: Game Loop Running - Build Fixed, Testing Deployment
+- **Last Action**: Fixed Rust target detection with .cargo/config.toml
+- **Current Blocker**: None - build working again
+- **Target**: Verify game still runs with new build, test rendering
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -39,16 +39,21 @@ Last updated: 2026-02-17T21:26:00Z
 - ✅ Win detection functional
 - ✅ Sound playback works
 - ✅ IPC bidirectional communication
+- ✅ Build system fixed (Rust target detection)
 - ❌ Rendering status unknown (canvas not verified)
 - ❌ Cleanup crash (RuntimeError: unreachable)
 - ❌ Console spam (5000+ lines from debug mode)
+
+**Recent Fix (2026-02-17):**
+- Added `.cargo/config.toml` to force wasm32-unknown-emscripten target
+- Prevents Corrosion from injecting native libs (-lgcc_s -lutil)
+- Build now succeeds reliably
 
 **Current Issues:**
 1. **Data file path warning**: `dependency: datafile_../../bin/hwengine.data` appears but file loads anyway
 2. **Main loop timing error**: SDL vsync calls before Emscripten main loop exists
 3. **Cleanup crash**: `RuntimeError: unreachable` during shutdown
 4. **Output volume**: Debug mode (-g4 -sASSERTIONS=2) causes massive stack traces
-5. **Build broken**: CMake reconfiguration attempt broke Rust linking
 
 **Output Files:**
 - `hwengine.html` - 22KB (loader page)
