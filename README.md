@@ -4,53 +4,116 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 
 ## Status
 
-**Build Complete: 100%** 🎉
+**IPC Transport Complete: 85%** 🎉
 
-The game engine has been successfully compiled to WebAssembly!
+The game engine successfully reads IPC commands from JavaScript!
+
+### What Works
+- ✅ Engine compiles to WebAssembly (4.1MB)
+- ✅ All assets load (51MB essential data)
+- ✅ SDL2, OpenGL, shaders initialize
+- ✅ **IPC transport layer working** - engine reads 149 bytes from JS
+- ✅ Game configuration parsed (seed, teams, hedgehogs)
+- 🟡 **Current**: Engine waiting for protocol handshake completion
 
 ### Output Files
 - ✅ `hwengine.html` - 22KB (loader page)
-- ✅ `hwengine.js` - 464KB (JavaScript glue code)
+- ✅ `hwengine.js` - 470KB (JavaScript glue code)
 - ✅ `hwengine.wasm` - 4.1MB (game engine)
-- ✅ `hwengine.wasm.map` - 1.9MB (debug symbols)
+- ✅ `hwengine.data` - 51MB (assets: graphics, fonts, shaders)
 
-### What Works
-- ✅ Emscripten toolchain (emcc/em++)
-- ✅ Rust wasm32-unknown-emscripten target
-- ✅ pas2c: 60+ Pascal files → C
-- ✅ OpenGL → WebGL2 compatibility layer
-- ✅ All libraries built (Lua, PhysFS, SDL2, SDL_NET)
-- ✅ All engine code compiled
-- ✅ Final linking successful
-- ✅ HWLIBRARY flag for --internal mode
+### Live Demo
+**URL**: http://54.80.204.92:8081/hwengine.html
+
+Open browser console to see engine initialization and IPC messages.
 
 ### Next Steps
-- Test IPC protocol message processing
-- Verify hotseat gameplay
-- Deploy MVP
+- Complete IPC protocol handshake (send replies)
+- Start game loop
+- Render first frame
 
-## Architecture
+## How It Works
+
+### Architecture
 
 ```
-Pascal → pas2c → C → Emscripten → WASM → Browser
-Browser ⇄ WebSocket Gateway ⇄ hedgewars-server (TCP)
+Pascal Source → pas2c → C Code → Emscripten → WebAssembly
+                                                    ↓
+Browser ← JavaScript Glue ← IPC Shim ← Engine (WASM)
 ```
+
+### IPC Transport Layer
+
+The engine communicates via a custom IPC protocol:
+
+1. **JavaScript Side** (`pre.js`):
+   - Queues game commands (seed, teams, hedgehogs)
+   - Provides `Module.HWEngine.readIPC()` callback
+   - Engine calls this to read bytes
+
+2. **C Shim** (`ipc_browser.c`):
+   - Replaces SDL_net with browser-friendly calls
+   - `hw_ipc_recv()` calls JavaScript via EM_JS
+   - Stubs out TCP socket functions
+
+3. **Pascal Engine** (`uIO.pas`):
+   - Conditional compilation: `{$IFDEF EMSCRIPTEN}`
+   - Uses browser IPC instead of SDL_net
+   - Parses length-prefixed protocol messages
+
+### Build Process
+
+```bash
+# 1. Configure with Emscripten
+source ~/emsdk/emsdk_env.sh
+source ~/.cargo/env
+cd build/wasm
+cmake ../.. -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_ENGINE_JS=ON \
+            -DNOSERVER=ON
+
+# 2. Build (pas2c → C → WASM)
+make -j$(nproc)
+
+# Output: bin/hwengine.{html,js,wasm,data}
+```
+
+### Key Technical Points
+
+- **Compilation**: Pascal → pas2c → C → Emscripten → WASM ✅
+- **Toolchain**: Official Emscripten (disabled legacy Platform/Emscripten.cmake)
+- **Rust**: staticlib with wasm32-unknown-emscripten target
+- **SDL**: Via Emscripten ports (-sUSE_SDL=2, no SDL_NET)
+- **OpenGL**: GLES2/WebGL2 with gl_emscripten_compat.h
+- **IPC**: Custom browser shim replaces TCP sockets
+- **Assets**: ~51MB essential (Graphics, Shaders, Fonts)
 
 ## Quick Start
 
+### Run Locally
+
 ```bash
-# Clone Hedgewars
-git clone https://github.com/hedgewars/hw.git hedgewars
-
-# Build baseline
-./scripts/build-native.sh
-
-# Build with pas2c
-./scripts/build-pas2c.sh
-
-# Build WASM (requires Emscripten)
-source ~/emsdk/emsdk_env.sh
+# Clone and build
+git clone <repo-url> webwars
+cd webwars
 ./scripts/build-wasm.sh
+
+# Serve
+cd build/wasm/bin
+python3 -m http.server 8081
+
+# Open http://localhost:8081/hwengine.html
+```
+
+### Development
+
+```bash
+# Rebuild after changes
+cd build/wasm
+make -j$(nproc)
+
+# Watch logs
+tail -f /tmp/hwengine.log
 ```
 
 ## Project Structure

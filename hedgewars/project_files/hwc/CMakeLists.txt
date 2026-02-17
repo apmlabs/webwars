@@ -93,6 +93,10 @@ if(LIBAV_FOUND)
     set(pas2c_args ${pas2c_args} -d USE_VIDEO_RECORDING)
 endif()
 
+if(BUILD_ENGINE_JS)
+    set(pas2c_args ${pas2c_args} -d EMSCRIPTEN)
+endif()
+
 #invoke pas2c on main module, it will call all the others
 add_custom_command(OUTPUT ${engine_sources}
                    COMMAND "${EXECUTABLE_OUTPUT_PATH}/pas2c${CMAKE_EXECUTABLE_SUFFIX}"
@@ -108,8 +112,10 @@ add_custom_target(engine_c DEPENDS ${engine_sources})
 if(BUILD_ENGINE_JS)
     set(HW_PRE_JS  "${CMAKE_SOURCE_DIR}/project_files/web/pre.js")
     set(HW_POST_JS "${CMAKE_SOURCE_DIR}/project_files/web/post.js")
+    set(HW_DATA_DIR "${CMAKE_SOURCE_DIR}/share/hedgewars/Data")
+    set(HW_DEMO_FILE "${CMAKE_SOURCE_DIR}/test.hwd")
     
-    add_flag_append(CMAKE_C_FLAGS "--memory-init-file 0 -O0 --js-opts 0 -g4 --use-preload-plugins -sASSERTIONS=2 -sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=100007936 -sGL_UNSAFE_OPTS=0 --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
+    add_flag_append(CMAKE_C_FLAGS "--memory-init-file 0 -O0 --js-opts 0 -g4 -sASSERTIONS=2 -sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=100007936 -sGL_UNSAFE_OPTS=0 -sLZ4=1 --preload-file ${HW_DATA_DIR}@/Data --preload-file ${HW_DEMO_FILE}@/test.hwd --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
 endif()
 
 #compile the c files
@@ -117,22 +123,24 @@ add_definitions(-DPAS2C)
 add_definitions(-DHWLIBRARY)
 add_definitions(-Werror=incompatible-pointer-types)
 
-add_executable(hwengine WIN32 ${engine_sources})
+add_executable(hwengine WIN32 ${engine_sources} ${CMAKE_CURRENT_SOURCE_DIR}/web_entry.c ${CMAKE_CURRENT_SOURCE_DIR}/ipc_browser.c)
 
 if(EMSCRIPTEN)
-    target_compile_options(hwengine PRIVATE -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -sUSE_SDL_IMAGE=2 -sUSE_SDL_TTF=2 -sUSE_SDL_NET=2)
+    target_compile_options(hwengine PRIVATE -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -sUSE_SDL_IMAGE=2 -sSDL2_IMAGE_FORMATS=["png"] -sUSE_SDL_TTF=2)
     target_include_directories(hwengine PRIVATE ${CMAKE_SOURCE_DIR}/misc/libphysfs)
     target_link_options(hwengine PRIVATE 
         -sUSE_SDL=2 
         -sUSE_SDL_MIXER=2 
-        -sUSE_SDL_IMAGE=2 
+        -sUSE_SDL_IMAGE=2
+        -sSDL2_IMAGE_FORMATS=["png"]
         -sUSE_SDL_TTF=2
-        -sUSE_SDL_NET=2
         -sMIN_WEBGL_VERSION=2 
         -sMAX_WEBGL_VERSION=2 
         -sFULL_ES2=1
         -sALLOW_MEMORY_GROWTH=1
-        "-sEXPORTED_RUNTIME_METHODS=FS")
+        -sSTACK_SIZE=5MB
+        "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
+        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal")
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
 endif()
 

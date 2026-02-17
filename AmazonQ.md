@@ -1,22 +1,60 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T12:29:00Z  
+**Last Updated**: 2026-02-17T16:00:00Z  
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`  
-**Status**: ✅ Boot flow fixed - Testing stdin reading
+**Status**: 🎉 IPC Transport Working - Engine reads from JS!
 
 ## Project: WebWars (Hedgewars WASM Port)
 
 Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket multiplayer.
 
-## Current Phase: IPC Protocol Testing
+## Current Phase: IPC Protocol Handshake
 
-### Build Complete! 🎉
-- ✅ All source code compiled to WebAssembly
-- ✅ Output: hwengine.html (22KB), hwengine.js (470KB), hwengine.wasm (4.1MB)
-- ✅ Boot flow fixed: Auto-run with Module.arguments
-- ✅ IPC messages queued in preRun (149 bytes)
-- ✅ Systemd service deployed
-- 🟡 Testing: stdin reading and IPC protocol
+### Breakthrough Achieved! 🎉
+- ✅ Engine compiled to WebAssembly (4.1MB)
+- ✅ SDL_net removed, browser IPC shim created
+- ✅ Pascal conditionals working with `-d EMSCRIPTEN`
+- ✅ Engine reads 149 bytes from JS callback
+- 🟡 **Current**: Engine waiting for IPC reply (blocking)
+
+### The Journey (Step by Step)
+
+#### Phase 1: WASM Compilation (Complete)
+1. Set up Emscripten SDK 5.0.1
+2. Configured Rust wasm32-unknown-emscripten target
+3. Fixed GL headers (GLES2/gl2.h)
+4. Built all dependencies (Lua, PhysFS, SDL2)
+5. Generated C from Pascal via pas2c (60+ files)
+6. Created OpenGL compatibility layer
+7. **Result**: hwengine.wasm (4.1MB) successfully built
+
+#### Phase 2: Asset Loading (Complete)
+8. Packaged 51MB essential assets (Graphics, Shaders, Fonts)
+9. Used `--preload-file` with LZ4 compression
+10. Removed `--use-preload-plugins` (caused browser audio limits)
+11. **Result**: Assets load cleanly in browser
+
+#### Phase 3: Boot Flow (Complete)
+12. Tried `callMain()` - doesn't exist in Emscripten output
+13. Tried `Module.run()` - caused re-entry assertion
+14. **Solution**: Auto-run with `Module.arguments`
+15. Created web_entry.c wrapper with static argv
+16. **Result**: Engine starts and initializes SDL
+
+#### Phase 4: IPC Transport (Complete) ✅
+17. **Problem**: Engine hardcoded to use TCP sockets (SDL_net)
+18. **Solution Path A**: Remove SDL_net, create browser shim
+19. Added `-d EMSCRIPTEN` to pas2c flags in CMakeLists.txt
+20. Patched uIO.pas with `{$IFDEF EMSCRIPTEN}` conditionals
+21. Created ipc_browser.c with SDL_net stubs + `hw_ipc_recv()`
+22. Implemented `Module.HWEngine.readIPC()` in pre.js
+23. Exported HEAPU8 to EXPORTED_RUNTIME_METHODS
+24. **Result**: Engine reads all 149 bytes from JS queue! 🎉
+
+#### Phase 5: IPC Protocol (In Progress) 🟡
+25. Engine successfully reads: seed, teams, hedgehogs, start command
+26. **Current blocker**: Engine stuck in `SendIPCAndWaitReply()`
+27. **Next**: Implement reply mechanism or complete protocol sequence
 
 ### Deployment
 - **Service**: `webwars-server.service` (systemd)
@@ -25,12 +63,6 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
   - Status: `sudo systemctl status webwars-server`
   - Logs: `sudo journalctl -u webwars-server -f`
   - Restart: `sudo systemctl restart webwars-server`
-
-### Next Steps
-1. Verify stdin() is called and reads queued messages
-2. Check IPC protocol framing (length-prefixed)
-3. Debug any protocol issues
-4. Verify game starts with hotseat setup
 
 ## Key Technical Points
 
