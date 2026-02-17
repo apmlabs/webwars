@@ -26,7 +26,6 @@ emcmake cmake ../../hedgewars \
     -DBUILD_ENGINE_C=ON \
     -DBUILD_ENGINE_JS=ON \
     -DLUA_SYSTEM=OFF \
-    -DPHYSFS_SYSTEM=OFF \
     -DHW_USE_RUST_MAPGEN=ON \
     -DRust_CARGO_TARGET=wasm32-unknown-emscripten \
     -DCMAKE_BUILD_TYPE=Release

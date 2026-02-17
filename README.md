@@ -4,21 +4,29 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 
 ## Status
 
-**Build Progress: 99% Complete** 🎉
+**Build Complete: 100%** 🎉
 
-All C code compiled successfully! Final linking in progress. See [AGENTS.md](AGENTS.md) for detailed tracking.
+The game engine has been successfully compiled to WebAssembly!
+
+### Output Files
+- ✅ `hwengine.html` - 22KB (loader page)
+- ✅ `hwengine.js` - 464KB (JavaScript glue code)
+- ✅ `hwengine.wasm` - 4.1MB (game engine)
+- ✅ `hwengine.wasm.map` - 1.9MB (debug symbols)
 
 ### What Works
 - ✅ Emscripten toolchain (emcc/em++)
 - ✅ Rust wasm32-unknown-emscripten target
 - ✅ pas2c: 60+ Pascal files → C
 - ✅ OpenGL → WebGL2 compatibility layer
-- ✅ All libraries built (Lua, PhysFS, SDL2)
+- ✅ All libraries built (Lua, PhysFS, SDL2, SDL_NET)
 - ✅ All engine code compiled
+- ✅ Final linking successful
 
-### Current Task
-- Fixing PhysFS linking configuration
-- Then: Final link → hwengine.html + .wasm + .js
+### Next Steps
+- Package game assets (~30-40MB essential)
+- Test in browser
+- Deploy MVP
 
 ## Architecture
 
@@ -53,6 +61,11 @@ webwars/
 ├── README.md          # This file
 ├── hedgewars/         # Cloned source
 ├── build/             # Build outputs
+│   └── wasm/
+│       └── bin/
+│           ├── hwengine.html
+│           ├── hwengine.js
+│           └── hwengine.wasm
 ├── gateway/           # WebSocket gateway
 ├── web/               # Browser frontend
 ├── scripts/           # Build scripts
@@ -66,6 +79,12 @@ webwars/
 - **Rust Integration**: wasm32-unknown-emscripten staticlib
 - **SDL2**: Via Emscripten ports (no native dependencies)
 - **Assets**: 218MB total, ~30-40MB essential bundle
+
+## Build Time
+
+- **Configuration**: ~10 seconds
+- **Full build**: ~3 minutes (clean)
+- **Incremental**: ~30 seconds
 
 ## License
 
