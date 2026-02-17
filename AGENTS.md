@@ -294,8 +294,8 @@ http://54.80.204.92:8081/hwengine.html
 
 ## 🔑 CRITICAL LESSONS
 
-### 1. Corrosion Detects Host, Not Cargo Target
-Corrosion queries `rustc -vV` for host target (x86_64-unknown-linux-gnu), not Cargo's configured target. This caused native libs (-lgcc_s, -lutil) to be injected into the WASM link line. Fix: `.cargo/config.toml` forces Cargo to always build for wasm32-unknown-emscripten, regardless of what Corrosion detects.
+### 1. Corrosion Detects Host, Not Cargo Target (PERMANENT FIX IN CMakeLists.txt)
+Corrosion's FindRust.cmake has NO Emscripten handling. It falls back to the host target (x86_64-unknown-linux-gnu), which sets `Rust_CARGO_TARGET_LINK_NATIVE_LIBS=gcc_s;util;rt;pthread;m;dl;c` in CMakeCache.txt. These propagate via INTERFACE_LINK_LIBRARIES to the WASM link line, causing `wasm-ld: unable to find -lutil`. The `.cargo/config.toml` only affects `cargo build` at runtime — it does NOT fix the CMake configure-time detection. Every `rm -rf build/wasm/*` would re-trigger the bug. **Permanent fix**: `set(Rust_CARGO_TARGET "wasm32-unknown-emscripten" CACHE STRING "Target triple" FORCE)` BEFORE `add_subdirectory(tools/corrosion)` in hedgewars/CMakeLists.txt.
 
 ### 2. Legacy Platform/Emscripten.cmake Overrides Everything
 Hedgewars ships its own `cmake_modules/Platform/Emscripten.cmake` that overrides the official Emscripten toolchain. This breaks modern Emscripten. Fix: Rename to `.legacy` and let the official toolchain work.
@@ -339,6 +339,7 @@ The Hedgewars IPC protocol is complex. Always reference `gameServer/EngineIntera
 | Bug Pattern | Why It's Bad | Fix |
 |-------------|--------------|-----|
 | Skip .cargo/config.toml | Corrosion injects native libs into WASM link | Always have config.toml |
+| Missing Rust_CARGO_TARGET set | .cargo/config.toml only fixes cargo build, NOT CMake configure-time detection | set(Rust_CARGO_TARGET "wasm32-unknown-emscripten") BEFORE add_subdirectory(corrosion) |
 | Use legacy Platform/Emscripten.cmake | Overrides official toolchain, breaks everything | Rename to .legacy |
 | Forget HWLIBRARY flag | Engine tries TCP sockets in browser | Add -DHWLIBRARY to compile flags |
 | Pipe build output | User can't see progress | Run commands directly |
