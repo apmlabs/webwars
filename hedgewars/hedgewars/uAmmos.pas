@@ -50,7 +50,7 @@ function  GetAmmoEntry(var Hedgehog: THedgehog; am: TAmmoType): PAmmo;
 var StoreCnt: LongInt;
 
 implementation
-uses uVariables, uCommands, uUtils, uCaptions, uDebug, uScript;
+uses uVariables, uCommands, uUtils, uCaptions, uDebug, uScript, uConsole;
 
 type TAmmoArray = array[TAmmoType] of TAmmo;
 var StoresList: array[0..Pred(cMaxHHs)] of PHHAmmo;
@@ -82,7 +82,16 @@ var cnt: Longword;
     a: TAmmoType;
     ammos: TAmmoCounts;
     newAmmos: TAmmoArray;
+    expectedLen: Longword;
 begin
+    expectedLen := ord(High(TAmmoType));
+    WriteLnToConsole('=== AMMO DEBUG ===');
+    WriteToConsole('Expected: '); WriteLnToConsole(inttostr(expectedLen));
+    WriteToConsole('Loadout: '); WriteLnToConsole(inttostr(byte(ammoLoadout[0])));
+    WriteToConsole('Prob: '); WriteLnToConsole(inttostr(byte(ammoProbability[0])));
+    WriteToConsole('Delay: '); WriteLnToConsole(inttostr(byte(ammoDelay[0])));
+    WriteToConsole('Reinf: '); WriteLnToConsole(inttostr(byte(ammoReinforcement[0])));
+    
     if checkFails((byte(ammoLoadout[0]) = byte(ord(High(TAmmoType)))) and (byte(ammoProbability[0]) = byte(ord(High(TAmmoType)))) and (byte(ammoDelay[0]) = byte(ord(High(TAmmoType)))) and (byte(ammoReinforcement[0]) = byte(ord(High(TAmmoType))))
                   , 'Incomplete or missing ammo scheme set (incompatible frontend or demo/save?)'
                   , true)

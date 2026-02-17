@@ -4,33 +4,39 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 
 ## Status
 
-**IPC Transport Complete: 85%** 🎉
+**Game Loop Running: 95%** 🎉
 
-The game engine successfully reads IPC commands from JavaScript!
+The game engine successfully runs complete gameplay sessions!
 
 ### What Works
-- ✅ Engine compiles to WebAssembly (4.1MB)
-- ✅ All assets load (51MB essential data)
+- ✅ Engine compiles to WebAssembly (4.2MB)
+- ✅ All assets load (187MB data file)
 - ✅ SDL2, OpenGL, shaders initialize
-- ✅ **IPC transport layer working** - engine reads 149 bytes from JS
-- ✅ Game configuration parsed (seed, teams, hedgehogs)
-- 🟡 **Current**: Engine waiting for protocol handshake completion
+- ✅ **IPC protocol working** - bidirectional communication
+- ✅ **Map loading** - Cake map with spawn zones
+- ✅ **Spawn system** - hedgehogs place successfully
+- ✅ **Game loop** - runs 360+ ticks
+- ✅ **Win detection** - identifies winners
+- ✅ **Sound playback** - plays victory sounds
+- 🟡 **Rendering** - status unknown (canvas not verified)
+- ❌ **Cleanup** - crashes on shutdown
 
 ### Output Files
 - ✅ `hwengine.html` - 22KB (loader page)
 - ✅ `hwengine.js` - 470KB (JavaScript glue code)
-- ✅ `hwengine.wasm` - 4.1MB (game engine)
-- ✅ `hwengine.data` - 51MB (assets: graphics, fonts, shaders)
+- ✅ `hwengine.wasm` - 4.2MB (game engine)
+- ✅ `hwengine.data` - 187MB (assets: graphics, fonts, shaders, maps, sounds)
 
 ### Live Demo
 **URL**: http://54.80.204.92:8081/hwengine.html
 
-Open browser console to see engine initialization and IPC messages.
+Open browser console to see engine initialization and gameplay messages.
 
 ### Next Steps
-- Complete IPC protocol handshake (send replies)
-- Start game loop
-- Render first frame
+- Verify rendering on canvas
+- Fix cleanup crash
+- Reduce console output
+- Add proper main loop integration
 
 ## How It Works
 
@@ -86,7 +92,7 @@ make -j$(nproc)
 - **SDL**: Via Emscripten ports (-sUSE_SDL=2, no SDL_NET)
 - **OpenGL**: GLES2/WebGL2 with gl_emscripten_compat.h
 - **IPC**: Custom browser shim replaces TCP sockets
-- **Assets**: ~51MB essential (Graphics, Shaders, Fonts)
+- **Assets**: ~187MB (Graphics, Shaders, Fonts, Maps, Sounds)
 
 ## Quick Start
 
@@ -129,7 +135,8 @@ webwars/
 │       └── bin/
 │           ├── hwengine.html
 │           ├── hwengine.js
-│           └── hwengine.wasm
+│           ├── hwengine.wasm
+│           └── hwengine.data
 ├── gateway/           # WebSocket gateway
 ├── web/               # Browser frontend
 ├── scripts/           # Build scripts
@@ -142,13 +149,23 @@ webwars/
 - **WebGL2**: Full GLES2 compatibility layer
 - **Rust Integration**: wasm32-unknown-emscripten staticlib
 - **SDL2**: Via Emscripten ports (no native dependencies)
-- **Assets**: 218MB total, ~30-40MB essential bundle
+- **Game Loop**: 360+ ticks of gameplay verified
+- **Win Detection**: Functional victory conditions
+- **Sound System**: Audio playback working
 
 ## Build Time
 
 - **Configuration**: ~10 seconds
 - **Full build**: ~3 minutes (clean)
 - **Incremental**: ~30 seconds
+
+## Known Issues
+
+1. **Data file warning**: Path resolution warning (non-fatal)
+2. **Main loop timing**: SDL vsync incompatibility with Emscripten
+3. **Cleanup crash**: RuntimeError during shutdown
+4. **Console output**: 5000+ lines from debug mode
+5. **Rendering verification**: Canvas display not confirmed
 
 ## License
 

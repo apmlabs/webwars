@@ -755,8 +755,10 @@ begin
             SDL_UnlockSurface(tmpsurf);
         end;
 
-    // log success
+    // log success (suppress spam in browser builds)
+    {$IFNDEF EMSCRIPTEN}
     WriteLnToConsole(logMsg + ' ' + msgOK + ' (' + inttostr(tmpsurf^.w) + 'x' + inttostr(tmpsurf^.h) + ')' + digestMsg);
+    {$ENDIF}
 
     LoadImage:= tmpsurf //Result
 end;

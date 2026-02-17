@@ -177,12 +177,18 @@ var event: TSDL_Event;
     isTerminated: boolean;
     previousGameState: TGameState;
     wheelEvent: boolean;
+    loopCounter: LongWord;
 begin
+    WriteLnToConsole('[PROBE] MainLoop entered');
     previousGameState:= gsStart;
     isTerminated:= false;
+    loopCounter:= 0;
     PrevTime:= SDL_GetTicks;
     while (not isTerminated) and allOK do
     begin
+        inc(loopCounter);
+        if (loopCounter mod 60) = 0 then
+            WriteLnToConsole('[PROBE] Loop tick: ' + inttostr(loopCounter));
         wheelEvent:= false;
         SDL_PumpEvents();
 
@@ -444,29 +450,44 @@ begin
         begin
         if recordFileName = '' then
             begin
+            if isDeveloperMode then
+                AddFileLog('[DEBUG] Before InitIPC: isDeveloperMode=TRUE InitStepsFlags=' + IntToStr(InitStepsFlags))
+            else
+                AddFileLog('[DEBUG] Before InitIPC: isDeveloperMode=FALSE InitStepsFlags=' + IntToStr(InitStepsFlags));
             InitIPC;
             SendIPCAndWaitReply(_S'C');        // ask for game config
+            if isDeveloperMode then
+                AddFileLog('[DEBUG] After config: isDeveloperMode=TRUE InitStepsFlags=' + IntToStr(InitStepsFlags))
+            else
+                AddFileLog('[DEBUG] After config: isDeveloperMode=FALSE InitStepsFlags=' + IntToStr(InitStepsFlags));
             end
         else
             LoadRecordFromFile(recordFileName);
         end;
 
     if not allOK then exit;
+    WriteLnToConsole('[PROBE] Calling ScriptOnGameInit');
     ScriptOnGameInit;
+    WriteLnToConsole('[PROBE] Sending proto version');
     s:= 'eproto ' + inttostr(cNetProtoVersion);
     SendIPCRaw(@s[0], Length(s) + 1); // send proto version
 
+    WriteLnToConsole('[PROBE] Calling InitTeams');
     InitTeams();
+    WriteLnToConsole('[PROBE] Calling AssignStores');
     AssignStores();
 
     if GameType = gmtRecord then
         SetSound(false);
 
+    WriteLnToConsole('[PROBE] Calling InitSound');
     InitSound();
 
+    WriteLnToConsole('[PROBE] About to check InitStepsFlags');
     isDeveloperMode:= false;
     if checkFails(InitStepsFlags = cifAllInited, 'Some parameters not set (flags = ' + inttostr(InitStepsFlags) + ')', true) then exit;
     if not allOK then exit;
+    WriteLnToConsole('[PROBE] InitStepsFlags check passed, calling MainLoop');
 
 {$IFDEF USE_VIDEO_RECORDING}
     if GameType = gmtRecord then
