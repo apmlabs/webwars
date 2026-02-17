@@ -1,12 +1,12 @@
 # Agent Status Tracking - WebWars (Hedgewars WASM Port)
 
 ## Current Status
-Last updated: 2026-02-17T02:28:00Z
+Last updated: 2026-02-17T03:07:00Z
 
 ### Project Status
-- **Phase**: Build Phase - 99% Complete
-- **Last Action**: Fixed all pas2c and OpenGL compatibility issues
-- **Current Task**: Final PhysFS linking configuration
+- **Phase**: Build Phase - ✅ 100% COMPLETE
+- **Last Action**: Successfully compiled hwengine to WebAssembly
+- **Current Task**: Asset packaging and browser testing
 - **Target**: Browser-playable Hedgewars with WebSocket multiplayer
 
 ### Implementation Tracks
@@ -14,7 +14,7 @@ Last updated: 2026-02-17T02:28:00Z
 |-------|-----------|--------|-------------|
 | A | Baseline Build | ✅ COMPLETE | Native hwengine builds successfully |
 | A | pas2c Validation | ✅ COMPLETE | All Pascal→C conversion working |
-| A | Emscripten Compile | 🟡 99% | Fix PhysFS linking, then link final binary |
+| A | Emscripten Compile | ✅ COMPLETE | hwengine.wasm built (4.1MB) |
 | A | Asset Packaging | NOT STARTED | Add --preload-file for Data/ |
 | A | Browser MVP | NOT STARTED | Test in browser |
 | B | WebSocket Gateway | NOT STARTED | Gateway code ready |
@@ -22,7 +22,14 @@ Last updated: 2026-02-17T02:28:00Z
 | B | Multiplayer Test | NOT STARTED | Depends on server |
 | C | Deployment | NOT STARTED | Deploy on this server |
 
-### Build Progress (99%)
+### Build Complete! 🎉
+**Output Files:**
+- `hwengine.html` - 22KB (loader page)
+- `hwengine.js` - 464KB (JavaScript glue)
+- `hwengine.wasm` - 4.1MB (game engine)
+- `hwengine.wasm.map` - 1.9MB (debug symbols)
+
+### Build Progress (100%)
 - [x] Emscripten SDK 5.0.1 installed and configured
 - [x] Rust wasm32-unknown-emscripten target installed
 - [x] GL headers fixed (GLES2/gl2.h)
@@ -33,7 +40,10 @@ Last updated: 2026-02-17T02:28:00Z
 - [x] pas2c: Generated all 60+ C files
 - [x] OpenGL compatibility layer (gl_emscripten_compat.h)
 - [x] All C files compiled (Lua, PhysFS, physlayer, fpcrtl, engine)
-- [ ] Final linking (blocked on PhysFS config)
+- [x] PhysFS bundled build with target-based linking
+- [x] Lua bundled build (removed lua_emscripten_internal)
+- [x] SDL_NET support added
+- [x] Final linking successful
 
 ### Key Technical Decisions
 
@@ -45,13 +55,15 @@ Last updated: 2026-02-17T02:28:00Z
 6. **Multiplayer**: WebSocket gateway (avoid WebRTC)
 7. **Assets**: Lazy-load non-essential content (future)
 
-### Files Modified (11 core patches)
+### Files Modified (7 core patches)
 
 **CMake Configuration:**
-- `hedgewars/CMakeLists.txt` - Rust toggle, skip Platform/ for Emscripten
+- `hedgewars/CMakeLists.txt` - Rust toggle, skip Platform/ for Emscripten, PhysFS/Lua bundled builds
 - `hedgewars/cmake_modules/Platform/Emscripten.cmake` - Renamed to .legacy
-- `hedgewars/misc/libphyslayer/CMakeLists.txt` - Emscripten SDL2/PhysFS
-- `hedgewars/project_files/hwc/CMakeLists.txt` - Emscripten flags, PhysFS include
+- `hedgewars/misc/libphyslayer/CMakeLists.txt` - Emscripten SDL2/PhysFS, removed .bc suffix
+- `hedgewars/misc/libphysfs/CMakeLists.txt` - Modern CMake compatibility
+- `hedgewars/misc/liblua/CMakeLists.txt` - Removed lua_emscripten_internal override
+- `hedgewars/project_files/hwc/CMakeLists.txt` - Emscripten flags, memory alignment, SDL_NET
 
 **Source Code:**
 - `hedgewars/rust/lib-hwengine-future/Cargo.toml` - staticlib
@@ -77,8 +89,8 @@ Last updated: 2026-02-17T02:28:00Z
 
 ### Next Immediate Actions
 
-1. Fix PhysFS linking (find built libphysfs.a or configure bundled properly)
-2. Complete final link → hwengine.html + .wasm + .js
-3. Test browser load with `python3 -m http.server`
-4. Package essential assets with `--preload-file`
-5. Deploy MVP on this server
+1. Test browser load with `python3 -m http.server`
+2. Package essential assets with `--preload-file`
+3. Optimize asset loading (lazy-load music/maps)
+4. Deploy MVP on this server
+5. Build WebSocket gateway for multiplayer
