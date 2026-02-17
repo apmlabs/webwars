@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T21:52:00Z
+**Last Updated**: 2026-02-17T22:11:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Game Loop Running - Build Fixed, Testing Deployment
+**Status**: IPC Protocol Fixed - Ammo Store Crash Resolved, Testing Rendering
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -191,6 +191,31 @@ Commits: 9ac6a51 → 672b3b0 (4 commits)
 - Clean rebuild succeeded, server restarted with new build
 
 **Key insight**: Corrosion queries `rustc -vV` for host target, ignoring Cargo's configured target. The .cargo/config.toml is the only reliable fix.
+
+### Session 4 - February 17, 2026 (22:00-22:11 UTC)
+
+**Fix fatal ammo store crash, correct IPC protocol, remove debug spam.**
+
+Commits: 9a8203b → 355da49 (3 commits)
+
+**Phase 1: Diagnosis**
+- User reported "Invalid ammo store number" fatal error, engine exit code 52
+- Traced through uAmmos.pas: `AssignStores()` → `GetAmmoByNum(hedgehog.AmmoStore)` → `num < StoreCnt` fails
+- Root cause: pre.js sent ONE ammo store then BOTH teams. Team 2 hedgehogs got AmmoStore=1 but StoreCnt=1
+
+**Phase 2: Protocol Fix**
+- Read `gameServer/EngineInteraction.hs` `teamSetup` function — ammo is prepended BEFORE each team
+- Rewrote pre.js: `sendAmmoAndTeam()` sends ammo store + team + hedgehogs as a unit
+- Added missing game config: `e$gmflags`, `e$turntime`, `e$damagepct`, all scheme params
+- Fixed team colors (real hex values instead of 0/1), added `efort`/`ehat` commands
+
+**Phase 3: Debug Spam Removal**
+- Removed IPC LEVEL1/2/3 logging from uCommands.pas, uIO.pas (was generating 5000+ lines)
+- Removed PROBE loop tick logging from hwengine.pas MainLoop
+- Kept ammo debug output in uAmmos.pas for verification
+- Fixed .gitignore to exclude Rust target/ directory (was accidentally committed)
+
+**Key insight**: The Hedgewars IPC protocol requires ammo stores per-team, not global. Always read EngineInteraction.hs, never guess the protocol.
 
 ## Success Criteria
 

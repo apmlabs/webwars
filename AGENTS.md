@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-17T21:52:00Z
+Last updated: 2026-02-17T22:11:00Z
 
 ### Project Status
-- **Phase**: Game Loop Running - Build Fixed, Testing Deployment
-- **Last Action**: Fixed Rust target detection with .cargo/config.toml
-- **Current Blocker**: None - build working again
-- **Target**: Verify rendering on canvas, fix cleanup crash
+- **Phase**: IPC Protocol Fixed - Testing Rendering
+- **Last Action**: Fixed fatal ammo store error, corrected IPC protocol to match real Hedgewars server
+- **Current Blocker**: Rendering not yet verified (ammo crash was preventing game loop)
+- **Target**: Verify rendering on canvas
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -324,6 +324,12 @@ After modifying any CMakeLists.txt, always `rm -rf build/wasm/*` and reconfigure
 ### 10. HWLIBRARY Flag is Critical
 The engine must be built with `-DHWLIBRARY` flag for `--internal` mode (no TCP sockets). Without it, the engine tries to open TCP connections which fail in browser.
 
+### 11. Ammo Stores Must Be Sent Per-Team
+The real Hedgewars server (EngineInteraction.hs `teamSetup`) sends ammo config (eammloadt/eammprob/eammdelay/eammreinf/eammstore) BEFORE EACH team, not once globally. Without per-team stores, `AssignStores()` fails with "Invalid ammo store number" because hedgehog.AmmoStore = TeamsCount-1 but StoreCnt is only 1.
+
+### 12. Read the Real Server Code, Don't Guess IPC Protocol
+The Hedgewars IPC protocol is complex. Always reference `gameServer/EngineInteraction.hs` for the exact message sequence. Guessing leads to subtle bugs like the ammo store ordering issue.
+
 ---
 
 ## 🐛 KEY BUG PATTERNS
@@ -340,6 +346,8 @@ The engine must be built with `-DHWLIBRARY` flag for `--internal` mode (no TCP s
 | callMain() in Emscripten | Doesn't exist in output | Use Module.run() instead |
 | noInitialRun flag | Gets stripped by Emscripten optimizer | Use Module.run() approach |
 | Forget to commit | Next session loses all context | Always git commit |
+| Send ammo store once globally | Team 2+ hedgehogs get invalid AmmoStore index | Send ammo per-team before each eaddteam |
+| Guess IPC protocol | Subtle ordering bugs | Read EngineInteraction.hs |
 
 ---
 
