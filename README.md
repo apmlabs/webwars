@@ -54,3 +54,7 @@ GPL v2 (same as Hedgewars)
 - [Hedgewars](https://hedgewars.org/)
 - [Hedgewars GitHub](https://github.com/hedgewars/hw)
 - [pas2c Docs](https://hedgewars.org/kb/pas2c)
+=======
+# webwars
+Browser port of Hedgewars using WebAssembly - Play with friends online
+>>>>>>> f6780b39b2fb356318274a4bc5d2e978b7285c7e
