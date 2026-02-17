@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WebWars — Hedgewars in Your Browser</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow:hidden;height:100vh;width:100vw}
+
+/* ── Layout ── */
+#game-wrap{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column}
+#top-bar{height:36px;background:linear-gradient(180deg,#161b2e,#0d1120);display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #1e2744;z-index:20;flex-shrink:0}
+#canvas-wrap{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
+canvas{display:block;background:#000}
+
+/* ── Top Bar ── */
+#top-bar .logo{font-weight:800;font-size:15px;letter-spacing:1px;background:linear-gradient(135deg,#4fc3f7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#top-bar .sep{width:1px;height:18px;background:#2a3352;margin:0 14px}
+#status-text{font-size:12px;color:#8892b0;flex:1}
+progress{width:160px;height:6px;border-radius:3px;margin:0 12px;appearance:none;-webkit-appearance:none}
+progress::-webkit-progress-bar{background:#1a2040;border-radius:3px}
+progress::-webkit-progress-value{background:linear-gradient(90deg,#4fc3f7,#66bb6a);border-radius:3px}
+.spinner{width:14px;height:14px;border:2px solid #2a3352;border-top-color:#4fc3f7;border-radius:50%;animation:spin .5s linear infinite;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.bar-btn{background:none;border:1px solid #2a3352;color:#8892b0;padding:3px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-left:8px;transition:all .15s}
+.bar-btn:hover{border-color:#4fc3f7;color:#4fc3f7}
+.bar-btn.accent{border-color:#4fc3f7;color:#4fc3f7}
+
+/* ── Click-to-play prompt ── */
+#click-prompt{display:none;position:absolute;inset:0;background:rgba(6,8,18,0.75);z-index:30;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+#click-prompt .icon{font-size:56px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(79,195,247,0.4))}
+#click-prompt .label{font-size:20px;font-weight:600;letter-spacing:0.5px}
+#click-prompt .sub{font-size:13px;color:#5a6480;margin-top:8px}
+
+/* ── Controls Overlay ── */
+#controls-overlay{display:none;position:fixed;inset:0;background:rgba(6,8,18,0.92);z-index:100;overflow-y:auto;backdrop-filter:blur(8px)}
+#controls-overlay.visible{display:flex;justify-content:center;padding:40px 20px}
+#controls-inner{max-width:660px;width:100%;animation:fadeUp .2s ease-out}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.close-x{position:fixed;top:16px;right:24px;font-size:24px;color:#5a6480;cursor:pointer;z-index:101;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:all .15s}
+.close-x:hover{background:#1a2040;color:#fff}
+#controls-inner h2{font-size:20px;font-weight:700;margin-bottom:20px;color:#fff}
+#controls-inner h2 span{background:linear-gradient(135deg,#4fc3f7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.ctrl-section{margin-bottom:20px}
+.ctrl-section h3{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#4a5270;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #1a2040}
+.ctrl-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.ctrl-row{display:flex;align-items:center;padding:6px 0;border-bottom:1px solid #0f1528}
+.ctrl-row:nth-child(odd){padding-right:16px}
+.ctrl-row:nth-child(even){padding-left:16px}
+kbd{display:inline-block;background:#141830;border:1px solid #232a48;border-radius:4px;padding:2px 7px;font-size:11px;font-family:inherit;color:#4fc3f7;min-width:24px;text-align:center;margin-right:8px;white-space:nowrap}
+.ctrl-desc{font-size:12px;color:#8892b0}
+.hint{color:#3d4560;font-size:11px;margin-top:16px;text-align:center}
+</style>
+</head>
+<body>
+<div id="game-wrap">
+  <div id="top-bar">
+    <span class="logo">WEBWARS</span>
+    <span class="sep"></span>
+    <span class="spinner" id="spinner"></span>
+    <span id="status-text">Downloading...</span>
+    <progress id="progress" hidden max="100" value="0"></progress>
+    <button class="bar-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+    <button class="bar-btn accent" onclick="toggleControls()">Controls</button>
+  </div>
+  <div id="canvas-wrap">
+    <canvas id="canvas" class="emscripten" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+    <div id="click-prompt">
+      <div class="icon">🎯</div>
+      <div class="label">Click to Play</div>
+      <div class="sub">Esc to release mouse · Controls button for help</div>
+    </div>
+  </div>
+</div>
+
+<!-- Controls Overlay -->
+<div id="controls-overlay">
+  <span class="close-x" onclick="toggleControls()">&times;</span>
+  <div id="controls-inner">
+    <h2><span>Controls</span></h2>
+
+    <div class="ctrl-section">
+      <h3>Movement</h3>
+      <div class="ctrl-grid">
+        <div class="ctrl-row"><kbd>←</kbd><kbd>→</kbd> <span class="ctrl-desc">Walk</span></div>
+        <div class="ctrl-row"><kbd>↑</kbd><kbd>↓</kbd> <span class="ctrl-desc">Aim up / down</span></div>
+        <div class="ctrl-row"><kbd>Enter</kbd> <span class="ctrl-desc">Long jump (forward)</span></div>
+        <div class="ctrl-row"><kbd>Backspace</kbd> <span class="ctrl-desc">High jump (vertical)</span></div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <h3>Combat</h3>
+      <div class="ctrl-grid">
+        <div class="ctrl-row"><kbd>Right Click</kbd> <span class="ctrl-desc">Weapon menu</span></div>
+        <div class="ctrl-row"><kbd>F1</kbd>–<kbd>F10</kbd> <span class="ctrl-desc">Weapon slot 1–10</span></div>
+        <div class="ctrl-row"><kbd>Space</kbd> <span class="ctrl-desc">Charge &amp; fire (hold)</span></div>
+        <div class="ctrl-row"><kbd>Left Click</kbd> <span class="ctrl-desc">Set target / fire</span></div>
+        <div class="ctrl-row"><kbd>1</kbd>–<kbd>5</kbd> <span class="ctrl-desc">Grenade timer</span></div>
+        <div class="ctrl-row"><kbd>L Shift</kbd> <span class="ctrl-desc">Precise aim (hold)</span></div>
+        <div class="ctrl-row"><kbd>Tab</kbd> <span class="ctrl-desc">Switch hedgehog</span></div>
+        <div class="ctrl-row"><kbd>N</kbd> <span class="ctrl-desc">Timer up</span></div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <h3>Camera</h3>
+      <div class="ctrl-grid">
+        <div class="ctrl-row"><kbd>Mouse</kbd> <span class="ctrl-desc">Move crosshair</span></div>
+        <div class="ctrl-row"><kbd>Scroll</kbd> <span class="ctrl-desc">Zoom in / out</span></div>
+        <div class="ctrl-row"><kbd>Middle Click</kbd> <span class="ctrl-desc">Reset zoom</span></div>
+        <div class="ctrl-row"><kbd>H</kbd> <span class="ctrl-desc">Find hedgehog</span></div>
+      </div>
+    </div>
+
+    <div class="ctrl-section">
+      <h3>Other</h3>
+      <div class="ctrl-grid">
+        <div class="ctrl-row"><kbd>P</kbd> <span class="ctrl-desc">Pause</span></div>
+        <div class="ctrl-row"><kbd>F</kbd> <span class="ctrl-desc">Fast-forward (hold)</span></div>
+        <div class="ctrl-row"><kbd>T</kbd> <span class="ctrl-desc">Chat</span></div>
+        <div class="ctrl-row"><kbd>Y</kbd> <span class="ctrl-desc">Confirm</span></div>
+        <div class="ctrl-row"><kbd>0</kbd><kbd>9</kbd><kbd>8</kbd> <span class="ctrl-desc">Vol up / down / mute</span></div>
+        <div class="ctrl-row"><kbd>Esc</kbd> <span class="ctrl-desc">Quit / release mouse</span></div>
+      </div>
+    </div>
+
+    <p class="hint">Click × or press Esc to close</p>
+  </div>
+</div>
+
+<script>
+/* ── Controls overlay ── */
+function toggleControls(){document.getElementById('controls-overlay').classList.toggle('visible')}
+document.addEventListener('keydown',function(e){
+  if(e.key==='F1'&&!document.pointerLockElement){e.preventDefault();toggleControls()}
+  if(e.key==='Escape'){var o=document.getElementById('controls-overlay');if(o.classList.contains('visible')){o.classList.remove('visible');e.stopPropagation()}}
+});
+
+/* ── Fullscreen ── */
+function toggleFullscreen(){
+  if(!document.fullscreenElement)document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+}
+
+/* ── Pointer lock prompt ── */
+var prompt=document.getElementById('click-prompt');
+prompt.addEventListener('click',function(){
+  document.getElementById('canvas').focus();
+  document.getElementById('canvas').requestPointerLock();
+});
+document.addEventListener('pointerlockchange',function(){
+  if(document.pointerLockElement){prompt.style.display='none'}
+  else{setTimeout(function(){if(!document.pointerLockElement)prompt.style.display='flex'},200)}
+});
+
+/* ── Canvas sizing ── */
+function resizeCanvas(){
+  var c=document.getElementById('canvas');
+  c.width=window.innerWidth;
+  c.height=window.innerHeight-36;
+}
+window.addEventListener('resize',resizeCanvas);
+resizeCanvas();
+
+/* ── Emscripten Module ── */
+var statusEl=document.getElementById('status-text');
+var progressEl=document.getElementById('progress');
+var spinnerEl=document.getElementById('spinner');
+
+var Module={
+  print:function(){console.log(Array.prototype.slice.call(arguments).join(' '))},
+  canvas:document.getElementById('canvas'),
+  setStatus:function(text){
+    if(!text){spinnerEl.style.display='none';progressEl.hidden=true}
+    var m=text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+    if(m){progressEl.value=100*parseInt(m[2]);progressEl.max=100*parseInt(m[4]);progressEl.hidden=false;text=m[1]}
+    else{progressEl.hidden=true}
+    statusEl.textContent=text;
+  },
+  totalDependencies:0,
+  monitorRunDependencies:function(left){
+    this.totalDependencies=Math.max(this.totalDependencies,left);
+    this.setStatus(left?'Loading... ('+(this.totalDependencies-left)+'/'+this.totalDependencies+')':'Ready');
+  },
+  postRun:[function(){document.getElementById('click-prompt').style.display='flex'}]
+};
+Module.setStatus('Downloading...');
+window.onerror=function(e){Module.setStatus('Error — see console');spinnerEl.style.display='none'};
+</script>
+<script async src="hwengine.js"></script>
+</body>
+</html>
