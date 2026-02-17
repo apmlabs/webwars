@@ -280,6 +280,13 @@ if(HW_USE_RUST_MAPGEN)
     if(${BUILD_OFFLINE})
         list(APPEND CARGO_FLAGS "--offline")
     endif()
+    # Corrosion's FindRust.cmake has no Emscripten handling - it falls back to the
+    # host target (x86_64-unknown-linux-gnu), which injects native libs (-lgcc_s, -lutil)
+    # into the WASM link line. We must set the target BEFORE add_subdirectory so
+    # FindRust.cmake uses it instead of auto-detecting the host.
+    if(EMSCRIPTEN)
+        set(Rust_CARGO_TARGET "wasm32-unknown-emscripten" CACHE STRING "Target triple" FORCE)
+    endif()
     add_subdirectory(tools/corrosion)
     corrosion_import_crate(MANIFEST_PATH rust/lib-hwengine-future/Cargo.toml NO_LINKER_OVERRIDE FLAGS ${CARGO_FLAGS})
     

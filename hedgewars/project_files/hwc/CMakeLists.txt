@@ -139,6 +139,8 @@ if(EMSCRIPTEN)
         -sFULL_ES2=1
         -sALLOW_MEMORY_GROWTH=1
         -sSTACK_SIZE=5MB
+        -sASYNCIFY
+        -sASYNCIFY_STACK_SIZE=65536
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
         "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal")
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
