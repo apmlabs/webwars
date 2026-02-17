@@ -1,6 +1,6 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T03:07:00Z  
+**Last Updated**: 2026-02-17T09:57:00Z  
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`  
 **Status**: ✅ Build 100% complete - hwengine.wasm successfully generated
 
@@ -8,16 +8,17 @@
 
 Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket multiplayer.
 
-## Current Phase: Browser Testing
+## Current Phase: IPC Protocol Testing
 
 ### Build Complete! 🎉
 - ✅ All source code compiled to WebAssembly
 - ✅ Output: hwengine.html (22KB), hwengine.js (464KB), hwengine.wasm (4.1MB)
-- ✅ All 7 core patches applied and working
+- ✅ All 8 core patches applied and working
+- ✅ HWLIBRARY flag enabled for --internal mode
 
 ### Next Steps
-1. Test in browser with `python3 -m http.server` (5 min)
-2. Package assets with `--preload-file` (30 min)
+1. Test IPC protocol with hotseat game setup (30 min)
+2. Verify rendering and gameplay (1 hour)
 3. Deploy MVP on this server (15 min)
 
 ## Key Technical Points
@@ -39,7 +40,7 @@ source ~/.cargo/env
 ./scripts/build-wasm.sh
 ```
 
-## Files Modified (7 patches)
+## Files Modified (8 patches)
 
 **CMake:**
 - `hedgewars/CMakeLists.txt` - PhysFS/Lua bundled builds, skip Platform/
@@ -47,7 +48,7 @@ source ~/.cargo/env
 - `hedgewars/misc/libphyslayer/CMakeLists.txt` - Remove .bc suffix
 - `hedgewars/misc/libphysfs/CMakeLists.txt` - Modern CMake
 - `hedgewars/misc/liblua/CMakeLists.txt` - Remove lua_emscripten_internal
-- `hedgewars/project_files/hwc/CMakeLists.txt` - Memory alignment, SDL_NET
+- `hedgewars/project_files/hwc/CMakeLists.txt` - Memory alignment, SDL_NET, HWLIBRARY
 
 **Source:**
 - `hedgewars/rust/lib-hwengine-future/Cargo.toml` - staticlib
