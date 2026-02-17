@@ -132,8 +132,7 @@ if(EMSCRIPTEN)
         -sMAX_WEBGL_VERSION=2 
         -sFULL_ES2=1
         -sALLOW_MEMORY_GROWTH=1
-        "-sINVOKE_RUN=0"
-        "-sEXPORTED_RUNTIME_METHODS=run,FS")
+        "-sEXPORTED_RUNTIME_METHODS=FS")
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
 endif()
 
