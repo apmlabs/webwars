@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebWars - Hedgewars MVP</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #container {
+            max-width: 1024px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4CAF50;
+        }
+        #status {
+            padding: 15px;
+            margin: 20px 0;
+            background: #333;
+            border-radius: 5px;
+        }
+        #canvas {
+            border: 2px solid #4CAF50;
+            background: #000;
+            display: block;
+            margin: 20px auto;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover:not(:disabled) {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .info {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>🎮 WebWars - Hedgewars MVP</h1>
+        
+        <div class="info">
+            <h3>Status: Engine with Message Queue</h3>
+            <p>This build includes:</p>
+            <ul>
+                <li>✅ Full game engine (4.8MB)</li>
+                <li>✅ Essential assets (51MB)</li>
+                <li>✅ Message queue for engine control</li>
+                <li>⚠️ Basic hotseat game setup (experimental)</li>
+            </ul>
+        </div>
+
+        <div id="status">Loading engine...</div>
+        
+        <button id="startGame" disabled>Start Hotseat Game</button>
+        
+        <canvas id="canvas" width="1024" height="768"></canvas>
+
+        <div class="info">
+            <h3>Console Output:</h3>
+            <p>Open browser console (F12) to see engine messages and debug output.</p>
+            <p><strong>Expected:</strong> Engine will receive game setup messages and attempt to start.</p>
+            <p><strong>Note:</strong> This is MVP - full protocol implementation needed for complete gameplay.</p>
+        </div>
+    </div>
+
+    <script>
+        // Override Module.locateFile to find data on port 8000
+        var Module = Module || {};
+        Module.locateFile = function(path) {
+            if (path.endsWith('.data') || path.endsWith('.wasm')) {
+                return 'http://54.80.204.92:8000/' + path;
+            }
+            return path;
+        };
+    </script>
+    <script src="http://54.80.204.92:8000/hwengine-mvp.js"></script>
+</body>
+</html>

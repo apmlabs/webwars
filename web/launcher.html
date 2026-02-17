@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>WebWars - Hedgewars</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            text-align: center;
+            color: #fff;
+        }
+        #status {
+            padding: 20px;
+            margin: 20px;
+            background: #333;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+        #canvas {
+            border: 2px solid #4CAF50;
+            display: none;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .loading {
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="status">
+            <h1>🎮 WebWars</h1>
+            <p>Hedgewars in your browser</p>
+            <div id="progress">
+                <p>Click Start to begin</p>
+                <button onclick="startGame()">Start Game</button>
+            </div>
+        </div>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        var Module = {
+            canvas: document.getElementById('canvas'),
+            print: function(text) {
+                console.log('[Engine] ' + text);
+                document.getElementById('progress').innerHTML = '<p class="loading">' + text + '</p>';
+            },
+            printErr: function(text) {
+                console.error('[Engine Error] ' + text);
+            },
+            setStatus: function(text) {
+                console.log('[Status] ' + text);
+                if (text) {
+                    document.getElementById('progress').innerHTML = '<p class="loading">' + text + '</p>';
+                }
+            },
+            onRuntimeInitialized: function() {
+                console.log('Runtime initialized');
+                document.getElementById('canvas').style.display = 'block';
+                document.getElementById('progress').innerHTML = '<p class="loading">Engine ready! Starting game...</p>';
+                
+                // Try to start the engine
+                try {
+                    if (Module._hwengine_RunEngine) {
+                        console.log('Calling hwengine_RunEngine...');
+                        Module._hwengine_RunEngine();
+                    } else if (Module._hwengine_MainLoop) {
+                        console.log('Calling hwengine_MainLoop...');
+                        Module._hwengine_MainLoop();
+                    } else {
+                        console.log('Available functions:', Object.keys(Module).filter(k => k.startsWith('_')));
+                    }
+                } catch(e) {
+                    console.error('Error starting engine:', e);
+                    document.getElementById('progress').innerHTML = '<p>Error: ' + e.message + '</p><p>Check console for details</p>';
+                }
+            }
+        };
+
+        function startGame() {
+            document.getElementById('progress').innerHTML = '<p class="loading">Loading engine...</p>';
+            var script = document.createElement('script');
+            script.src = 'http://54.80.204.92:8000/hwengine-with-assets.js';
+            document.body.appendChild(script);
+        }
+    </script>
+</body>
+</html>
