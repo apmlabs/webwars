@@ -1,13 +1,30 @@
 # Agent Status Tracking - WebWars (Hedgewars WASM Port)
 
+## 🎯 PROJECT GOAL
+
+**Browser-based Hedgewars** - Full game engine compiled to WebAssembly, playable in any browser. Hotseat (local) and multiplayer (WebSocket) modes.
+
+Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
+
+---
+
+## 📚 DOCUMENTATION STRUCTURE
+
+### Core Files (NEVER DELETE)
+- **AGENTS.md** (this file) - Permanent knowledge, architecture, lessons learned
+- **AmazonQ.md** - Current status, session history, progress tracking
+- **README.md** - User-facing quick start guide
+
+---
+
 ## Current Status
-Last updated: 2026-02-17T21:47:00Z
+Last updated: 2026-02-17T21:52:00Z
 
 ### Project Status
 - **Phase**: Game Loop Running - Build Fixed, Testing Deployment
 - **Last Action**: Fixed Rust target detection with .cargo/config.toml
 - **Current Blocker**: None - build working again
-- **Target**: Verify game still runs with new build, test rendering
+- **Target**: Verify rendering on canvas, fix cleanup crash
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -30,204 +47,346 @@ Last updated: 2026-02-17T21:47:00Z
 | B | Multiplayer Test | NOT STARTED | Depends on server |
 | C | Deployment | ✅ COMPLETE | Systemd service running |
 
-### Major Milestone: Game Loop Running! 🎉
+### Current Issues
+1. **Rendering unknown** - Canvas display not confirmed yet
+2. **Cleanup crash** - `RuntimeError: unreachable` during shutdown
+3. **Main loop timing** - SDL vsync calls before Emscripten main loop exists
+4. **Console spam** - 5000+ lines from debug mode (-g4 -sASSERTIONS=2)
+5. **Data file path warning** - `dependency: datafile_../../bin/hwengine.data` (non-fatal)
 
-**The Breakthrough:**
-- ✅ Assets load (fonts, sounds, maps)
-- ✅ Spawn algorithm works (no FindPlace errors)
-- ✅ Game loop executes (360+ ticks)
-- ✅ Win detection functional
-- ✅ Sound playback works
-- ✅ IPC bidirectional communication
-- ✅ Build system fixed (Rust target detection)
-- ❌ Rendering status unknown (canvas not verified)
-- ❌ Cleanup crash (RuntimeError: unreachable)
-- ❌ Console spam (5000+ lines from debug mode)
+---
 
-**Recent Fix (2026-02-17):**
-- Added `.cargo/config.toml` to force wasm32-unknown-emscripten target
-- Prevents Corrosion from injecting native libs (-lgcc_s -lutil)
-- Build now succeeds reliably
+## 🏗️ ARCHITECTURE
 
-**Current Issues:**
-1. **Data file path warning**: `dependency: datafile_../../bin/hwengine.data` appears but file loads anyway
-2. **Main loop timing error**: SDL vsync calls before Emscripten main loop exists
-3. **Cleanup crash**: `RuntimeError: unreachable` during shutdown
-4. **Output volume**: Debug mode (-g4 -sASSERTIONS=2) causes massive stack traces
-
-**Output Files:**
-- `hwengine.html` - 22KB (loader page)
-- `hwengine.js` - 470KB (JavaScript glue with auto-start)
-- `hwengine.wasm` - 4.2MB (game engine)
-- `hwengine.data` - 187MB (assets)
-
-**Deployment:**
-- Systemd service: `webwars-server.service`
-- Auto-starts on boot, auto-restarts on crash
-- Logs to systemd journal
-- URL: http://54.80.204.92:8081/hwengine.html
-
-**Test Commands:**
-```bash
-# Check service status
-sudo systemctl status webwars-server
-
-# View logs
-sudo journalctl -u webwars-server -f
-
-# Restart service
-sudo systemctl restart webwars-server
+### Compilation Pipeline
+```
+Pascal Source (.pas)
+  → pas2c tool (Haskell)
+    → C Code (60+ .c files)
+      → Emscripten (emcc)
+        → hwengine.wasm (4.2MB)
+        → hwengine.js (470KB glue)
+        → hwengine.data (187MB assets)
 ```
 
-### Build Progress (100% Compilation, 85% Integration)
+### IPC Architecture (Browser ↔ Engine)
+```
+JavaScript (pre.js)                    C Shim (ipc_browser.c)           Pascal Engine (uIO.pas)
+┌─────────────────┐                   ┌──────────────────┐              ┌─────────────────┐
+│ Module.HWEngine  │                   │                  │              │                 │
+│  .sendMessage()  │──queue──→         │ hw_ipc_recv()    │──→           │ IPCCheckSock()  │
+│  .readIPC()      │←─EM_JS──         │ SDLNet_TCP_Send()│←──           │ ParseIPCCommand │
+│  .writeIPC()     │──EM_JS──→        │                  │              │ SendIPCRaw()    │
+│  .startHotseat() │                   │ SDL_net stubs    │              │ IPCWaitPong()   │
+└─────────────────┘                   └──────────────────┘              └─────────────────┘
+```
 
-**Completed:**
-- [x] Emscripten SDK 5.0.1 installed and configured
-- [x] Rust wasm32-unknown-emscripten target installed
-- [x] GL headers fixed (GLES2/gl2.h)
-- [x] SDL2 via Emscripten ports (-sUSE_SDL=2, -sUSE_SDL_NET=2)
-- [x] Rust staticlib built (libhwengine_future.a)
-- [x] pas2c: Fixed initialization section (uConsts.pas)
-- [x] pas2c: Fixed legacy GL test code (uMatrix.pas)
-- [x] pas2c: Generated all 60+ C files
-- [x] OpenGL compatibility layer (gl_emscripten_compat.h)
-- [x] All C files compiled (Lua, PhysFS, physlayer, fpcrtl, engine)
-- [x] PhysFS bundled build with target-based linking
-- [x] Lua bundled build (removed lua_emscripten_internal)
-- [x] SDL_NET support added
-- [x] Final linking successful
-- [x] CORS-enabled servers for cross-origin loading
-- [x] Message queue system for engine IPC
-- [x] Engine loads and executes in browser
-- [x] HWLIBRARY flag enabled for --internal mode
+### Key Files in the Chain
+| Step | File | Function |
+|------|------|----------|
+| JS Message Queue | `hedgewars/project_files/web/pre.js` | sendMessage(), readIPC(), writeIPC(), startHotseatGame() |
+| JS Runtime Init | `hedgewars/project_files/web/post.js` | Runtime initialization |
+| C IPC Shim | `hedgewars/project_files/hwc/ipc_browser.c` | hw_ipc_recv(), SDLNet_TCP_Send() stubs |
+| Pascal IPC | `hedgewars/hedgewars/uIO.pas` | IPCCheckSock(), ParseIPCCommand(), SendIPCAndWaitReply() |
+| Pascal Commands | `hedgewars/hedgewars/uCommands.pas` | Command registration and dispatch |
+| Pascal Handlers | `hedgewars/hedgewars/uCommandHandlers.pas` | Individual command handlers |
+| Pascal Engine | `hedgewars/hedgewars/hwengine.pas` | Main engine entry point |
+| CMake Main | `hedgewars/CMakeLists.txt` | Build configuration, PhysFS/Lua bundled |
+| CMake hwc | `hedgewars/project_files/hwc/CMakeLists.txt` | Emscripten flags, memory, linking |
+| Rust Config | `hedgewars/rust/lib-hwengine-future/.cargo/config.toml` | Force wasm32-unknown-emscripten |
+| Build Script | `scripts/build-wasm.sh` | Complete Emscripten configuration |
 
-**Remaining:**
-- [ ] Test IPC protocol message processing
-- [ ] Verify game starts with hotseat setup
-- [ ] Test actual gameplay
-- [ ] Optimize asset loading
-- [ ] Deploy production version
+### IPC Protocol (Length-Prefixed Messages)
+```
+Byte 0: Length (1 byte, max 255)
+Bytes 1-N: Message content
 
-### Key Technical Decisions
+Message types:
+  'e' + seed        → Set random seed (e.g., "eseed_value")
+  'T' + count       → Set team count
+  'e$...'           → Game config commands
+  'H' + name        → Add hedgehog
+  '!'               → Pong response
+  '?'               → Ping request
+  'i' + stats       → Game statistics
+  'q' + reason      → Quit with reason
+```
 
-1. **Compilation**: pas2c → C → Emscripten (proven path, working ✅)
-2. **Toolchain**: Disabled legacy Platform/Emscripten.cmake, use official toolchain
-3. **Rust**: staticlib with wasm32-unknown-emscripten target
-4. **SDL**: Via Emscripten ports (-sUSE_SDL=2), not find_package
-5. **OpenGL**: GLES2/WebGL2 with compatibility layer for desktop GL constants
-6. **Multiplayer**: WebSocket gateway (avoid WebRTC)
-7. **Assets**: Bundled essential 51MB, lazy-load optional content (future)
-8. **IPC**: Message queue implemented, protocol needs implementation
+### Hotseat Game Setup Sequence (pre.js)
+```javascript
+// 1. Config
+sendMessage("TL")           // Local game
+sendMessage("e$seed " + seed)
+sendMessage("e$mapgen 0")   // Random map
+sendMessage("e$template_filter 1")
+sendMessage("e$feature_size 12")
 
-### Files Modified (8 core patches)
+// 2. Teams (2 teams, 4 hedgehogs each)
+sendMessage("eaddteam <color> Team1")
+sendMessage("ename hog1") // x4
+sendMessage("eaddteam <color> Team2")
+sendMessage("ename hog1") // x4
 
-**CMake Configuration:**
-- `hedgewars/CMakeLists.txt` - Rust toggle, skip Platform/ for Emscripten, PhysFS/Lua bundled builds
-- `hedgewars/cmake_modules/Platform/Emscripten.cmake` - Renamed to .legacy
-- `hedgewars/misc/libphyslayer/CMakeLists.txt` - Emscripten SDL2/PhysFS, removed .bc suffix
-- `hedgewars/misc/libphysfs/CMakeLists.txt` - Modern CMake compatibility
-- `hedgewars/misc/liblua/CMakeLists.txt` - Removed lua_emscripten_internal override
-- `hedgewars/project_files/hwc/CMakeLists.txt` - Emscripten flags, memory alignment, SDL_NET, HWLIBRARY
+// 3. Start
+sendMessage("!")            // Pong to start
+```
 
-**Source Code:**
-- `hedgewars/rust/lib-hwengine-future/Cargo.toml` - staticlib
-- `hedgewars/hedgewars/uConsts.pas` - Guard initialization
-- `hedgewars/hedgewars/uMatrix.pas` - Guard legacy GL test
+---
 
-**Runtime/Headers:**
-- `hedgewars/project_files/hwc/rtl/GL.h` - GLES2 headers
-- `hedgewars/project_files/hwc/rtl/gl_emscripten_compat.h` - **NEW** WebGL compat
-- `hedgewars/project_files/hwc/rtl/misc.h` - fpcrtl_glShaderSource
+## 📁 FILE STRUCTURE
 
-**JavaScript Glue:**
-- `hedgewars/project_files/web/pre.js` - **NEW** Message queue, Module setup
-- `hedgewars/project_files/web/post.js` - **NEW** Runtime initialization
+```
+webwars/
+├── AGENTS.md                    # Permanent knowledge (NEVER DELETE)
+├── AmazonQ.md                   # Current state + history (NEVER DELETE)
+├── README.md                    # Quick start (NEVER DELETE)
+├── .gitignore
+│
+├── hedgewars/                   # Cloned + modified Hedgewars source
+│   ├── CMakeLists.txt           # Main build config (MODIFIED)
+│   ├── hedgewars/               # Pascal source files
+│   │   ├── hwengine.pas         # Engine entry point (MODIFIED)
+│   │   ├── uIO.pas              # IPC implementation (MODIFIED)
+│   │   ├── uCommands.pas        # Command dispatch (MODIFIED)
+│   │   ├── uCommandHandlers.pas # Command handlers (MODIFIED)
+│   │   ├── uSound.pas           # Sound system (MODIFIED - disable music)
+│   │   ├── uStore.pas           # Asset loading (MODIFIED - suppress spam)
+│   │   ├── uConsts.pas          # Constants (MODIFIED - guard init)
+│   │   └── uMatrix.pas          # GL matrix (MODIFIED - guard legacy)
+│   ├── project_files/
+│   │   ├── hwc/                 # C compilation target
+│   │   │   ├── CMakeLists.txt   # Emscripten flags (MODIFIED)
+│   │   │   ├── ipc_browser.c    # Browser IPC shim (NEW)
+│   │   │   └── rtl/
+│   │   │       ├── GL.h         # GLES2 headers (MODIFIED)
+│   │   │       ├── gl_emscripten_compat.h  # WebGL compat (NEW)
+│   │   │       └── misc.h       # fpcrtl (MODIFIED)
+│   │   └── web/
+│   │       ├── pre.js           # Message queue + Module setup (NEW)
+│   │       └── post.js          # Runtime init (NEW)
+│   ├── rust/lib-hwengine-future/
+│   │   ├── Cargo.toml           # staticlib (MODIFIED)
+│   │   └── .cargo/config.toml   # Force wasm32 target (NEW)
+│   ├── misc/
+│   │   ├── libphyslayer/CMakeLists.txt  # (MODIFIED)
+│   │   ├── libphysfs/CMakeLists.txt     # (MODIFIED)
+│   │   └── liblua/CMakeLists.txt        # (MODIFIED)
+│   ├── cmake_modules/Platform/
+│   │   └── Emscripten.cmake.legacy      # Renamed from .cmake
+│   └── tools/corrosion/         # Rust-CMake integration
+│
+├── build/                       # Build outputs (gitignored)
+│   └── wasm/bin/
+│       ├── hwengine.html        # 22KB loader
+│       ├── hwengine.js          # 470KB glue
+│       ├── hwengine.wasm        # 4.2MB engine
+│       └── hwengine.data        # 187MB assets
+│
+├── gateway/                     # WebSocket gateway (NOT STARTED)
+│   └── src/index.js             # Gateway code ready
+├── web/                         # Browser frontend
+│   ├── index.html               # Landing page
+│   ├── launcher.html            # Game launcher
+│   └── mvp.html                 # MVP test page
+├── scripts/
+│   ├── build-wasm.sh            # Complete Emscripten build
+│   ├── build-native.sh          # Native build
+│   ├── build-pas2c.sh           # pas2c conversion
+│   ├── package-assets.sh        # Asset packaging
+│   └── analyze-assets.sh        # Asset analysis
+├── cors-server.py               # CORS-enabled HTTP server
+└── docs/                        # Documentation
+```
 
-**Build Scripts:**
-- `scripts/build-wasm.sh` - Complete Emscripten configuration
-- `cors-server.py` - **NEW** CORS-enabled HTTP server
+---
 
-### Next Steps (Frontend Integration)
+## 🧠 AGENT WORKFLOW
 
-**Option 1: Demo File Approach (Fastest to Gameplay)**
-1. Obtain `.hwd` demo/replay file from desktop Hedgewars
-2. Package with assets: `--preload-file demo.hwd@/demo.hwd`
-3. Pass as argument: `Module.arguments = ['--prefix', '/Data', '/demo.hwd']`
-4. Engine will play replay automatically
-5. **Estimated time**: 1-2 hours
+### After EVERY Coding Session
+1. ✅ Update **AmazonQ.md** with session summary and timestamp
+2. ✅ Update **AGENTS.md** if new permanent lesson learned
+3. ✅ Update **README.md** if user-facing changes
+4. ✅ Git commit with clear message
 
-**Option 2: IPC Protocol Implementation (Proper Solution)**
-1. Research Hedgewars engine protocol (HWKB documentation)
-2. Implement length-prefixed message framing
-3. Create game setup sequence:
-   - Map seed and generation parameters
-   - Team configuration
-   - Hedgehog setup
-   - Game start command
-4. Wire stdin/stdout to message queue
-5. **Estimated time**: 4-8 hours
+### Before STARTING New Work
+1. ✅ Review **AmazonQ.md** for current status
+2. ✅ Review **AGENTS.md** for relevant lessons and architecture
+3. ✅ Check recent git commits for changes since last session
 
-**Option 3: Minimal Web Frontend (Full Solution)**
-1. Create web UI for game configuration
-2. Implement protocol message generation
-3. Handle engine responses
-4. Add game controls
-5. **Estimated time**: 1-2 days
+### Red Flags (I'm Failing)
+- ⚠️ User asks "did you update docs?" → I forgot
+- ⚠️ I suggest something already tried → Didn't read context
+- ⚠️ I repeat a mistake → AGENTS.md wasn't updated
+- ⚠️ User has to remind me twice → I failed first time
+- ⚠️ I make changes without committing → CRITICAL WORKFLOW ERROR
+- ⚠️ I pipe long command output through head/tail → User can't see real-time progress
 
-### Validation Findings
+**Context files are my only memory. Without them, I start from scratch every time.**
 
-**Asset Analysis** (218MB total):
-- Music: 84MB (largest, can be lazy-loaded)
-- Maps: 35MB (many optional)
-- Themes: 24MB (default theme ~2MB)
-- Fonts: 17MB (wqy-zenhei.ttc is 17MB alone)
-- **Current bundle**: 51MB (essential only)
-- **Optimization potential**: 30-40MB with selective loading
+---
 
-### Success Metrics
+## 📋 FILE RULES
+
+- **NEVER delete**: AGENTS.md, AmazonQ.md, README.md
+- **Can delete other .md files IF**: knowledge is incorporated into main files first
+- **Always commit** after making changes - don't tell user to test without pushing first
+
+---
+
+## ⚙️ TECHNICAL NOTES
+
+### Build Commands
+```bash
+# Full clean build
+source ~/emsdk/emsdk_env.sh
+source ~/.cargo/env
+cd build/wasm
+rm -rf *
+cmake ../../hedgewars -DBUILD_ENGINE_JS=ON -DNOSERVER=ON \
+  -DCMAKE_TOOLCHAIN_FILE=$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake
+make -j$(nproc)
+
+# Quick rebuild after changes
+cd build/wasm && make -j$(nproc)
+
+# Using build script
+./scripts/build-wasm.sh
+```
+
+### Deployment
+```bash
+# Service management
+sudo systemctl status webwars-server
+sudo systemctl restart webwars-server
+sudo journalctl -u webwars-server -f
+
+# URL
+http://54.80.204.92:8081/hwengine.html
+```
+
+### Emscripten Flags (in hwc/CMakeLists.txt)
+```
+-sUSE_SDL=2              # SDL2 via Emscripten ports
+-sUSE_SDL_NET=2          # SDL_net via ports
+-sALLOW_MEMORY_GROWTH=1  # Dynamic memory
+-sINITIAL_MEMORY=268435456  # 256MB initial
+-sSTACK_SIZE=1048576     # 1MB stack
+-sFORCE_FILESYSTEM=1     # Virtual filesystem
+-sEXPORTED_FUNCTIONS     # _main, _malloc, _free
+-sEXPORTED_RUNTIME_METHODS  # ccall, cwrap, etc.
+--preload-file Data@/Data  # Asset packaging
+--pre-js pre.js          # Message queue
+--post-js post.js        # Runtime init
+```
+
+### Rust Integration
+- Target: `wasm32-unknown-emscripten` (forced via .cargo/config.toml)
+- Crate type: `staticlib` (produces .a file linked by Emscripten)
+- Linker: `emcc`, AR: `emar`
+- Corrosion (CMake tool) detects host target, NOT Cargo target - this is why .cargo/config.toml is needed
+
+### OpenGL Compatibility
+- Engine uses desktop OpenGL constants (GL_QUADS, GL_CLAMP, etc.)
+- `gl_emscripten_compat.h` maps these to GLES2/WebGL2 equivalents
+- `GL.h` includes GLES2/gl2.h instead of desktop GL
+
+---
+
+## 🔑 CRITICAL LESSONS
+
+### 1. Corrosion Detects Host, Not Cargo Target
+Corrosion queries `rustc -vV` for host target (x86_64-unknown-linux-gnu), not Cargo's configured target. This caused native libs (-lgcc_s, -lutil) to be injected into the WASM link line. Fix: `.cargo/config.toml` forces Cargo to always build for wasm32-unknown-emscripten, regardless of what Corrosion detects.
+
+### 2. Legacy Platform/Emscripten.cmake Overrides Everything
+Hedgewars ships its own `cmake_modules/Platform/Emscripten.cmake` that overrides the official Emscripten toolchain. This breaks modern Emscripten. Fix: Rename to `.legacy` and let the official toolchain work.
+
+### 3. pas2c Initialization Order Matters
+Pascal units have initialization sections that run at startup. `uConsts.pas` had unguarded initialization that crashed in WASM. Fix: Guard with `{$IFNDEF EMSCRIPTEN}` or conditional compilation.
+
+### 4. SDL_net Must Be Stubbed for Browser
+The engine uses SDL_net for IPC (TCP sockets). In browser, we replace with EM_JS calls to JavaScript. The C shim (`ipc_browser.c`) stubs all SDL_net functions and routes through the JS message queue.
+
+### 5. Emscripten Main Loop Integration
+SDL's vsync calls `emscripten_set_main_loop_timing` before the main loop exists. This causes warnings but doesn't crash. Proper fix would be to use `emscripten_set_main_loop()` but the engine's game loop is deeply embedded in Pascal code.
+
+### 6. Asset Path Resolution
+Emscripten's `--preload-file Data@/Data` creates a virtual filesystem. The engine expects assets at `/Data/`. The `Module.locateFile()` callback helps resolve the `.data` file URL, but path warnings still appear (non-fatal).
+
+### 7. Don't Pipe Long Command Output
+Never use `| head`, `| tail`, `| grep` on build commands. User can't see real-time progress. Run commands directly and let output stream.
+
+### 8. Context Files Are Memory
+Without AGENTS.md and AmazonQ.md, agent starts from scratch every session. These files ARE the agent's long-term memory. Update them religiously.
+
+### 9. Clean Build After CMake Changes
+After modifying any CMakeLists.txt, always `rm -rf build/wasm/*` and reconfigure. Incremental builds after CMake changes cause mysterious failures.
+
+### 10. HWLIBRARY Flag is Critical
+The engine must be built with `-DHWLIBRARY` flag for `--internal` mode (no TCP sockets). Without it, the engine tries to open TCP connections which fail in browser.
+
+---
+
+## 🐛 KEY BUG PATTERNS
+
+### Never Do This
+
+| Bug Pattern | Why It's Bad | Fix |
+|-------------|--------------|-----|
+| Skip .cargo/config.toml | Corrosion injects native libs into WASM link | Always have config.toml |
+| Use legacy Platform/Emscripten.cmake | Overrides official toolchain, breaks everything | Rename to .legacy |
+| Forget HWLIBRARY flag | Engine tries TCP sockets in browser | Add -DHWLIBRARY to compile flags |
+| Pipe build output | User can't see progress | Run commands directly |
+| Incremental build after CMake change | Stale cache causes mysterious failures | Clean build: rm -rf build/wasm/* |
+| callMain() in Emscripten | Doesn't exist in output | Use Module.run() instead |
+| noInitialRun flag | Gets stripped by Emscripten optimizer | Use Module.run() approach |
+| Forget to commit | Next session loses all context | Always git commit |
+
+---
+
+## 🎯 NEXT STEPS
+
+### Immediate (Rendering Verification)
+1. Open http://54.80.204.92:8081/hwengine.html in browser
+2. Check if canvas shows game graphics
+3. If no rendering: check WebGL context, shader compilation
+4. If rendering works: test input controls
+
+### Short Term (Polish)
+1. Fix cleanup crash (RuntimeError: unreachable)
+2. Reduce console output (remove -g4 -sASSERTIONS=2)
+3. Proper emscripten_set_main_loop() integration
+4. Add input handling (keyboard/mouse → engine)
+
+### Medium Term (Multiplayer)
+1. Build WebSocket gateway (gateway/src/index.js)
+2. Compile hedgewars-server for the host
+3. Bridge WebSocket ↔ TCP for server communication
+4. Test 2-player game
+
+### Long Term (Production)
+1. Optimize asset loading (lazy-load music, optional maps)
+2. Reduce initial download (51MB essential vs 187MB full)
+3. Add proper web UI for game configuration
+4. HTTPS + domain name
+
+---
+
+## Success Metrics
 
 **Achieved:**
-- ✅ Engine compiles to WASM
+- ✅ Engine compiles to WASM (4.2MB)
 - ✅ All dependencies resolved (Lua, PhysFS, SDL2, Rust)
-- ✅ Assets package and load
+- ✅ Assets package and load (187MB)
 - ✅ Engine executes in browser
 - ✅ WebGL context created
-- ✅ Error messages confirm engine is functional
+- ✅ IPC bidirectional communication
+- ✅ Game loop runs (360+ ticks)
+- ✅ Win detection works
+- ✅ Sound playback works
+- ✅ Build system reliable
 
 **Remaining:**
-- ⏳ Game actually starts and renders
+- ⏳ Game renders on canvas
 - ⏳ Input controls work
-- ⏳ Audio plays
+- ⏳ Game restart without crash
 - ⏳ Multiplayer via WebSocket
-
-### Technical Achievements
-
-1. **Toolchain Mastery**: Fixed legacy Platform/Emscripten.cmake override
-2. **pas2c Compatibility**: Solved initialization and legacy GL issues
-3. **WebGL Compatibility**: Created compatibility layer for desktop GL
-4. **Target-Based Linking**: Modern CMake for PhysFS/Lua
-5. **Cross-Compilation**: Rust wasm32-unknown-emscripten integration
-6. **CORS Resolution**: Custom server for cross-origin asset loading
-7. **Module Integration**: Proper Emscripten Module extension pattern
-
-### Critical IPC Implementation Files
-
-**Browser IPC Shim (C → JS bridge):**
-- `hedgewars/project_files/hwc/ipc_browser.c` - EM_JS bindings
-  - `hw_ipc_recv()` - Engine reads from JS via `hw_ipc_read_js()`
-  - `SDLNet_TCP_Send()` - Engine writes to JS via `hw_ipc_write_js()`
-  - SDL_net stubs (SDLNet_Init, SDLNet_TCP_Open, etc.)
-
-**JavaScript Message Queue:**
-- `hedgewars/project_files/web/pre.js` - Module.HWEngine object
-  - `readIPC(bufPtr, maxLen)` - Called by C, returns bytes from queue
-  - `writeIPC(bufPtr, len)` - Called by C when engine sends data
-  - `sendMessage(msg)` - Adds length-prefixed message to queue
-  - `startHotseatGame()` - Queues initial game setup
-
-**Pascal IPC Protocol:**
-- `hedgewars/hedgewars/uIO.pas` - Engine IPC implementation
-  - `IPCCheckSock()` - Reads via `hw_ipc_recv()`, parses messages
-  - `ParseIPCCommand(s)` - Handles commands: '!' sets isPonged, '?' sends '!'
-  - `IPCWaitPongEvent()` - Loops calling IPCCheckSock() until isPonged
-  - `SendIPCAndWaitReply(s)` - Sends message + '?', waits for '!'
