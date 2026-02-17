@@ -109,7 +109,7 @@ if(BUILD_ENGINE_JS)
     set(HW_PRE_JS  "${CMAKE_SOURCE_DIR}/project_files/web/pre.js")
     set(HW_POST_JS "${CMAKE_SOURCE_DIR}/project_files/web/post.js")
     
-    add_flag_append(CMAKE_C_FLAGS "--memory-init-file 0 -O0 --js-opts 0 -g4 --use-preload-plugins -s ASSERTIONS=2 -s USE_SDL=2 -s USE_SDL_IMAGE=1 -s USE_LIBPNG=1 -s USE_SDL_TTF=2 -s USE_VORBIS=1 -s USE_OGG=1 -s INITIAL_MEMORY=100007936 -s GL_UNSAFE_OPTS=0 -s INVOKE_RUN=0 -s EXPORTED_RUNTIME_METHODS=['callMain'] -s EXPORTED_FUNCTIONS=\"['_hwengine_RunEngine', '_hwengine_MainLoop']\" --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
+    add_flag_append(CMAKE_C_FLAGS "--memory-init-file 0 -O0 --js-opts 0 -g4 --use-preload-plugins -sASSERTIONS=2 -sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=100007936 -sGL_UNSAFE_OPTS=0 -sINVOKE_RUN=0 -sEXPORTED_RUNTIME_METHODS=callMain,FS -sEXPORTED_FUNCTIONS=_hwengine_RunEngine,_hwengine_MainLoop --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
 endif()
 
 #compile the c files
@@ -131,7 +131,10 @@ if(EMSCRIPTEN)
         -sMIN_WEBGL_VERSION=2 
         -sMAX_WEBGL_VERSION=2 
         -sFULL_ES2=1
-        -sALLOW_MEMORY_GROWTH=1)
+        -sALLOW_MEMORY_GROWTH=1
+        "-sINVOKE_RUN=0"
+        "-sEXPORTED_RUNTIME_METHODS=callMain,FS"
+        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine,_hwengine_MainLoop")
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
 endif()
 
