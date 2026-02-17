@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-17T22:11:00Z
+Last updated: 2026-02-17T23:16:00Z
 
 ### Project Status
-- **Phase**: IPC Protocol Fixed - Testing Rendering
-- **Last Action**: Fixed fatal ammo store error, corrected IPC protocol to match real Hedgewars server
-- **Current Blocker**: Rendering not yet verified (ammo crash was preventing game loop)
-- **Target**: Verify rendering on canvas
+- **Phase**: Rendering Confirmed - Performance Optimization
+- **Last Action**: Replaced blocking main loop with emscripten_set_main_loop, eliminated ASYNCIFY overhead
+- **Current Blocker**: Texture loading failures (theme sprites, sky, water, clouds)
+- **Target**: Playable frame rate in browser
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -41,17 +41,17 @@ Last updated: 2026-02-17T22:11:00Z
 | A | Spawn System | ✅ COMPLETE | Hedgehogs spawn successfully |
 | A | Game Loop | ✅ COMPLETE | Runs 360+ ticks, sends state updates |
 | A | Win Detection | ✅ COMPLETE | Detects winners, plays sounds |
-| A | Browser MVP | 🟡 IN PROGRESS | Need rendering verification |
+| A | Browser MVP | 🟡 IN PROGRESS | Fix texture loading, improve perf |
 | B | WebSocket Gateway | NOT STARTED | Gateway code ready |
 | B | Server Integration | NOT STARTED | Need hedgewars-server binary |
 | B | Multiplayer Test | NOT STARTED | Depends on server |
 | C | Deployment | ✅ COMPLETE | Systemd service running |
 
 ### Current Issues
-1. **Rendering unknown** - Canvas display not confirmed yet
+1. **Texture loading failures** - BlueWater, Clouds, SkyL/R, AmmoMenu, theme sprites (flags 5/21/44) all fail to load
 2. **Cleanup crash** - `RuntimeError: unreachable` during shutdown
-3. **Main loop timing** - SDL vsync calls before Emscripten main loop exists
-4. **Console spam** - 5000+ lines from debug mode (-g4 -sASSERTIONS=2)
+3. **Main loop timing** - ~~SDL vsync calls before Emscripten main loop exists~~ FIXED: using emscripten_set_main_loop
+4. **Console spam** - ~~5000+ lines from debug mode~~ FIXED: switched to -O2
 5. **Data file path warning** - `dependency: datafile_../../bin/hwengine.data` (non-fatal)
 
 ---
@@ -87,6 +87,7 @@ JavaScript (pre.js)                    C Shim (ipc_browser.c)           Pascal E
 | JS Message Queue | `hedgewars/project_files/web/pre.js` | sendMessage(), readIPC(), writeIPC(), startHotseatGame() |
 | JS Runtime Init | `hedgewars/project_files/web/post.js` | Runtime initialization |
 | C IPC Shim | `hedgewars/project_files/hwc/ipc_browser.c` | hw_ipc_recv(), SDLNet_TCP_Send() stubs |
+| C Main Loop | `hedgewars/project_files/hwc/web_entry.c` | __wrap_hwengine_MainLoop(), emscripten_set_main_loop |
 | Pascal IPC | `hedgewars/hedgewars/uIO.pas` | IPCCheckSock(), ParseIPCCommand(), SendIPCAndWaitReply() |
 | Pascal Commands | `hedgewars/hedgewars/uCommands.pas` | Command registration and dispatch |
 | Pascal Handlers | `hedgewars/hedgewars/uCommandHandlers.pas` | Individual command handlers |
@@ -157,6 +158,7 @@ webwars/
 │   │   ├── hwc/                 # C compilation target
 │   │   │   ├── CMakeLists.txt   # Emscripten flags (MODIFIED)
 │   │   │   ├── ipc_browser.c    # Browser IPC shim (NEW)
+│   │   │   ├── web_entry.c      # emscripten_set_main_loop wrapper (NEW)
 │   │   │   └── rtl/
 │   │   │       ├── GL.h         # GLES2 headers (MODIFIED)
 │   │   │       ├── gl_emscripten_compat.h  # WebGL compat (NEW)
@@ -330,6 +332,12 @@ The real Hedgewars server (EngineInteraction.hs `teamSetup`) sends ammo config (
 ### 12. Read the Real Server Code, Don't Guess IPC Protocol
 The Hedgewars IPC protocol is complex. Always reference `gameServer/EngineInteraction.hs` for the exact message sequence. Guessing leads to subtle bugs like the ammo store ordering issue.
 
+### 13. ASYNCIFY Is Catastrophically Slow for Main Loops
+ASYNCIFY saves/restores the entire WASM stack on every `emscripten_sleep`, `SDL_Delay`, and `SDL_GL_SwapWindow`. In a 60fps game loop that's 120+ stack unwind/rewind cycles per second. Fix: use `emscripten_set_main_loop` with `--wrap=hwengine_MainLoop` linker flag to intercept the generated C function. Set `SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0")` to prevent SDL from calling `emscripten_sleep` in SwapWindow/Delay. ASYNCIFY is still needed for initialization (IPCWaitPongEvent) and AI delays, but NOT on the hot rendering path.
+
+### 14. Use --wrap for Generated Code Interception
+When pas2c generates C code you can't modify (regenerated on every build), use the linker `--wrap=symbol_name` flag. Define `__wrap_symbol_name()` in your own C file as the replacement, and `__real_symbol_name()` to call the original. Include the generated headers via `#include "fpcrtl.h"` then `#include "hwengine.h"` (order matters — fpcrtl.h defines types used by generated headers). Add `${CMAKE_CURRENT_BINARY_DIR}` to include paths for generated .h files.
+
 ---
 
 ## 🐛 KEY BUG PATTERNS
@@ -349,22 +357,22 @@ The Hedgewars IPC protocol is complex. Always reference `gameServer/EngineIntera
 | Forget to commit | Next session loses all context | Always git commit |
 | Send ammo store once globally | Team 2+ hedgehogs get invalid AmmoStore index | Send ammo per-team before each eaddteam |
 | Guess IPC protocol | Subtle ordering bugs | Read EngineInteraction.hs |
+| Use ASYNCIFY for main loop | 120+ stack save/restore per second | emscripten_set_main_loop + --wrap |
+| Include hwengine.h before fpcrtl.h | fpcrtl_dimension_t undefined | Always include fpcrtl.h first |
 
 ---
 
 ## 🎯 NEXT STEPS
 
-### Immediate (Rendering Verification)
-1. Open http://54.80.204.92:8081/hwengine.html in browser
-2. Check if canvas shows game graphics
-3. If no rendering: check WebGL context, shader compilation
-4. If rendering works: test input controls
+### Immediate (Texture & Performance)
+1. Debug texture loading failures (flags 5/21/44) — missing sky, water, clouds, sprites
+2. Verify emscripten_set_main_loop performance improvement in browser
+3. Test input controls (keyboard/mouse → engine)
 
 ### Short Term (Polish)
 1. Fix cleanup crash (RuntimeError: unreachable)
-2. Reduce console output (remove -g4 -sASSERTIONS=2)
-3. Proper emscripten_set_main_loop() integration
-4. Add input handling (keyboard/mouse → engine)
+2. Fix remaining texture loading (may be SDL_image format or path issue)
+3. Add proper game restart support
 
 ### Medium Term (Multiplayer)
 1. Build WebSocket gateway (gateway/src/index.js)
@@ -395,7 +403,7 @@ The Hedgewars IPC protocol is complex. Always reference `gameServer/EngineIntera
 - ✅ Build system reliable
 
 **Remaining:**
-- ⏳ Game renders on canvas
+- ✅ Game renders on canvas
 - ⏳ Input controls work
 - ⏳ Game restart without crash
 - ⏳ Multiplayer via WebSocket

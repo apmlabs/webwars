@@ -1,17 +1,17 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T22:11:00Z
+**Last Updated**: 2026-02-17T23:16:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: IPC Protocol Fixed - Ammo Store Crash Resolved, Testing Rendering
+**Status**: Rendering Confirmed - Performance Optimization (emscripten_set_main_loop)
 
 ## Project: WebWars (Hedgewars WASM Port)
 
 Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket multiplayer.
 
-## Current Phase: Game Loop Functional, Verifying Rendering
+## Current Phase: Rendering Works, Optimizing Performance
 
 ### What Works
-- ✅ Engine compiled to WebAssembly (4.2MB)
+- ✅ Engine compiled to WebAssembly (5.2MB)
 - ✅ Assets load (187MB data file)
 - ✅ IPC protocol working perfectly
 - ✅ Map loading (Cake map with mask.png)
@@ -20,7 +20,10 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ Win detection works
 - ✅ Sound playback works
 - ✅ Build system reliable (.cargo/config.toml fix)
-- 🟡 **Current**: Rendering status unknown, cleanup crash
+- ✅ **Rendering confirmed** - game renders on canvas
+- ✅ **Optimized build** - switched from -O0 to -O2
+- ✅ **emscripten_set_main_loop** - eliminated ASYNCIFY overhead on hot path
+- 🟡 **Current**: Texture loading failures, still needs perf work
 
 ### Known Issues
 
@@ -28,23 +31,14 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
    - Warning: `dependency: datafile_../../bin/hwengine.data`
    - File loads successfully via fallback mechanism
 
-2. **Main Loop Integration** (Real Issue)
-   - Error: `emscripten_set_main_loop_timing: Cannot set timing mode`
-   - SDL trying to set vsync without Emscripten main loop
+2. **Texture Loading Failures** (Visual Issue)
+   - BlueWater, Clouds, SkyL/R, AmmoMenu, theme sprites (flags 5/21/44)
+   - Game renders but missing sky, water, clouds, decorations
 
 3. **Cleanup Crash** (Deterministic)
    - `RuntimeError: unreachable` during shutdown
    - Happens after "Freeing resources..."
    - Prevents game restart
-
-4. **Output Volume** (Debug Mode)
-   - 5000+ console lines per run
-   - Caused by `-g4 -sASSERTIONS=2`
-
-5. **Build System Fixed** ✅
-   - Was broken: CMake detected wrong Rust target
-   - Error was: `unable to find library -lgcc_s -lutil`
-   - Fixed with: `.cargo/config.toml` forcing wasm32-unknown-emscripten
 
 ### Deployment
 - **Service**: `webwars-server.service` (systemd)
@@ -82,7 +76,7 @@ cd build/wasm && make -j$(nproc)
 ./scripts/build-wasm.sh
 ```
 
-## Files Modified (16 patches + .cargo/config.toml)
+## Files Modified (18 patches + .cargo/config.toml)
 
 **CMake:**
 - `hedgewars/CMakeLists.txt` - PhysFS/Lua bundled builds, skip Platform/
@@ -111,6 +105,10 @@ cd build/wasm && make -j$(nproc)
 **JavaScript:**
 - `hedgewars/project_files/web/pre.js` - NEW (Message queue, Module.locateFile, 2 teams)
 - `hedgewars/project_files/web/post.js` - NEW (Runtime init)
+
+**C Shims:**
+- `hedgewars/project_files/hwc/web_entry.c` - NEW (emscripten_set_main_loop wrapper, --wrap entry)
+- `hedgewars/project_files/hwc/ipc_browser.c` - NEW (Browser IPC shim, SDL_net stubs)
 
 **Scripts:**
 - `scripts/build-wasm.sh` - Complete config
@@ -217,8 +215,36 @@ Commits: 9a8203b → 355da49 (3 commits)
 
 **Key insight**: The Hedgewars IPC protocol requires ammo stores per-team, not global. Always read EngineInteraction.hs, never guess the protocol.
 
+### Session 5 - February 17, 2026 (22:11-23:16 UTC)
+
+**Rendering confirmed, performance optimization: -O2 + emscripten_set_main_loop.**
+
+Commits: 8b07650, fabf08a
+
+**Phase 1: Diagnosis**
+- User confirmed rendering works but "super slow and literally unplayable"
+- Console showed hundreds of `WebGL: INVALID_ENUM: texParameter` errors from GL_TEXTURE_PRIORITY
+- Build was compiled with `-O0 -g4 -sASSERTIONS=2` (full debug mode)
+- ASYNCIFY save/restore on every SDL_Delay and SDL_GL_SwapWindow (2+ per frame)
+
+**Phase 2: Quick Wins**
+- Switched from `-O0 -g4 -sASSERTIONS=2` to `-O2` in hwc/CMakeLists.txt
+- Guarded `glTexParameterf(GL_TEXTURE_PRIORITY)` with `{$IFNDEF EMSCRIPTEN}` in uStore.pas
+- Doubled ASYNCIFY_STACK_SIZE from 64KB to 128KB
+
+**Phase 3: Main Loop Rewrite (Major)**
+- Identified ASYNCIFY as primary bottleneck: 120+ stack unwind/rewind cycles per second
+- Created `__wrap_hwengine_MainLoop` in web_entry.c using `emscripten_set_main_loop`
+- Used `--wrap=hwengine_MainLoop` linker flag to intercept generated C function
+- Set `SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0")` to prevent SDL from calling emscripten_sleep
+- Included generated headers via `fpcrtl.h` then `hwengine.h` (order matters)
+- Added `${CMAKE_CURRENT_BINARY_DIR}` to include paths for generated .h files
+- Fixed gitignore to track web_entry.c and ipc_browser.c
+
+**Key insight**: ASYNCIFY is catastrophically slow for main loops. Use `emscripten_set_main_loop` + `--wrap` to intercept generated code. Set `SDL_EMSCRIPTEN_ASYNCIFY=0` to prevent SDL from adding its own emscripten_sleep calls.
+
 ## Success Criteria
 
 **MVP**: Game loads in browser, hotseat playable, <10s load time
-**Current**: Game runs, needs rendering verification and cleanup fix
+**Current**: Renders, needs texture fix and perf verification after main loop rewrite
 **Full**: Multiplayer stable, deployed on this server, public URL

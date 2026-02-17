@@ -4,10 +4,10 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 
 ## Status
 
-**Game Loop Running** - Engine runs complete gameplay sessions in the browser.
+**Game Renders** - Engine runs and renders in the browser.
 
 ### What Works
-- ✅ Engine compiles to WebAssembly (4.2MB)
+- ✅ Engine compiles to WebAssembly (5.2MB)
 - ✅ All assets load (187MB data file)
 - ✅ SDL2, OpenGL, shaders initialize
 - ✅ IPC protocol working (bidirectional)
@@ -15,7 +15,8 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 - ✅ Hedgehogs spawn successfully
 - ✅ Game loop runs (360+ ticks)
 - ✅ Win detection and sound playback
-- 🟡 Rendering not yet verified on canvas
+- ✅ Rendering works on canvas
+- 🟡 Missing textures (sky, water, clouds, sprites)
 - ❌ Cleanup crashes on shutdown
 
 ### Live Demo
@@ -59,7 +60,7 @@ cd bin && python3 -m http.server 8081
 |------|------|-------------|
 | hwengine.html | 22KB | Loader page |
 | hwengine.js | 470KB | JavaScript glue |
-| hwengine.wasm | 4.2MB | Game engine |
+| hwengine.wasm | 5.2MB | Game engine |
 | hwengine.data | 187MB | Assets (graphics, fonts, shaders, maps, sounds) |
 
 ## Build Time
@@ -69,10 +70,9 @@ cd bin && python3 -m http.server 8081
 
 ## Known Issues
 1. Data file path warning (non-fatal)
-2. SDL vsync incompatibility with Emscripten main loop
+2. Missing textures (sky, water, clouds, theme sprites)
 3. RuntimeError during shutdown
-4. 5000+ console lines from debug mode
-5. Canvas rendering not yet confirmed
+4. Some theme sprite masks fail to load (flags 44)
 
 ## License
 
