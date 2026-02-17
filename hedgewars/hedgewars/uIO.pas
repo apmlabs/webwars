@@ -163,7 +163,6 @@ var loTicks: Word;
     i: LongInt;
     unwrapped: shortstring;
 begin
-WriteLnToConsole('[IPC LEVEL1] cmd=' + s[1] + ' len=' + inttostr(Length(s)) + ' preview=' + copy(s, 1, 40));
 isProcessed := true;
 
 case s[1] of
@@ -171,7 +170,6 @@ case s[1] of
      '?': SendIPC(_S'!');
      'e': begin
           unwrapped:= copy(s, 2, Length(s) - 1);
-          WriteLnToConsole('[IPC LEVEL2] Unwrapped e-command: ' + unwrapped);
           ParseCommand(unwrapped, true)
           end;
      'E': OutError(copy(s, 2, Length(s) - 1), true);
