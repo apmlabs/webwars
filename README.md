@@ -4,7 +4,21 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 
 ## Status
 
-**Phase**: Initial scaffolding complete. See [AGENTS.md](AGENTS.md) for detailed tracking.
+**Build Progress: 99% Complete** 🎉
+
+All C code compiled successfully! Final linking in progress. See [AGENTS.md](AGENTS.md) for detailed tracking.
+
+### What Works
+- ✅ Emscripten toolchain (emcc/em++)
+- ✅ Rust wasm32-unknown-emscripten target
+- ✅ pas2c: 60+ Pascal files → C
+- ✅ OpenGL → WebGL2 compatibility layer
+- ✅ All libraries built (Lua, PhysFS, SDL2)
+- ✅ All engine code compiled
+
+### Current Task
+- Fixing PhysFS linking configuration
+- Then: Final link → hwengine.html + .wasm + .js
 
 ## Architecture
 
@@ -45,6 +59,14 @@ webwars/
 └── docs/              # Documentation
 ```
 
+## Technical Highlights
+
+- **pas2c → Emscripten**: Proven compilation path
+- **WebGL2**: Full GLES2 compatibility layer
+- **Rust Integration**: wasm32-unknown-emscripten staticlib
+- **SDL2**: Via Emscripten ports (no native dependencies)
+- **Assets**: 218MB total, ~30-40MB essential bundle
+
 ## License
 
 GPL v2 (same as Hedgewars)
@@ -54,7 +76,3 @@ GPL v2 (same as Hedgewars)
 - [Hedgewars](https://hedgewars.org/)
 - [Hedgewars GitHub](https://github.com/hedgewars/hw)
 - [pas2c Docs](https://hedgewars.org/kb/pas2c)
-=======
-# webwars
-Browser port of Hedgewars using WebAssembly - Play with friends online
->>>>>>> f6780b39b2fb356318274a4bc5d2e978b7285c7e

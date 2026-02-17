@@ -1,0 +1,670 @@
+=== Building Hedgewars for WebAssembly ===
+=== TOOLCHAIN SANITY CHECK ===
+emcmake: cmake ../../hedgewars -DCMAKE_C_COMPILER=emcc -DCMAKE_CXX_COMPILER=em++ -DNOSERVER=ON -DNOVIDEOREC=ON -DBUILD_ENGINE_C=ON -DLUA_SYSTEM=OFF -DPHYSFS_INCLUDE_DIR=../../hedgewars/misc/libphysfs -DPHYSFS_LIBRARY=../../hedgewars/misc/libphysfs -DHW_USE_RUST_MAPGEN=ON -DRust_CARGO_TARGET=wasm32-unknown-emscripten -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=/home/ubuntu/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake -DCMAKE_CROSSCOMPILING_EMULATOR=/home/ubuntu/emsdk/node/22.16.0_64bit/bin/node in directory /home/ubuntu/mcpprojects/webwars/build/wasm
+-- Building 1.1.0-rGIT (1bbc396d3)
+-- Performing Test HAVE_STACKPROTECTOR
+-- Performing Test HAVE_STACKPROTECTOR - Success
+-- Performing Test HAVE_VISIBILITY
+-- Performing Test HAVE_VISIBILITY - Success
+-- Performing Test HAVE_NOEXECSTACK
+-- Performing Test HAVE_NOEXECSTACK - Success
+-- Performing Test HAVE_ORIGIN
+-- Performing Test HAVE_ORIGIN - Success
+-- Performing Test HAVE_RELROFULL
+-- Performing Test HAVE_RELROFULL - Success
+-- Performing Test HAVE_ASNEEDED
+-- Performing Test HAVE_ASNEEDED - Failed
+-- Found Clang: /usr/bin/clang-18  
+-- LUA will be provided by the bundled sources
+CMake Warning (dev) at misc/liblua/CMakeLists.txt:12 (add_library):
+  ADD_LIBRARY called with SHARED option but the target platform does not
+  support dynamic linking.  Building a STATIC library instead.  This may lead
+  to problems.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- LIBAV disabled. Video recording will not be built
+-- Emscripten build: using built-in SDL2 via -sUSE_SDL=2
+CMake Warning (dev) at misc/libphyslayer/CMakeLists.txt:23 (add_library):
+  ADD_LIBRARY called with SHARED option but the target platform does not
+  support dynamic linking.  Building a STATIC library instead.  This may lead
+  to problems.
+This warning is for project developers.  Use -Wno-dev to suppress it.
+
+-- Rust Toolchain: stable-x86_64-unknown-linux-gnu
+-- Determining required link libraries for target wasm32-unknown-emscripten
+-- Determining required link libraries for target x86_64-unknown-linux-gnu
+-- Required static libs for host target x86_64-unknown-linux-gnu: gcc_s;util;rt;pthread;m;dl;c
+-- Found Rust: /home/ubuntu/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc (found version "1.93.1") 
+-- Found GHC: /usr/bin/ghc  
+-- Found OpenGL: /home/ubuntu/emsdk/upstream/emscripten/cache/sysroot/lib/wasm32-emscripten/libGL.a  
+-- Emscripten build: using built-in SDL2 libraries via -sUSE_SDL flags
+-- Configuring done (16.8s)
+-- Generating done (0.1s)
+-- Build files have been written to: /home/ubuntu/mcpprojects/webwars/build/wasm
+
+=== TOOLCHAIN VERIFICATION ===
+C Compiler:   /home/ubuntu/emsdk/upstream/emscripten/emcc
+CXX Compiler: /home/ubuntu/emsdk/upstream/emscripten/em++
+AR:           
+RANLIB:       
+Rust Target:  wasm32-unknown-emscripten
+
+✅ Emscripten toolchain verified
+
+
+=== BUILDING (VERBOSE) ===
+Change Dir: '/home/ubuntu/mcpprojects/webwars/build/wasm'
+
+Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile
+/usr/bin/cmake -S/home/ubuntu/mcpprojects/webwars/hedgewars -B/home/ubuntu/mcpprojects/webwars/build/wasm --check-build-system CMakeFiles/Makefile.cmake 0
+/usr/bin/cmake -E cmake_progress_start /home/ubuntu/mcpprojects/webwars/build/wasm/CMakeFiles /home/ubuntu/mcpprojects/webwars/build/wasm//CMakeFiles/progress.marks
+/usr/bin/gmake  -f CMakeFiles/Makefile2 all
+gmake[1]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+/usr/bin/gmake  -f CMakeFiles/cargo-prebuild_hwengine_future.dir/build.make CMakeFiles/cargo-prebuild_hwengine_future.dir/depend
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+cd /home/ubuntu/mcpprojects/webwars/build/wasm && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm/CMakeFiles/cargo-prebuild_hwengine_future.dir/DependInfo.cmake "--color="
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+/usr/bin/gmake  -f CMakeFiles/cargo-prebuild_hwengine_future.dir/build.make CMakeFiles/cargo-prebuild_hwengine_future.dir/build
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+gmake[2]: Nothing to be done for 'CMakeFiles/cargo-prebuild_hwengine_future.dir/build'.
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+[  0%] Built target cargo-prebuild_hwengine_future
+/usr/bin/gmake  -f CMakeFiles/_cargo-build_hwengine_future.dir/build.make CMakeFiles/_cargo-build_hwengine_future.dir/depend
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+cd /home/ubuntu/mcpprojects/webwars/build/wasm && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm/CMakeFiles/_cargo-build_hwengine_future.dir/DependInfo.cmake "--color="
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+/usr/bin/gmake  -f CMakeFiles/_cargo-build_hwengine_future.dir/build.make CMakeFiles/_cargo-build_hwengine_future.dir/build
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+cd /home/ubuntu/mcpprojects/webwars/hedgewars/rust/lib-hwengine-future && /usr/bin/cmake -E env CC_wasm32-unknown-emscripten=/usr/bin/clang-18 CXX_wasm32-unknown-emscripten=/usr/bin/clang-18 AR_wasm32-unknown-emscripten=/home/ubuntu/emsdk/upstream/emscripten/emar CORROSION_BUILD_DIR=/home/ubuntu/mcpprojects/webwars/build/wasm CARGO_BUILD_RUSTC=/home/ubuntu/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc /home/ubuntu/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo rustc --lib --target=wasm32-unknown-emscripten --package lib-hwengine-future --crate-type=staticlib --manifest-path /home/ubuntu/mcpprojects/webwars/hedgewars/rust/lib-hwengine-future/Cargo.toml --target-dir /home/ubuntu/mcpprojects/webwars/build/wasm/cargo/lib-hwengine-future_aeba1 --release -- -Cdefault-linker-libraries=yes
+   Compiling cfg-if v1.0.4
+   Compiling libc v0.2.182
+   Compiling serde_core v1.0.228
+   Compiling serde v1.0.228
+   Compiling zerocopy v0.8.39
+   Compiling getrandom v0.3.4
+   Compiling saturate v0.1.0
+   Compiling crc32fast v1.5.0
+   Compiling simd-adler32 v0.3.8
+   Compiling proc-macro2 v1.0.106
+   Compiling fpnum v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/fpnum)
+   Compiling rand_core v0.9.5
+   Compiling hashbrown v0.16.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling adler2 v2.0.1
+   Compiling unicode-ident v1.0.24
+   Compiling equivalent v1.0.2
+   Compiling quote v1.0.44
+   Compiling indexmap v2.13.0
+   Compiling miniz_oxide v0.8.9
+   Compiling rand_chacha v0.9.0
+   Compiling integral-geometry v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/integral-geometry)
+   Compiling flate2 v1.1.9
+   Compiling vec2d v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/vec2d)
+   Compiling rand v0.9.2
+   Compiling fdeflate v0.3.7
+   Compiling serde_spanned v0.6.9
+   Compiling toml_datetime v0.6.11
+   Compiling bitflags v1.3.2
+   Compiling winnow v0.7.14
+   Compiling toml_write v0.1.2
+   Compiling png v0.17.16
+   Compiling toml_edit v0.22.27
+   Compiling syn v2.0.116
+   Compiling land2d v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/land2d)
+   Compiling ryu v1.0.23
+   Compiling itoa v1.0.17
+   Compiling unsafe-libyaml v0.2.11
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling landgen v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/landgen)
+   Compiling serde_derive v1.0.228
+   Compiling toml v0.8.23
+   Compiling mapgen v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen)
+   Compiling lfprng v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/lfprng)
+warning: field `max_hedgehogs` is never read
+ --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/template/maze.rs:9:5
+  |
+6 | pub struct TemplateDesc {
+  |            ------------ field in this struct
+...
+9 |     max_hedgehogs: u8,
+  |     ^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: fields `put_girders` and `max_hedgehogs` are never read
+  --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/template/outline.rs:30:5
+   |
+23 | pub struct TemplateDesc {
+   |            ------------ fields in this struct
+...
+30 |     put_girders: bool,
+   |     ^^^^^^^^^^^
+31 |     max_hedgehogs: u8,
+   |     ^^^^^^^^^^^^^
+   |
+   = note: `TemplateDesc` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: fields `put_girders` and `max_hedgehogs` are never read
+  --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/template/wavefront_collapse.rs:42:9
+   |
+37 | pub struct TemplateDesc {
+   |            ------------ fields in this struct
+...
+42 |     pub put_girders: Option<bool>,
+   |         ^^^^^^^^^^^
+43 |     pub max_hedgehogs: u8,
+   |         ^^^^^^^^^^^^^
+   |
+   = note: `TemplateDesc` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: fields `0`, `1`, `2`, and `3` are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:114:14
+    |
+114 | struct Color(u8, u8, u8, u8);
+    |        ----- ^^  ^^  ^^  ^^
+    |        |
+    |        fields in this struct
+    |
+    = help: consider removing these fields
+
+warning: fields `texture` and `offset` are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:117:5
+    |
+116 | pub struct LandObjectOverlay {
+    |            ----------------- fields in this struct
+117 |     texture: ThemeSprite,
+    |     ^^^^^^^
+118 |     offset: Point,
+    |     ^^^^^^
+
+warning: fields `texture`, `inland_rects`, `outland_rects`, `anchors`, and `overlays` are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:122:5
+    |
+121 | pub struct LandObject {
+    |            ---------- fields in this struct
+122 |     texture: ThemeSprite,
+    |     ^^^^^^^
+123 |     inland_rects: Vec<Rect>,
+    |     ^^^^^^^^^^^^
+124 |     outland_rects: Vec<Rect>,
+    |     ^^^^^^^^^^^^^
+125 |     anchors: Vec<Rect>,
+    |     ^^^^^^^
+126 |     overlays: Vec<LandObjectOverlay>,
+    |     ^^^^^^^^
+
+warning: fields `texture` and `count` are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:130:5
+    |
+129 | pub struct LandSpray {
+    |            --------- fields in this struct
+130 |     texture: ThemeSprite,
+    |     ^^^^^^^
+131 |     count: u16,
+    |     ^^^^^
+
+warning: field `border` is never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:136:5
+    |
+135 | pub struct ThemeColors {
+    |            ----------- field in this struct
+136 |     border: Color,
+    |     ^^^^^^
+
+warning: fields `texture`, `frames_count`, `frame_ticks`, `velocity`, and `fall_speed` are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:140:5
+    |
+139 | pub struct Flakes {
+    |            ------ fields in this struct
+140 |     texture: ThemeSprite,
+    |     ^^^^^^^
+141 |     frames_count: u16,
+    |     ^^^^^^^^^^^^
+142 |     frame_ticks: u16,
+    |     ^^^^^^^^^^^
+143 |     velocity: u16,
+    |     ^^^^^^^^
+144 |     fall_speed: u16,
+    |     ^^^^^^^^^^
+
+warning: fields `top_color`, `bottom_color`, and `opacity` are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:149:5
+    |
+148 | pub struct Water {
+    |            ----- fields in this struct
+149 |     top_color: Color,
+    |     ^^^^^^^^^
+150 |     bottom_color: Color,
+    |     ^^^^^^^^^^^^
+151 |     opacity: u8,
+    |     ^^^^^^^
+
+warning: fields `water`, `flakes`, `music`, `sky`, and `tint` are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:156:5
+    |
+155 | pub struct ThemeParts {
+    |            ---------- fields in this struct
+156 |     water: Water,
+    |     ^^^^^
+157 |     flakes: Option<Flakes>,
+    |     ^^^^^^
+158 |     music: String,
+    |     ^^^^^
+159 |     sky: Color,
+    |     ^^^
+160 |     tint: Color,
+    |     ^^^^
+
+warning: multiple fields are never read
+   --> /home/ubuntu/mcpprojects/webwars/hedgewars/rust/mapgen/src/theme.rs:165:5
+    |
+164 | pub struct Theme {
+    |            ----- fields in this struct
+165 |     border_color: Color,
+    |     ^^^^^^^^^^^^
+166 |     clouds_count: u16,
+    |     ^^^^^^^^^^^^
+167 |     flatten_flakes: bool,
+    |     ^^^^^^^^^^^^^^
+...
+170 |     land_objects: Vec<LandObject>,
+    |     ^^^^^^^^^^^^
+171 |     spays: Vec<LandSpray>,
+    |     ^^^^^
+172 |     use_ice: bool,
+    |     ^^^^^^^
+173 |     use_snow: bool,
+    |     ^^^^^^^^
+174 |     music: String,
+    |     ^^^^^
+175 |     normal_parts: ThemeParts,
+    |     ^^^^^^^^^^^^
+176 |     sd_parts: ThemeParts,
+    |     ^^^^^^^^
+
+warning: `mapgen` (lib) generated 12 warnings
+   Compiling lib-hwengine-future v0.1.0 (/home/ubuntu/mcpprojects/webwars/hedgewars/rust/lib-hwengine-future)
+warning: unused imports: `Left` and `Right`
+ --> src/ai/action.rs:1:36
+  |
+1 | use crate::ai::action::Direction::{Left, Right};
+  |                                    ^^^^  ^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::shortstring::ShortString`
+ --> src/ai/action.rs:2:5
+  |
+2 | use crate::shortstring::ShortString;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `current_hedgehog_state`
+  --> src/ai/action.rs:53:38
+   |
+53 |     pub fn get_new_action(&mut self, current_hedgehog_state: &HedgehogState) -> Option<Action> {
+   |                                      ^^^^^^^^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_current_hedgehog_state`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `game_field`
+ --> src/ai/attack_tests.rs:5:20
+  |
+5 | fn analyze_grenade(game_field: &GameField, targets: &[Target], my_x: f32, my_y: f32) {}
+  |                    ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_game_field`
+
+warning: unused variable: `targets`
+ --> src/ai/attack_tests.rs:5:44
+  |
+5 | fn analyze_grenade(game_field: &GameField, targets: &[Target], my_x: f32, my_y: f32) {}
+  |                                            ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_targets`
+
+warning: unused variable: `my_x`
+ --> src/ai/attack_tests.rs:5:64
+  |
+5 | fn analyze_grenade(game_field: &GameField, targets: &[Target], my_x: f32, my_y: f32) {}
+  |                                                                ^^^^ help: if this is intentional, prefix it with an underscore: `_my_x`
+
+warning: unused variable: `my_y`
+ --> src/ai/attack_tests.rs:5:75
+  |
+5 | fn analyze_grenade(game_field: &GameField, targets: &[Target], my_x: f32, my_y: f32) {}
+  |                                                                           ^^^^ help: if this is intentional, prefix it with an underscore: `_my_y`
+
+warning: unused variable: `waypoint`
+  --> src/ai/mod.rs:96:24
+   |
+96 |         while let Some(waypoint) = stack.pop() {
+   |                        ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_waypoint`
+
+warning: unused variable: `count`
+   --> src/ai/mod.rs:111:29
+    |
+111 |             .for_each(|(a, &count)| {
+    |                             ^^^^^ help: if this is intentional, prefix it with an underscore: `_count`
+
+warning: fields `point`, `health`, `radius`, and `density` are never read
+  --> src/ai/mod.rs:11:5
+   |
+10 | pub struct Target {
+   |            ------ fields in this struct
+11 |     point: Point,
+   |     ^^^^^
+12 |     health: i32,
+   |     ^^^^^^
+13 |     radius: u32,
+   |     ^^^^^^
+14 |     density: f32,
+   |     ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `ammo` is never read
+  --> src/ai/mod.rs:20:16
+   |
+17 | pub struct Hedgehog {
+   |            -------- field in this struct
+...
+20 |     pub(crate) ammo: [u32; ammo::AmmoType::Count as usize],
+   |                ^^^^
+
+warning: fields `ticks`, `damage`, and `previous_point` are never read
+  --> src/ai/mod.rs:35:5
+   |
+32 | pub(crate) struct Waypoint {
+   |                   -------- fields in this struct
+...
+35 |     ticks: usize,
+   |     ^^^^^
+36 |     damage: usize,
+   |     ^^^^^^
+37 |     previous_point: Option<(usize, Action)>,
+   |     ^^^^^^^^^^^^^^
+   |
+   = note: `Waypoint` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: variant `Right` is never constructed
+ --> src/ai/action.rs:8:5
+  |
+6 | pub enum Direction {
+  |          --------- variant in this enum
+7 |     Left,
+8 |     Right,
+  |     ^^^^^
+  |
+  = note: `Direction` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: fields `x` and `y` are never read
+  --> src/ai/action.rs:15:34
+   |
+15 |     StopAt{direction: Direction, x: i32, y: i32},
+   |     ------                       ^       ^
+   |     |
+   |     fields in this variant
+   |
+   = note: `Action` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: variants `Look`, `CheckPosition`, `LongJump`, and `HighJump` are never constructed
+  --> src/ai/action.rs:13:5
+   |
+11 | pub enum Action {
+   |          ------ variants in this enum
+12 |     Walk(Direction),
+13 |     Look(Direction),
+   |     ^^^^
+14 |     CheckPosition { x: i32, y: i32, angle: i32 },
+   |     ^^^^^^^^^^^^^
+15 |     StopAt{direction: Direction, x: i32, y: i32},
+16 |     LongJump,
+   |     ^^^^^^^^
+17 |     HighJump(usize),
+   |     ^^^^^^^^
+   |
+   = note: `Action` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+
+warning: multiple variants are never constructed
+  --> src/ai/ammo.rs:3:5
+   |
+ 2 | pub enum AmmoType {
+   |          -------- variants in this enum
+ 3 |     Nothing,
+   |     ^^^^^^^
+ 4 |     Grenade,
+   |     ^^^^^^^
+ 5 |     ClusterBomb,
+   |     ^^^^^^^^^^^
+ 6 |     Bazooka,
+   |     ^^^^^^^
+ 7 |     Bee,
+   |     ^^^
+ 8 |     Shotgun,
+   |     ^^^^^^^
+ 9 |     PickHammer, // 6
+   |     ^^^^^^^^^^
+10 |     Skip,
+   |     ^^^^
+11 |     Rope,
+   |     ^^^^
+12 |     Mine,
+   |     ^^^^
+13 |     DEagle,
+   |     ^^^^^^
+14 |     Dynamite,
+   |     ^^^^^^^^
+15 |     FirePunch,
+   |     ^^^^^^^^^
+16 |     Whip, // 13
+   |     ^^^^
+17 |     BaseballBat,
+   |     ^^^^^^^^^^^
+18 |     Parachute,
+   |     ^^^^^^^^^
+19 |     AirAttack,
+   |     ^^^^^^^^^
+20 |     MineStrike,
+   |     ^^^^^^^^^^
+21 |     BlowTorch, // 18
+   |     ^^^^^^^^^
+22 |     Girder,
+   |     ^^^^^^
+23 |     Teleport,
+   |     ^^^^^^^^
+24 |     Switch,
+   |     ^^^^^^
+25 |     Mortar,
+   |     ^^^^^^
+26 |     Kamikaze,
+   |     ^^^^^^^^
+27 |     Cake, // 24
+   |     ^^^^
+28 |     Seduction,
+   |     ^^^^^^^^^
+29 |     Watermelon,
+   |     ^^^^^^^^^^
+30 |     HellishBomb,
+   |     ^^^^^^^^^^^
+31 |     Napalm,
+   |     ^^^^^^
+32 |     Drill,
+   |     ^^^^^
+33 |     Ballgun, // 30
+   |     ^^^^^^^
+34 |     RCPlane,
+   |     ^^^^^^^
+35 |     LowGravity,
+   |     ^^^^^^^^^^
+36 |     ExtraDamage,
+   |     ^^^^^^^^^^^
+37 |     Invulnerable,
+   |     ^^^^^^^^^^^^
+38 |     ExtraTime, // 35
+   |     ^^^^^^^^^
+39 |     LaserSight,
+   |     ^^^^^^^^^^
+40 |     Vampiric,
+   |     ^^^^^^^^
+41 |     SniperRifle,
+   |     ^^^^^^^^^^^
+42 |     Jetpack,
+   |     ^^^^^^^
+43 |     Molotov,
+   |     ^^^^^^^
+44 |     Birdy,
+   |     ^^^^^
+45 |     PortalGun, // 42
+   |     ^^^^^^^^^
+46 |     Piano,
+   |     ^^^^^
+47 |     GasBomb,
+   |     ^^^^^^^
+48 |     SineGun,
+   |     ^^^^^^^
+49 |     Flamethrower,
+   |     ^^^^^^^^^^^^
+50 |     SMine,
+   |     ^^^^^
+51 |     Hammer, // 48
+   |     ^^^^^^
+52 |     Resurrector,
+   |     ^^^^^^^^^^^
+53 |     DrillStrike,
+   |     ^^^^^^^^^^^
+54 |     Snowball,
+   |     ^^^^^^^^
+55 |     Tardis,
+   |     ^^^^^^
+56 |     LandGun, // 53
+   |     ^^^^^^^
+57 |     IceGun,
+   |     ^^^^^^
+58 |     Knife,
+   |     ^^^^^
+59 |     Rubber,
+   |     ^^^^^^
+60 |     AirMine,
+   |     ^^^^^^^
+61 |     Creeper,
+   |     ^^^^^^^
+62 |     Minigun,
+   |     ^^^^^^^
+63 |     Sentry, // 60
+   |     ^^^^^^
+
+warning: hiding a lifetime that's elided elsewhere is confusing
+   --> src/lib.rs:267:41
+    |
+267 | pub extern "C" fn create_ai(game_field: &GameField) -> *mut AI {
+    |                                         ^^^^^^^^^^          ^^ the same lifetime is hidden here
+    |                                         |
+    |                                         the lifetime is elided here
+    |
+    = help: the same lifetime is referred to in inconsistent ways, making the signature confusing
+    = note: `#[warn(mismatched_lifetime_syntaxes)]` on by default
+help: use `'_` for type paths
+    |
+267 | pub extern "C" fn create_ai(game_field: &GameField) -> *mut AI<'_> {
+    |                                                               ++++
+
+warning: `lib-hwengine-future` (lib) generated 17 warnings (run `cargo fix --lib -p lib-hwengine-future` to apply 10 suggestions)
+    Finished `release` profile [optimized] target(s) in 1m 12s
+Copying byproducts `libhwengine_future.a` to /home/ubuntu/mcpprojects/webwars/build/wasm/bin
+/usr/bin/cmake -E make_directory /home/ubuntu/mcpprojects/webwars/build/wasm/bin
+/usr/bin/cmake -E copy_if_different /home/ubuntu/mcpprojects/webwars/build/wasm/cargo/lib-hwengine-future_aeba1/wasm32-unknown-emscripten/release/libhwengine_future.a /home/ubuntu/mcpprojects/webwars/build/wasm/bin
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+[  0%] Built target _cargo-build_hwengine_future
+/usr/bin/gmake  -f CMakeFiles/cargo-build_hwengine_future.dir/build.make CMakeFiles/cargo-build_hwengine_future.dir/depend
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+cd /home/ubuntu/mcpprojects/webwars/build/wasm && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm/CMakeFiles/cargo-build_hwengine_future.dir/DependInfo.cmake "--color="
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+/usr/bin/gmake  -f CMakeFiles/cargo-build_hwengine_future.dir/build.make CMakeFiles/cargo-build_hwengine_future.dir/build
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+gmake[2]: Nothing to be done for 'CMakeFiles/cargo-build_hwengine_future.dir/build'.
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+[  0%] Built target cargo-build_hwengine_future
+/usr/bin/gmake  -f misc/liblua/CMakeFiles/lua.dir/build.make misc/liblua/CMakeFiles/lua.dir/depend
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+cd /home/ubuntu/mcpprojects/webwars/build/wasm && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua/CMakeFiles/lua.dir/DependInfo.cmake "--color="
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+/usr/bin/gmake  -f misc/liblua/CMakeFiles/lua.dir/build.make misc/liblua/CMakeFiles/lua.dir/build
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+[  1%] Building C object misc/liblua/CMakeFiles/lua.dir/lapi.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lapi.c.o -MF CMakeFiles/lua.dir/lapi.c.o.d -o CMakeFiles/lua.dir/lapi.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lapi.c
+[  2%] Building C object misc/liblua/CMakeFiles/lua.dir/lauxlib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lauxlib.c.o -MF CMakeFiles/lua.dir/lauxlib.c.o.d -o CMakeFiles/lua.dir/lauxlib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lauxlib.c
+[  3%] Building C object misc/liblua/CMakeFiles/lua.dir/lbaselib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lbaselib.c.o -MF CMakeFiles/lua.dir/lbaselib.c.o.d -o CMakeFiles/lua.dir/lbaselib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lbaselib.c
+[  4%] Building C object misc/liblua/CMakeFiles/lua.dir/lcode.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lcode.c.o -MF CMakeFiles/lua.dir/lcode.c.o.d -o CMakeFiles/lua.dir/lcode.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lcode.c
+[  5%] Building C object misc/liblua/CMakeFiles/lua.dir/ldblib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/ldblib.c.o -MF CMakeFiles/lua.dir/ldblib.c.o.d -o CMakeFiles/lua.dir/ldblib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/ldblib.c
+[  6%] Building C object misc/liblua/CMakeFiles/lua.dir/ldebug.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/ldebug.c.o -MF CMakeFiles/lua.dir/ldebug.c.o.d -o CMakeFiles/lua.dir/ldebug.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/ldebug.c
+[  7%] Building C object misc/liblua/CMakeFiles/lua.dir/ldo.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/ldo.c.o -MF CMakeFiles/lua.dir/ldo.c.o.d -o CMakeFiles/lua.dir/ldo.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/ldo.c
+[  8%] Building C object misc/liblua/CMakeFiles/lua.dir/ldump.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/ldump.c.o -MF CMakeFiles/lua.dir/ldump.c.o.d -o CMakeFiles/lua.dir/ldump.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/ldump.c
+[  9%] Building C object misc/liblua/CMakeFiles/lua.dir/lfunc.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lfunc.c.o -MF CMakeFiles/lua.dir/lfunc.c.o.d -o CMakeFiles/lua.dir/lfunc.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lfunc.c
+[ 10%] Building C object misc/liblua/CMakeFiles/lua.dir/lgc.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lgc.c.o -MF CMakeFiles/lua.dir/lgc.c.o.d -o CMakeFiles/lua.dir/lgc.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lgc.c
+[ 10%] Building C object misc/liblua/CMakeFiles/lua.dir/linit.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/linit.c.o -MF CMakeFiles/lua.dir/linit.c.o.d -o CMakeFiles/lua.dir/linit.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/linit.c
+[ 11%] Building C object misc/liblua/CMakeFiles/lua.dir/liolib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/liolib.c.o -MF CMakeFiles/lua.dir/liolib.c.o.d -o CMakeFiles/lua.dir/liolib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/liolib.c
+[ 12%] Building C object misc/liblua/CMakeFiles/lua.dir/llex.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/llex.c.o -MF CMakeFiles/lua.dir/llex.c.o.d -o CMakeFiles/lua.dir/llex.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/llex.c
+[ 13%] Building C object misc/liblua/CMakeFiles/lua.dir/lmathlib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lmathlib.c.o -MF CMakeFiles/lua.dir/lmathlib.c.o.d -o CMakeFiles/lua.dir/lmathlib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lmathlib.c
+[ 14%] Building C object misc/liblua/CMakeFiles/lua.dir/lmem.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lmem.c.o -MF CMakeFiles/lua.dir/lmem.c.o.d -o CMakeFiles/lua.dir/lmem.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lmem.c
+[ 15%] Building C object misc/liblua/CMakeFiles/lua.dir/loadlib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/loadlib.c.o -MF CMakeFiles/lua.dir/loadlib.c.o.d -o CMakeFiles/lua.dir/loadlib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/loadlib.c
+[ 16%] Building C object misc/liblua/CMakeFiles/lua.dir/lobject.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lobject.c.o -MF CMakeFiles/lua.dir/lobject.c.o.d -o CMakeFiles/lua.dir/lobject.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lobject.c
+[ 17%] Building C object misc/liblua/CMakeFiles/lua.dir/lopcodes.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lopcodes.c.o -MF CMakeFiles/lua.dir/lopcodes.c.o.d -o CMakeFiles/lua.dir/lopcodes.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lopcodes.c
+[ 18%] Building C object misc/liblua/CMakeFiles/lua.dir/loslib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/loslib.c.o -MF CMakeFiles/lua.dir/loslib.c.o.d -o CMakeFiles/lua.dir/loslib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/loslib.c
+[ 19%] Building C object misc/liblua/CMakeFiles/lua.dir/lparser.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lparser.c.o -MF CMakeFiles/lua.dir/lparser.c.o.d -o CMakeFiles/lua.dir/lparser.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lparser.c
+[ 20%] Building C object misc/liblua/CMakeFiles/lua.dir/lstate.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lstate.c.o -MF CMakeFiles/lua.dir/lstate.c.o.d -o CMakeFiles/lua.dir/lstate.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lstate.c
+[ 21%] Building C object misc/liblua/CMakeFiles/lua.dir/lstring.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lstring.c.o -MF CMakeFiles/lua.dir/lstring.c.o.d -o CMakeFiles/lua.dir/lstring.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lstring.c
+[ 22%] Building C object misc/liblua/CMakeFiles/lua.dir/lstrlib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lstrlib.c.o -MF CMakeFiles/lua.dir/lstrlib.c.o.d -o CMakeFiles/lua.dir/lstrlib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lstrlib.c
+[ 22%] Building C object misc/liblua/CMakeFiles/lua.dir/ltable.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/ltable.c.o -MF CMakeFiles/lua.dir/ltable.c.o.d -o CMakeFiles/lua.dir/ltable.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/ltable.c
+[ 23%] Building C object misc/liblua/CMakeFiles/lua.dir/ltablib.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/ltablib.c.o -MF CMakeFiles/lua.dir/ltablib.c.o.d -o CMakeFiles/lua.dir/ltablib.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/ltablib.c
+[ 24%] Building C object misc/liblua/CMakeFiles/lua.dir/ltm.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/ltm.c.o -MF CMakeFiles/lua.dir/ltm.c.o.d -o CMakeFiles/lua.dir/ltm.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/ltm.c
+[ 25%] Building C object misc/liblua/CMakeFiles/lua.dir/lundump.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lundump.c.o -MF CMakeFiles/lua.dir/lundump.c.o.d -o CMakeFiles/lua.dir/lundump.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lundump.c
+[ 26%] Building C object misc/liblua/CMakeFiles/lua.dir/lvm.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lvm.c.o -MF CMakeFiles/lua.dir/lvm.c.o.d -o CMakeFiles/lua.dir/lvm.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lvm.c
+[ 27%] Building C object misc/liblua/CMakeFiles/lua.dir/lzio.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/lzio.c.o -MF CMakeFiles/lua.dir/lzio.c.o.d -o CMakeFiles/lua.dir/lzio.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/lzio.c
+[ 28%] Building C object misc/liblua/CMakeFiles/lua.dir/print.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/clang-18 -DLUA_USE_LINUX  -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3   -fvisibility=default -MD -MT misc/liblua/CMakeFiles/lua.dir/print.c.o -MF CMakeFiles/lua.dir/print.c.o.d -o CMakeFiles/lua.dir/print.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/liblua/print.c
+[ 29%] Linking C static library ../../bin/libhwlua.a
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/cmake -P CMakeFiles/lua.dir/cmake_clean_target.cmake
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/liblua && /usr/bin/cmake -E cmake_link_script CMakeFiles/lua.dir/link.txt --verbose=1
+/home/ubuntu/emsdk/upstream/emscripten/emar qc ../../bin/libhwlua.a CMakeFiles/lua.dir/lapi.c.o CMakeFiles/lua.dir/lauxlib.c.o CMakeFiles/lua.dir/lbaselib.c.o CMakeFiles/lua.dir/lcode.c.o CMakeFiles/lua.dir/ldblib.c.o CMakeFiles/lua.dir/ldebug.c.o CMakeFiles/lua.dir/ldo.c.o CMakeFiles/lua.dir/ldump.c.o CMakeFiles/lua.dir/lfunc.c.o CMakeFiles/lua.dir/lgc.c.o CMakeFiles/lua.dir/linit.c.o CMakeFiles/lua.dir/liolib.c.o CMakeFiles/lua.dir/llex.c.o CMakeFiles/lua.dir/lmathlib.c.o CMakeFiles/lua.dir/lmem.c.o CMakeFiles/lua.dir/loadlib.c.o CMakeFiles/lua.dir/lobject.c.o CMakeFiles/lua.dir/lopcodes.c.o CMakeFiles/lua.dir/loslib.c.o CMakeFiles/lua.dir/lparser.c.o CMakeFiles/lua.dir/lstate.c.o CMakeFiles/lua.dir/lstring.c.o CMakeFiles/lua.dir/lstrlib.c.o CMakeFiles/lua.dir/ltable.c.o CMakeFiles/lua.dir/ltablib.c.o CMakeFiles/lua.dir/ltm.c.o CMakeFiles/lua.dir/lundump.c.o CMakeFiles/lua.dir/lvm.c.o CMakeFiles/lua.dir/lzio.c.o CMakeFiles/lua.dir/print.c.o
+/home/ubuntu/emsdk/upstream/emscripten/emranlib ../../bin/libhwlua.a
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+[ 29%] Built target lua
+/usr/bin/gmake  -f misc/libphyslayer/CMakeFiles/physlayer.dir/build.make misc/libphyslayer/CMakeFiles/physlayer.dir/depend
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+cd /home/ubuntu/mcpprojects/webwars/build/wasm && /usr/bin/cmake -E cmake_depends "Unix Makefiles" /home/ubuntu/mcpprojects/webwars/hedgewars /home/ubuntu/mcpprojects/webwars/hedgewars/misc/libphyslayer /home/ubuntu/mcpprojects/webwars/build/wasm /home/ubuntu/mcpprojects/webwars/build/wasm/misc/libphyslayer /home/ubuntu/mcpprojects/webwars/build/wasm/misc/libphyslayer/CMakeFiles/physlayer.dir/DependInfo.cmake "--color="
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+/usr/bin/gmake  -f misc/libphyslayer/CMakeFiles/physlayer.dir/build.make misc/libphyslayer/CMakeFiles/physlayer.dir/build
+gmake[2]: Entering directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+[ 30%] Building C object misc/libphyslayer/CMakeFiles/physlayer.dir/physfscompat.c.o
+cd /home/ubuntu/mcpprojects/webwars/build/wasm/misc/libphyslayer && /usr/bin/clang-18  @CMakeFiles/physlayer.dir/includes_C.rsp -fPIC -fstack-protector-all -fstack-protector -fvisibility=hidden -Wall -pipe -O3 -DNDEBUG -O3 -sUSE_SDL=2 -MD -MT misc/libphyslayer/CMakeFiles/physlayer.dir/physfscompat.c.o -MF CMakeFiles/physlayer.dir/physfscompat.c.o.d -o CMakeFiles/physlayer.dir/physfscompat.c.o -c /home/ubuntu/mcpprojects/webwars/hedgewars/misc/libphyslayer/physfscompat.c
+clang-18: error: unknown argument: '-sUSE_SDL=2'
+gmake[2]: *** [misc/libphyslayer/CMakeFiles/physlayer.dir/build.make:77: misc/libphyslayer/CMakeFiles/physlayer.dir/physfscompat.c.o] Error 1
+gmake[2]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+gmake[1]: *** [CMakeFiles/Makefile2:467: misc/libphyslayer/CMakeFiles/physlayer.dir/all] Error 2
+gmake[1]: Leaving directory '/home/ubuntu/mcpprojects/webwars/build/wasm'
+gmake: *** [Makefile:166: all] Error 2
+
