@@ -1,0 +1,16 @@
+{
+  "name": "webwars-gateway",
+  "version": "0.1.0",
+  "description": "WebSocket gateway for Hedgewars multiplayer",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebWars - Hedgewars in Your Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .container {
+            max-width: 1200px;
+            padding: 2rem;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        .status {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+        .status h2 {
+            margin-bottom: 1rem;
+        }
+        .checklist {
+            text-align: left;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+        .checklist li {
+            margin: 0.5rem 0;
+            list-style: none;
+        }
+        .checklist li:before {
+            content: "⏳ ";
+        }
+        .checklist li.done:before {
+            content: "✅ ";
+        }
+        #canvas {
+            display: none;
+            border: 2px solid white;
+            border-radius: 8px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .button {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 0.5rem;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .links {
+            margin-top: 2rem;
+        }
+        .links a {
+            color: white;
+            margin: 0 1rem;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(255,255,255,0.5);
+        }
+        .links a:hover {
+            border-bottom-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 WebWars</h1>
+        <p class="subtitle">Hedgewars in Your Browser</p>
+        
+        <div class="status">
+            <h2>Project Status: In Development</h2>
+            <ul class="checklist">
+                <li class="done">Project scaffolding</li>
+                <li>Clone Hedgewars source</li>
+                <li>Build baseline (native)</li>
+                <li>Test pas2c compilation</li>
+                <li>Build with Emscripten</li>
+                <li>Package assets</li>
+                <li>Browser integration</li>
+                <li>WebSocket gateway</li>
+                <li>Multiplayer testing</li>
+                <li>Deployment</li>
+            </ul>
+            
+            <div style="margin-top: 2rem;">
+                <button class="button" disabled>Play Hotseat (Coming Soon)</button>
+                <button class="button" disabled>Join Online Game (Coming Soon)</button>
+            </div>
+        </div>
+
+        <canvas id="canvas"></canvas>
+
+        <div class="links">
+            <a href="https://github.com/hedgewars/hw" target="_blank">Hedgewars GitHub</a>
+            <a href="https://hedgewars.org/" target="_blank">Hedgewars Official</a>
+            <a href="https://hedgewars.org/kb/pas2c" target="_blank">pas2c Docs</a>
+        </div>
+    </div>
+
+    <script>
+        // Placeholder for WASM integration
+        console.log('WebWars - Development version');
+        console.log('WASM module will be loaded here once built');
+    </script>
+</body>
+</html>
