@@ -1,0 +1,26 @@
+set(FONTFILES
+    DejaVuSans-Bold.ttf
+    wqy-zenhei.ttc)
+
+if (FONTS_DIRS)
+    foreach(fontfile ${FONTFILES})
+        set(missing 1)
+        foreach(fontdir ${FONTS_DIRS})
+            if (EXISTS "${fontdir}/${fontfile}")
+                message(STATUS "Fonts: Found ${fontfile} in ${fontdir}")
+                set(missing 0)
+                break()
+            endif()
+        endforeach(fontdir)
+        if(missing)
+            set(MISSINGFONTFILES ${MISSINGFONTFILES} ${fontfile})
+            message(STATUS "Fonts: Could not find ${fontfile}, it will be installed")
+        endif()
+    endforeach(fontfile)
+else()
+    set(MISSINGFONTFILES ${FONTFILES})
+endif()
+
+if (MISSINGFONTFILES)
+    install(FILES ${MISSINGFONTFILES} DESTINATION ${SHAREPATH}Data/Fonts)
+endif()

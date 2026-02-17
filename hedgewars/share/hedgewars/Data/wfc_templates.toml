@@ -1,0 +1,562 @@
+# Templates for wavefront collapse map generator in hedgewars
+
+################ TILES ################
+# round120 tiles
+[[tiles.round120]]
+name = "120_filled.png"
+edges = [ "f", "f", "f", "f" ]
+is_negative = true
+
+[[tiles.round120]]
+name = "120_bar.png"
+edges = [ "f", "fe", "e", "ef" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true        
+
+[[tiles.round120]]
+name = "120_filled.png"
+edges = [ "e", "e", "e", "e" ]
+is_negative = false
+
+[[tiles.round120]]
+name = "120_corner.png"
+edges = [ "fe", "e", "e", "ef" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.round120]]
+name = "120_corner.png"
+edges = [ "ef", "f", "f", "fe" ]
+is_negative = false
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.round120]]
+name = "120_two_corners.png"
+edges = [ "fe", "ef", "fe", "ef" ]
+is_negative = true
+can_mirror = true
+can_flip = false
+
+# Rooms tiles
+[[tiles.Rooms]]
+name = "bend_120.png"
+edges = [ "fee", "eef", "f", "f" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Rooms]]
+name = "corner_120.png"
+edges = [ "eef", "fee", "e", "e" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Rooms]]
+name = "corridor_120.png"
+edges = [ "efe", "e", "efe", "e" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = false
+can_rotate270 = false
+
+[[tiles.Rooms]]
+name = "door_120.png"
+edges = [ "f", "fee", "efe", "eef" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Rooms]]
+name = "empty_120.png"
+edges = [ "f", "f", "f", "f" ]
+is_negative = true
+
+[[tiles.Rooms]]
+name = "side_120.png"
+edges = [ "e", "eef", "f", "fee" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Rooms]]
+name = "t_120.png"
+edges = [ "e", "efe", "efe", "efe" ]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Rooms]]
+name = "turn_120.png"
+edges = [ "efe", "efe", "e", "e" ]
+is_negative = true
+can_mirror = false
+can_flip = false
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Rooms]]
+name = "wall_120.png"
+edges = [ "e", "e", "e", "e" ]
+is_negative = true
+
+# shoppa tiles
+[[tiles.Shoppa]]
+name = "120_filled.png"
+weight = 0
+edges = [ "first_layer_reyal_tsrif", "f", "!f", "f" ]
+is_negative = true
+
+[[tiles.Shoppa]]
+name = "120_filled.png"
+edges = [ "e", "e", "e", "e" ]
+
+[[tiles.Shoppa]]
+name = "120_filled.png"
+weight = 15
+edges = [ "e", "OE", "EO", "e" ]
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Shoppa]]
+# forced space
+name = "120_filled.png"
+weight = 0
+edges = [ "!E", "e", "e", "e" ]
+anti_match = [0, 1, 0, 1]
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Shoppa]]
+name = "120_filled.png"
+weight = 10
+edges = [ "e", "e", "!first_layer_reyal_tsrif", "e" ]
+
+[[tiles.Shoppa]]
+name = "shoppa_bar.png"
+weight = 15
+edges = [ "e", "efe", "e", "efe" ]
+anti_match = [1, 0, 1, 0]
+can_rotate90 = true
+
+[[tiles.Shoppa]]
+# used as end piece
+name = "shoppa_bar.png"
+weight = 10
+edges = [ "e", "e", "e", "efe" ]
+anti_match = [1, 1, 1, 0]
+can_mirror = true
+
+[[tiles.Shoppa]]
+name = "shoppa_roundedendpiece.png"
+weight = 8
+edges = [ "e", "e", "e", "efe" ]
+anti_match = [1, 1, 1, 0]
+can_rotate90 = true
+can_rotate270 = true
+can_mirror = true
+
+[[tiles.Shoppa]]
+name = "shoppa_t.png"
+weight = 4
+edges = [ "e", "efe", "efe", "efe" ]
+anti_match = [1, 1, 1, 1]
+can_rotate90 = true
+can_rotate270 = true
+
+[[tiles.Shoppa]]
+# first layer semicircle
+name = "shoppa_sector.png"
+weight = 5
+edges = [ "e", "sector_rotces", "!first_layer_reyal_tsrif", "e" ]
+anti_match = [1, 0, 0, 1]
+can_mirror = true
+
+[[tiles.Shoppa]]
+name = "shoppa_sector.png"
+weight = 8
+edges = [ "e", "sector", "rotces", "e" ]
+anti_match = [1, 0, 0, 1]
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Shoppa]]
+name = "120_corner.png"
+weight = 8
+edges = [ "RS", "e", "e", "SR" ]
+anti_match = [0, 1, 1, 0]
+is_negative = true
+can_rotate90 = true
+can_rotate180 = true
+can_rotate270 = true
+
+[[tiles.Shoppa]]
+name = "120_bar.png"
+edges = [ "RRR", "RS", "e", "SR" ]
+anti_match = [0, 0, 1, 0]
+is_negative = true
+can_flip = true
+
+[[tiles.Shoppa]]
+name = "shoppa_hill_center_1.png"
+weight = 0
+edges = [ "E", "E", "!retnecllih", "E" ]
+
+[[tiles.Shoppa]]
+name = "shoppa_hill_center_2.png"
+weight = 0
+edges = [ "hillcenter", "hillside2", "H", "2edisllih" ]
+anti_match = [0, 2, 0, 2]
+
+[[tiles.Shoppa]]
+name = "shoppa_hill_side_2.png"
+weight = 0
+edges = [ "e", "hillside2", "3edisllih", "e" ]
+anti_match = [0, 1, 0, 0]
+can_mirror = true
+
+[[tiles.Shoppa]]
+name = "shoppa_hill_side_3.png"
+weight = 0
+edges = [ "hillside3", "H", "4edisllih", "e" ]
+can_mirror = true
+
+[[tiles.Shoppa]]
+name = "shoppa_hill_side_4.png"
+weight = 4
+edges = [ "hillside4", "H", "!first_layer_reyal_tsrif", "e" ]
+anti_match = [0, 4, 0, 0]
+can_mirror = true
+
+[[tiles.Shoppa]]
+name = "120_filled.png"
+weight = 0
+edges = [ "H", "H", "first_layer_reyal_tsrif", "H" ]
+is_negative = true
+
+[[tiles.Shoppa]]
+name = "120_filled.png"
+edges = [ "H", "H", "H", "H" ]
+anti_match = [0, 2, 0, 2]
+is_negative = true
+
+# hex tiles
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "eE", "EE", "Ee", "e" ]
+is_negative = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "fE", "EE", "Ee", "e" ]
+is_negative = true
+can_flip = true
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "fE", "EE", "Ef", "e" ]
+is_negative = true
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_1.png"
+edges = [ "fE", "EE", "Ef", "f" ]
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_1.png"
+edges = [ "eE", "EE", "Ef", "f" ]
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_1.png"
+edges = [ "eE", "EE", "Ee", "f" ]
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_1.png"
+edges = [ "eF", "FF", "Fe", "e" ]
+is_negative = true
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_1.png"
+edges = [ "fF", "FF", "Fe", "e" ]
+is_negative = true
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_1.png"
+edges = [ "fF", "FF", "Ff", "e" ]
+is_negative = true
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "eF", "FE", "Ee", "e" ]
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "eF", "FE", "Ef", "e" ]
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "fF", "FE", "Ee", "e" ]
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "fF", "FE", "Ef", "e" ]
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "fE", "EF", "Ff", "f" ]
+is_negative = true
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "fE", "EF", "Fe", "f" ]
+is_negative = true
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "eE", "EF", "Ff", "f" ]
+is_negative = true
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "eE", "EF", "Fe", "f" ]
+is_negative = true
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "fF", "FF", "Ff", "f" ]
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "eF", "FF", "Ff", "f" ]
+can_flip = true
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "eF", "FF", "Fe", "f" ]
+can_mirror = true
+
+# borders compatibility:
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "!ef", "FE", "Ee", "e" ]
+weight = 0
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "fE", "EF", "!f", "f" ]
+weight = 0
+is_negative = true
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_2.png"
+edges = [ "eE", "EF", "!f", "f" ]
+weight = 0
+is_negative = true
+can_mirror = true
+can_flip = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "fF", "FF", "!f", "f" ]
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "!e", "EE", "Ef", "e" ]
+is_negative = true
+can_mirror = true
+
+[[tiles.hex]]
+name = "hex_0.png"
+edges = [ "!e", "EE", "Ee", "e" ]
+is_negative = true
+can_mirror = true
+
+################ EDGES ################
+[edges.bottom_row]
+top = { begin = "e", fill = "e", end = "e" }
+right = { begin = "e", fill = "e", end = "e" }
+bottom = { begin = "ef", fill = "f", end = "fe" }
+left = { begin = "e", fill = "e", end = "e" }
+
+[edges.bottom_fill]
+bottom.fill = "f"
+
+[edges.top_bottom]
+top.fill = "f"
+bottom.fill = "f"
+
+[edges.full_top_bottom]
+top = { begin = "f", fill = "f", end = "f" }
+bottom = { begin = "f", fill = "f", end = "f" }
+
+################ TEMPLATES ################
+[[templates]]
+# 0
+width = 3960
+height = 1920
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 40
+wrap = true
+edges = "top_bottom"
+tiles = [ "round120" ]
+
+[[templates]]
+# 1
+width = 3960
+height = 1920
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 40
+wrap = false
+edges = "bottom_row"
+tiles = [ "round120" ]
+
+[[templates]]
+# 2
+width = 1200
+height = 600
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 24
+wrap = false
+edges = "bottom_row"
+tiles = [ "round120" ]
+
+[[templates]]
+# 3
+width = 720
+height = 7920
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 64
+wrap = false
+edges = "bottom_row"
+tiles = [ "round120" ]
+
+[[templates]]
+# 4
+width = 2200
+height = 960
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 24
+wrap = false
+edges = "bottom_row"
+tiles = [ "round120" ]
+
+[[templates]]
+# 5
+width = 2280
+height = 1200
+can_invert = false
+put_girders = true
+max_hedgehogs = 40
+wrap = true
+edges = "full_top_bottom"
+tiles = [ "Rooms" ]
+
+[[templates]]
+# 6
+width = 3960
+height = 1920
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 64
+wrap = true
+edges = "bottom_fill"
+tiles = [ "Shoppa" ]
+
+[[templates]]
+# 7
+width = 1960
+height = 1140
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 64
+edges = "bottom_row"
+tiles = [ "hex" ]
+
+[[templates]]
+# 8
+width = 980
+height = 570
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 64
+edges = "bottom_row"
+tiles = [ "hex" ]
+
+[[templates]]
+# 9
+width = 3920
+height = 1710
+can_invert = false
+is_negative = false
+put_girders = true
+max_hedgehogs = 64
+edges = "bottom_row"
+tiles = [ "hex" ]
+
+[template_types]
+small = [ 2, 8 ]
+medium = [ 4, 7 ]
+large = [ 1, 9 ]
+cavern = [ 0, 5 ]
+wacky = [ 6 ]

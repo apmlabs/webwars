@@ -1,0 +1,7 @@
+extra-prog-path: z:/w64devkit/bin
+
+packages: Z:\src\gameServer\hedgewars-server.cabal
+
+package network
+  configure-options: --build=x86_64-w64-mingw32 --host=x86_64-w64-mingw32 GREP=Z:\w64devkit\bin\grep.exe SED=Z:\w64devkit\bin\sed.exe
+

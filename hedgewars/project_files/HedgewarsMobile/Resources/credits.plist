@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+	<array>
+		<string>Andrey &quot;unC0Rr&quot; Korotaev</string>
+		<string>Igor &quot;Displacer&quot; Ulyanov</string>
+		<string>Derek &quot;nemo&quot; Pomery</string>
+		<string>Martin &quot;Affect&quot; Boze</string>
+		<string>David &quot;Krawek&quot; Cuadrado</string>
+		<string>Martin &quot;Ttsmj&quot; Minarik</string>
+		<string>Kristian &quot;TheXception&quot; Lehmann</string>
+		<string>Vittorio &quot;Koda&quot; Giovara</string>
+		<string>Mario &quot;Smaxx&quot; Liebisch</string>
+		<string>Carlos &quot;Palewolf&quot; Vives</string>
+		<string>Richard &quot;sheepluva&quot; Karolyi</string>
+		<string>Henning &quot;Prg&quot; Kühn</string>
+		<string>Henrik &quot;Henek&quot; Rostedt</string>
+		<string>John &quot;mikade&quot; Lambert</string>
+		<string>Mayur &quot;Zorg&quot; Pawashe</string>
+		<string>Richard &quot;Xeli&quot; Deurwaarder</string>
+		<string>Simeon Maxein</string>
+		<string>Meng Xiangyun</string>
+		<string>Stepan Podoskin</string>
+		<string>Szabolcs Orbàn</string>
+		<string>Drew Gottlieb</string>
+		<string>Ondrej Skopek</string>
+		<string>Julia Struchenko</string>
+		<string>Anton &quot;antonc27&quot; Malmygin</string>
+	</array>
+	<array>
+		<string>John &quot;Fizzy&quot; Dum</string>
+		<string>Joshua Frese</string>
+		<string>Stanko Tadić</string>
+		<string>Julien Koesten</string>
+		<string>Joshua O&apos;Sullivan</string>
+		<string>Nils Lück</string>
+		<string>Guillaume Englert</string>
+		<string>Trey Perry</string>
+	</array>
+	<array>
+		<string>Stephen &quot;Armagon&quot; Alexander</string>
+		<string>John &quot;Fizzy&quot; Dum</string>
+		<string>Jonatan Nilsson</string>
+		<string>Daniel Martin</string>
+	</array>
+	<array>
+		<string>Romulo Fernandes Machado</string>
+		<string>Svetoslav Stefanov</string>
+		<string>Petr Řezáček</string>
+		<string>Jie Luo</string>
+		<string>Andrey Korotaev</string>
+		<string>Nina Kuisma</string>
+		<string>Antoine Turmel, Clement Woitrain, Matisumi</string>
+		<string>Peter Hüwe, Mario Liebisch, Richard Karolyi, Wuzzy</string>
+		<string>Talos Kriti</string>
+		<string>Luca Bonora, Marco Bresciani, Gianfranco Costamagna</string>
+		<string>Adam Etienne, Marco Bresciani</string>
+		<string>Anthony Bellew</string>
+		<string>Lukas Urbonas</string>
+		<string>Maciej Mroziński, Wojciech Latkowski, Piotr Mitana, Maciej Górny</string>
+		<string>Fábio Canário</string>
+		<string>Andrey Korotaev, Vitaly Novichkov, Anton Malmygin</string>
+		<string>Jose Riha</string>
+		<string>Carlos Vives</string>
+		<string>Niklas Grahn, Henrik Rostedt</string>
+		<string>Eugene V. Lyubimkin, Igor Paliychuk, Eugene Sakara</string>
+	</array>
+	<array>
+		<string>Aleksey Andreev</string>
+		<string>Aleksander Rudalev</string>
+		<string>Natasha Korotaeva</string>
+		<string>Adam Higerd</string>
+	</array>
+	<array>
+		<string>Engine, frontend, net server</string>
+		<string>Many desktop frontend improvements</string>
+		<string>Many engine and desktop frontend improvements</string>
+		<string>Drillrocket, Ballgun, RC Plane weapons</string>
+		<string>Mine number and time game settings</string>
+		<string>Desktop frontend improvements</string>
+		<string>Desktop frontend improvements</string>
+		<string>Mac OS X and iPhone version</string>
+		<string>Many engine and desktop frontend improvements</string>
+		<string>Gamepad and Lua integration</string>
+		<string>Many engine improvements and graphics</string>
+		<string>Maze maps</string>
+		<string>Engine and desktop frontend improvements</string>
+		<string>Lua game modes and missions</string>
+		<string>Desktop frontend improvements</string>
+		<string>Android port</string>
+		<string>Android netplay, portability abstraction</string>
+		<string>WebGL port, some pas2c and GLES2 work</string>
+		<string>Video recording</string>
+		<string>Campaign support, first campaign</string>
+		<string>Keybinds, feedback, maps and hats interfaces</string>
+		<string>Login dialogs, frontend improvements</string>
+		<string>Icegun weapon</string>
+		<string>Current developer of iPhone/iPad versions</string>
+	</array>
+	<array>
+		<string>Main graphics</string>
+		<string></string>
+		<string></string>
+		<string></string>
+		<string></string>
+		<string></string>
+		<string></string>
+		<string>Some hats</string>
+	</array>
+	<array>
+		<string>Hedgehogs voice</string>
+		<string></string>
+		<string></string>
+		<string></string>
+	</array>
+	<array>
+		<string>Brazilian Portuguese</string>
+		<string>Bulgarian</string>
+		<string>Czech</string>
+		<string>Chinese</string>
+		<string>English</string>
+		<string>Finnish</string>
+		<string>French</string>
+		<string>German</string>
+		<string>Greek</string>
+		<string>Italian</string>
+		<string>Japanese</string>
+		<string>Korean</string>
+		<string>Lithuanian</string>
+		<string>Polish</string>
+		<string>Portuguese</string>
+		<string>Russian</string>
+		<string>Slovak</string>
+		<string>Spanish</string>
+		<string>Swedish</string>
+		<string>Ukrainian</string>
+	</array>
+	<array>
+		<string></string>
+		<string></string>
+		<string></string>
+		<string></string>
+	</array>
+</array>
+</plist>

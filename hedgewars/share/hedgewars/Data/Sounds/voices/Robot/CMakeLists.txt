@@ -1,0 +1,61 @@
+file(GLOB VoiceSounds
+Amazing.ogg
+Boring.ogg
+Brilliant.ogg
+Bugger.ogg
+Byebye.ogg
+Comeonthen.ogg
+Coward.ogg
+Cutitout.ogg
+Drat.ogg
+Enemydown.ogg
+Excellent.ogg
+Firstblood.ogg
+Fire.ogg
+Firepunch*.ogg
+Flawless.ogg
+Flyaway.ogg
+Gonnagetyou.ogg
+Grenade.ogg
+Hello.ogg
+Hmm.ogg
+Hurry.ogg
+Illgetyou.ogg
+Incoming.ogg
+Jump*.ogg
+Justyouwait.ogg
+Kamikaze.ogg
+Laugh.ogg
+Leavemealone.ogg
+Melon.ogg
+Missed.ogg
+Nooo.ogg
+Nutter.ogg
+Ohdear.ogg
+Ooff*.ogg
+Oops.ogg
+Ouch.ogg
+Ow*.ogg
+Reinforcements.ogg
+Revenge.ogg
+Runaway.ogg
+Sameteam.ogg
+Solong.ogg
+Stupid.ogg
+Takecover.ogg
+# NOTE: Thisoneismine.ogg intentionally not included.
+# Reason: The text "Threat detected" does not fit.
+# This sound is for crate drops.
+Traitor.ogg
+Uh-oh.ogg
+Victory.ogg
+Watchit.ogg
+Watchthis.ogg
+Whatthe.ogg
+Yessir.ogg
+Youllregretthat.ogg
+)
+
+install(FILES
+    ${VoiceSounds}
+    DESTINATION ${SHAREPATH}Data/Sounds/voices/Robot)

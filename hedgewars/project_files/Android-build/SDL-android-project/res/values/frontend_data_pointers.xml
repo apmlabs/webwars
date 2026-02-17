@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<array name="teams">
+	<item>@raw/team_one</item>
+	<item>@raw/team_two</item>
+</array>
+<array name="teamFilenames">
+	<item>Team 1.hwt</item>
+	<item>Team 2.hwt</item>
+</array>
+</resources>

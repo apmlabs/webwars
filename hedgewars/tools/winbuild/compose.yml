@@ -1,0 +1,9 @@
+services:
+  build:
+    image: win-hedgewarsbe
+    working_dir: /
+    volumes:
+      - ../../:/src
+      - ./out:/build-Hedgewars
+    command: ["wine", "cmd", "/c", "z:/src/tools/winbuild/build-hedgewars.cmd"]
+

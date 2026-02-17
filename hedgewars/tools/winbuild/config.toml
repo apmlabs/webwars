@@ -1,0 +1,3 @@
+[target.x86_64-pc-windows-gnu]
+linker = "Z:\\RUST\\lib\\rustlib\\x86_64-pc-windows-gnu\\bin\\self-contained\\x86_64-w64-mingw32-gcc.exe"
+

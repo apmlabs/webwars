@@ -1,0 +1,37 @@
+foreach(dir
+    Art
+    Bamboo
+    Bath
+    Beach
+    Blox
+    Brick
+    Cake
+    Cave
+    Castle
+    Cheese
+    Christmas
+    City
+    Compost
+    CrazyMission
+    Deepspace
+    Desert
+    EarthRise
+    Eyes
+    Freeway
+    Fruit
+    Golf
+    Halloween
+    Hell
+    Hoggywood
+    Island
+    Jungle
+    Nature
+    Olympics
+    Planes
+    Sheep
+    Snow
+    Stage
+    Underwater
+    )
+    add_subdirectory(${dir})
+endforeach(dir)

@@ -1,0 +1,104 @@
+/*
+ * Hedgewars, a free turn based strategy game
+ * Copyright (c) 2004-2015 Andrey Korotaev <unC0Rr@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; version 2 of the License
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+/**
+ * @file
+ * @brief GameStyleModel class implementation
+ */
+
+#include "GameStyleModel.h"
+
+#include <QTextStream>
+
+#include "hwconsts.h"
+#include "physfs_integration.h"
+
+void GameStyleModel::loadGameStyles() {
+  QIcon dlcIcon;
+  dlcIcon.addFile(QStringLiteral(":/res/dlcMarker.png"), QSize(), QIcon::Normal,
+                  QIcon::On);
+  dlcIcon.addFile(QStringLiteral(":/res/dlcMarkerSelected.png"), QSize(),
+                  QIcon::Selected, QIcon::On);
+  QPixmap emptySpace = QPixmap(7, 15);
+  emptySpace.fill(QColor(0, 0, 0, 0));
+  QIcon notDlcIcon = QIcon(emptySpace);
+
+  // empty list, so that we can (re)fill it
+  QStandardItemModel::clear();
+
+  QList<QStandardItem*> items;
+  items.append(new QStandardItem(notDlcIcon, QStringLiteral("Normal")));
+
+  // define a separator item
+  QStandardItem* separator = new QStandardItem(QStringLiteral("---"));
+  separator->setData(QLatin1String("separator"), Qt::AccessibleDescriptionRole);
+  separator->setFlags(separator->flags() &
+                      ~(Qt::ItemIsEnabled | Qt::ItemIsSelectable));
+
+  items.append(separator);
+
+  QStringList scripts = DataManager::instance().entryList(
+      QStringLiteral("Scripts/Multiplayer"), QDir::Files, QStringList("*.lua"));
+
+  for (auto&& script : scripts) {
+    script = script.remove(QStringLiteral(".lua"), Qt::CaseInsensitive);
+
+    PhysFsFile scriptCfgFile(
+        QStringLiteral("/Scripts/Multiplayer/%2.cfg").arg(script));
+
+    QString name = script;
+    name = name.replace(QLatin1String("_"), QLatin1String(" "));
+
+    QString scheme = QStringLiteral("locked");
+    QString weapons = QStringLiteral("locked");
+
+    if (scriptCfgFile.exists() && scriptCfgFile.open(QFile::ReadOnly)) {
+      QTextStream input(&scriptCfgFile);
+      input >> scheme;
+      input >> weapons;
+      scriptCfgFile.close();
+
+      if (!scheme.isEmpty())
+        scheme.replace(QLatin1String("_"), QLatin1String(" "));
+
+      if (!weapons.isEmpty())
+        weapons.replace(QLatin1String("_"), QLatin1String(" "));
+    }
+
+    // detect if script is dlc
+    QString scriptPath = PhysFsManager::instance().getRealDir(
+        QStringLiteral("Scripts/Multiplayer/%1.lua").arg(script));
+
+    bool isDLC = !scriptPath.startsWith(datadir.absolutePath());
+
+    QStandardItem* item;
+    if (isDLC)
+      item = new QStandardItem(dlcIcon, name);
+    else
+      item = new QStandardItem(notDlcIcon, name);
+
+    item->setData(script, ScriptRole);
+    item->setData(scheme, SchemeRole);
+    item->setData(weapons, WeaponsRole);
+    item->setData(isDLC, IsDlcRole);
+
+    items.append(item);
+  }
+
+  QStandardItemModel::appendColumn(items);
+}

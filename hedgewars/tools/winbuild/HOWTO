@@ -1,0 +1,10 @@
+== Build docker image before first time building hedgewars:
+
+> docker build --progress=plain -t win-hedgewarsbe .
+
+== To build hedgewars using this image:
+
+> docker-compose run --rm build
+
+Collect artifacts in out/ folder
+
