@@ -13,7 +13,7 @@ mkdir -p build/native
 cd build/native
 
 echo "Configuring..."
-cmake ../../hedgewars -DNOSERVER=ON -DCMAKE_BUILD_TYPE=Release
+cmake ../../hedgewars -DNOSERVER=ON -DNOVIDEOREC=ON -DCMAKE_BUILD_TYPE=Release
 
 echo "Building..."
 make -j$(nproc)

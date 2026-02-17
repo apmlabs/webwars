@@ -12,24 +12,47 @@ Last updated: 2026-02-17T01:04:00.000+00:00
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
 |-------|-----------|--------|-------------|
-| A | Baseline Build | NOT STARTED | Clone Hedgewars repo |
-| A | pas2c Validation | NOT STARTED | Test pas2c on current code |
-| A | Emscripten Compile | NOT STARTED | Compile C to WASM |
-| A | Asset Packaging | NOT STARTED | Analyze Data/ size |
-| A | Browser MVP | NOT STARTED | Integrate WASM in browser |
-| B | WebSocket Gateway | NOT STARTED | Implement gateway |
-| B | Server Integration | NOT STARTED | Connect to hedgewars-server |
-| B | Multiplayer Test | NOT STARTED | Test online play |
+| A | Baseline Build | ✅ COMPLETE | Native hwengine builds successfully |
+| A | pas2c Validation | ⚠️ PARTIAL | pas2c tool works, C code needs OpenGL headers |
+| A | Emscripten Compile | NOT STARTED | Try with Emscripten environment |
+| A | Asset Packaging | ✅ ANALYZED | 218MB total, ~30-40MB essential |
+| A | Browser MVP | NOT STARTED | Depends on Emscripten |
+| B | WebSocket Gateway | NOT STARTED | Gateway code ready |
+| B | Server Integration | NOT STARTED | Need hedgewars-server binary |
+| B | Multiplayer Test | NOT STARTED | Depends on server |
 | C | Deployment | NOT STARTED | Deploy on this server |
 
 ### Build Validation Checklist
-- [ ] Clone Hedgewars repository
-- [ ] Build normally (baseline)
-- [ ] Enable pas2c in CMake
-- [ ] Verify pas2c output compiles
+- [x] Clone Hedgewars repository
+- [x] Build normally (baseline) - **SUCCESS** (hwengine binary created)
+- [x] Enable pas2c in CMake - **PARTIAL** (pas2c tool builds, C code has OpenGL issues)
+- [ ] Verify pas2c output compiles cleanly
 - [ ] Test generated C code quality
-- [ ] Measure Data/ asset size
+- [x] Measure Data/ asset size - **218MB total** (84MB music, 35MB maps, 24MB themes)
 - [ ] Identify essential vs optional assets
+
+### Validation Findings
+
+**Asset Analysis** (218MB total):
+- Music: 84MB (largest, can be lazy-loaded)
+- Maps: 35MB (many optional)
+- Themes: 24MB (default theme ~2MB)
+- Fonts: 17MB (wqy-zenhei.ttc is 17MB alone)
+- Graphics: 16MB
+- Locale: 11MB
+- **Essential bundle estimate**: ~30-40MB (default theme, basic sounds, core graphics)
+
+**Build Status**:
+- ✅ Native build works (with Qt frontend disabled)
+- ✅ pas2c tool compiles successfully
+- ⚠️ pas2c generated C code has OpenGL linking issues (`glShaderSource` undeclared)
+- **Blocker**: Need OpenGL headers or Emscripten environment for pas2c C code
+
+**Dependencies Installed**:
+- CMake, FPC (Free Pascal), SDL2 libraries
+- Rust toolchain
+- Clang, GHC (Haskell)
+- Qt6 (partial, version mismatch 6.4 vs 6.5 required)
 
 ## Core Agent Role
 
