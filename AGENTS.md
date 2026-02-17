@@ -1,12 +1,12 @@
 # Agent Status Tracking - WebWars (Hedgewars WASM Port)
 
 ## Current Status
-Last updated: 2026-02-17T03:32:00Z
+Last updated: 2026-02-17T09:57:00Z
 
 ### Project Status
-- **Phase**: Frontend Integration - Engine Running, Protocol Needed
-- **Last Action**: Engine successfully loads and executes in browser
-- **Current Task**: Implement Hedgewars IPC protocol or obtain demo file
+- **Phase**: Frontend Integration - IPC Protocol Ready
+- **Last Action**: Fixed HWLIBRARY flag to enable --internal mode
+- **Current Task**: Test IPC protocol message processing
 - **Target**: Playable game in browser
 
 ### Implementation Tracks
@@ -40,7 +40,7 @@ Last updated: 2026-02-17T03:32:00Z
 
 **Test URL:** http://54.80.204.92:8081/mvp.html
 
-### Build Progress (100% Compilation, 80% Integration)
+### Build Progress (100% Compilation, 85% Integration)
 
 **Completed:**
 - [x] Emscripten SDK 5.0.1 installed and configured
@@ -60,10 +60,11 @@ Last updated: 2026-02-17T03:32:00Z
 - [x] CORS-enabled servers for cross-origin loading
 - [x] Message queue system for engine IPC
 - [x] Engine loads and executes in browser
+- [x] HWLIBRARY flag enabled for --internal mode
 
 **Remaining:**
-- [ ] Obtain demo/replay file (.hwd) OR
-- [ ] Implement Hedgewars IPC protocol for game setup
+- [ ] Test IPC protocol message processing
+- [ ] Verify game starts with hotseat setup
 - [ ] Test actual gameplay
 - [ ] Optimize asset loading
 - [ ] Deploy production version
@@ -79,7 +80,7 @@ Last updated: 2026-02-17T03:32:00Z
 7. **Assets**: Bundled essential 51MB, lazy-load optional content (future)
 8. **IPC**: Message queue implemented, protocol needs implementation
 
-### Files Modified (7 core patches)
+### Files Modified (8 core patches)
 
 **CMake Configuration:**
 - `hedgewars/CMakeLists.txt` - Rust toggle, skip Platform/ for Emscripten, PhysFS/Lua bundled builds
@@ -87,7 +88,7 @@ Last updated: 2026-02-17T03:32:00Z
 - `hedgewars/misc/libphyslayer/CMakeLists.txt` - Emscripten SDL2/PhysFS, removed .bc suffix
 - `hedgewars/misc/libphysfs/CMakeLists.txt` - Modern CMake compatibility
 - `hedgewars/misc/liblua/CMakeLists.txt` - Removed lua_emscripten_internal override
-- `hedgewars/project_files/hwc/CMakeLists.txt` - Emscripten flags, memory alignment, SDL_NET
+- `hedgewars/project_files/hwc/CMakeLists.txt` - Emscripten flags, memory alignment, SDL_NET, HWLIBRARY
 
 **Source Code:**
 - `hedgewars/rust/lib-hwengine-future/Cargo.toml` - staticlib

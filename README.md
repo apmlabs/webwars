@@ -22,10 +22,11 @@ The game engine has been successfully compiled to WebAssembly!
 - ✅ All libraries built (Lua, PhysFS, SDL2, SDL_NET)
 - ✅ All engine code compiled
 - ✅ Final linking successful
+- ✅ HWLIBRARY flag for --internal mode
 
 ### Next Steps
-- Package game assets (~30-40MB essential)
-- Test in browser
+- Test IPC protocol message processing
+- Verify hotseat gameplay
 - Deploy MVP
 
 ## Architecture
