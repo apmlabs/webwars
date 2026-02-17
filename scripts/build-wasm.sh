@@ -25,10 +25,7 @@ emcmake cmake ../../hedgewars \
     -DLUA_SYSTEM=OFF \
     -DPHYSFS_INCLUDE_DIR=../../hedgewars/misc/libphysfs \
     -DPHYSFS_LIBRARY=../../hedgewars/misc/libphysfs \
-    -DSDL2_BUILDING_LIBRARY=ON \
-    -DCMAKE_C_FLAGS="-sUSE_SDL=2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES2=1" \
-    -DCMAKE_CXX_FLAGS="-sUSE_SDL=2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES2=1" \
-    -DCMAKE_EXE_LINKER_FLAGS="-sUSE_SDL=2 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sFULL_ES2=1" \
+    -DHW_USE_RUST_MAPGEN=ON \
     -DCMAKE_BUILD_TYPE=Release
 
 echo "Building..."
