@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T21:26:00Z  
+**Last Updated**: 2026-02-17T21:47:00Z  
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`  
-**Status**: 🎉 Game Loop Running - Debugging Rendering & Cleanup
+**Status**: 🎉 Game Loop Running - Build Fixed, Testing Deployment
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -45,12 +45,13 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
    - 5000+ console lines per run
    - Caused by `-g4 -sASSERTIONS=2`
    - Every log = 1 message + 15-line stack trace
-   - Attempted fix broke build (Rust linking)
+   - Can be reduced later without breaking build
 
-5. **Build Currently Broken**
-   - CMake reconfiguration broke Rust target libraries
-   - Error: `unable to find library -lgcc_s -lutil`
-   - Need clean rebuild with original flags
+5. **Build System Fixed** ✅
+   - Was broken: CMake detected wrong Rust target
+   - Error was: `unable to find library -lgcc_s -lutil`
+   - Fixed with: `.cargo/config.toml` forcing wasm32-unknown-emscripten
+   - Build now works reliably
 
 ### Deployment
 - **Service**: `webwars-server.service` (systemd)
@@ -79,7 +80,7 @@ source ~/.cargo/env
 ./scripts/build-wasm.sh
 ```
 
-## Files Modified (15 patches)
+## Files Modified (16 patches)
 
 **CMake:**
 - `hedgewars/CMakeLists.txt` - PhysFS/Lua bundled builds, skip Platform/
@@ -91,6 +92,7 @@ source ~/.cargo/env
 
 **Source:**
 - `hedgewars/rust/lib-hwengine-future/Cargo.toml` - staticlib
+- `hedgewars/rust/lib-hwengine-future/.cargo/config.toml` - **NEW** Force wasm32-unknown-emscripten target
 - `hedgewars/hedgewars/uConsts.pas` - Guard initialization
 - `hedgewars/hedgewars/uMatrix.pas` - Guard legacy GL
 - `hedgewars/hedgewars/uSound.pas` - Disable music for EMSCRIPTEN
