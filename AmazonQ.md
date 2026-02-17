@@ -1,60 +1,56 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T16:00:00Z  
+**Last Updated**: 2026-02-17T21:26:00Z  
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`  
-**Status**: 🎉 IPC Transport Working - Engine reads from JS!
+**Status**: 🎉 Game Loop Running - Debugging Rendering & Cleanup
 
 ## Project: WebWars (Hedgewars WASM Port)
 
 Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket multiplayer.
 
-## Current Phase: IPC Protocol Handshake
+## Current Phase: Game Loop Functional, Debugging Issues
 
 ### Breakthrough Achieved! 🎉
-- ✅ Engine compiled to WebAssembly (4.1MB)
-- ✅ SDL_net removed, browser IPC shim created
-- ✅ Pascal conditionals working with `-d EMSCRIPTEN`
-- ✅ Engine reads 149 bytes from JS callback
-- 🟡 **Current**: Engine waiting for IPC reply (blocking)
+- ✅ Engine compiled to WebAssembly (4.2MB)
+- ✅ Assets load (187MB data file)
+- ✅ IPC protocol working perfectly
+- ✅ Map loading (Cake map with mask.png)
+- ✅ Spawn system working (no FindPlace errors)
+- ✅ Game loop runs (360+ ticks)
+- ✅ Win detection works
+- ✅ Sound playback works
+- 🟡 **Current**: Rendering status unknown, cleanup crash
 
-### The Journey (Step by Step)
+### Known Issues
 
-#### Phase 1: WASM Compilation (Complete)
-1. Set up Emscripten SDK 5.0.1
-2. Configured Rust wasm32-unknown-emscripten target
-3. Fixed GL headers (GLES2/gl2.h)
-4. Built all dependencies (Lua, PhysFS, SDL2)
-5. Generated C from Pascal via pas2c (60+ files)
-6. Created OpenGL compatibility layer
-7. **Result**: hwengine.wasm (4.1MB) successfully built
+1. **Data File Path Warning** (Non-Fatal)
+   - Warning: `dependency: datafile_../../bin/hwengine.data`
+   - File loads successfully via fallback mechanism
+   - Assets work (fonts, sounds, maps)
+   - Need to verify `Module.locateFile()` is called
 
-#### Phase 2: Asset Loading (Complete)
-8. Packaged 51MB essential assets (Graphics, Shaders, Fonts)
-9. Used `--preload-file` with LZ4 compression
-10. Removed `--use-preload-plugins` (caused browser audio limits)
-11. **Result**: Assets load cleanly in browser
+2. **Main Loop Integration** (Real Issue)
+   - Error: `emscripten_set_main_loop_timing: Cannot set timing mode`
+   - SDL trying to set vsync without Emscripten main loop
+   - Can cause inconsistent rendering cadence
+   - Needs proper `emscripten_set_main_loop()` integration
 
-#### Phase 3: Boot Flow (Complete)
-12. Tried `callMain()` - doesn't exist in Emscripten output
-13. Tried `Module.run()` - caused re-entry assertion
-14. **Solution**: Auto-run with `Module.arguments`
-15. Created web_entry.c wrapper with static argv
-16. **Result**: Engine starts and initializes SDL
+3. **Cleanup Crash** (Deterministic)
+   - `RuntimeError: unreachable` during shutdown
+   - Happens after "Freeing resources..."
+   - Likely abort() during cleanup
+   - Prevents game restart
 
-#### Phase 4: IPC Transport (Complete) ✅
-17. **Problem**: Engine hardcoded to use TCP sockets (SDL_net)
-18. **Solution Path A**: Remove SDL_net, create browser shim
-19. Added `-d EMSCRIPTEN` to pas2c flags in CMakeLists.txt
-20. Patched uIO.pas with `{$IFDEF EMSCRIPTEN}` conditionals
-21. Created ipc_browser.c with SDL_net stubs + `hw_ipc_recv()`
-22. Implemented `Module.HWEngine.readIPC()` in pre.js
-23. Exported HEAPU8 to EXPORTED_RUNTIME_METHODS
-24. **Result**: Engine reads all 149 bytes from JS queue! 🎉
+4. **Output Volume** (Debug Mode)
+   - 5000+ console lines per run
+   - Caused by `-g4 -sASSERTIONS=2`
+   - Every log = 1 message + 15-line stack trace
+   - Attempted fix broke build (Rust linking)
 
-#### Phase 5: IPC Protocol (In Progress) 🟡
-25. Engine successfully reads: seed, teams, hedgehogs, start command
-26. **Current blocker**: Engine stuck in `SendIPCAndWaitReply()`
-27. **Next**: Implement reply mechanism or complete protocol sequence
+5. **Build Currently Broken**
+   - CMake reconfiguration broke Rust target libraries
+   - Error: `unable to find library -lgcc_s -lutil`
+   - Need clean rebuild with original flags
 
 ### Deployment
 - **Service**: `webwars-server.service` (systemd)
@@ -69,11 +65,10 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - **Compilation**: Pascal → pas2c → C → Emscripten → WASM ✅
 - **Toolchain**: Official Emscripten (disabled legacy Platform/Emscripten.cmake)
 - **Rust**: staticlib with wasm32-unknown-emscripten target
-- **SDL**: Via Emscripten ports (-sUSE_SDL=2, -sUSE_SDL_NET=2)
+- **SDL**: Via Emscripten ports (-sUSE_SDL=2, no SDL_NET)
 - **OpenGL**: GLES2/WebGL2 with gl_emscripten_compat.h
-- **Multiplayer**: WebSocket gateway bridges browser to TCP server (port 46631)
-- **Assets**: ~218MB total, ~30-40MB essential
-- **Boot**: Auto-run with Module.arguments, IPC queued in preRun
+- **IPC**: Custom browser shim replaces TCP sockets
+- **Assets**: ~187MB (Graphics, Shaders, Fonts, Maps, Sounds)
 
 ## Build Commands
 
@@ -84,7 +79,7 @@ source ~/.cargo/env
 ./scripts/build-wasm.sh
 ```
 
-## Files Modified (14 patches)
+## Files Modified (15 patches)
 
 **CMake:**
 - `hedgewars/CMakeLists.txt` - PhysFS/Lua bundled builds, skip Platform/
@@ -98,6 +93,11 @@ source ~/.cargo/env
 - `hedgewars/rust/lib-hwengine-future/Cargo.toml` - staticlib
 - `hedgewars/hedgewars/uConsts.pas` - Guard initialization
 - `hedgewars/hedgewars/uMatrix.pas` - Guard legacy GL
+- `hedgewars/hedgewars/uSound.pas` - Disable music for EMSCRIPTEN
+- `hedgewars/hedgewars/uStore.pas` - Suppress asset loading spam
+- `hedgewars/hedgewars/uIO.pas` - Browser IPC, buffer overflow fix, IPC logging
+- `hedgewars/hedgewars/uCommands.pas` - IPC Level 3 logging
+- `hedgewars/hedgewars/uCommandHandlers.pas` - Handler logging, uConsole import
 
 **Headers:**
 - `hedgewars/project_files/hwc/rtl/GL.h` - GLES2
@@ -105,45 +105,14 @@ source ~/.cargo/env
 - `hedgewars/project_files/hwc/rtl/misc.h` - glShaderSource
 
 **JavaScript:**
-- `hedgewars/project_files/web/pre.js` - NEW (Message queue, preRun IPC)
+- `hedgewars/project_files/web/pre.js` - NEW (Message queue, Module.locateFile, data logging, 2 teams)
 - `hedgewars/project_files/web/post.js` - NEW (Runtime init)
 
 **Scripts:**
 - `scripts/build-wasm.sh` - Complete config
 
-## Boot Flow Architecture
-
-**Correct Flow (Current):**
-1. `Module.arguments` set in pre.js: `['--internal', '--prefix', '/Data']`
-2. `Module.preRun` queues IPC messages via `HWEngine.startHotseatGame()`
-3. `FS.init(stdin, stdout, stderr)` wires stdio in preRun
-4. Emscripten auto-runs main() with Module.arguments
-5. Engine processes `--internal` flag (HWLIBRARY mode)
-6. Engine reads from stdin (should drain 149-byte queue)
-
-**Key Lessons:**
-- Don't call `Module.run()` inside `onRuntimeInitialized` (re-entry)
-- Don't use `-sINVOKE_RUN=0` with manual `run()` call (assertion)
-- Queue IPC messages in `preRun` before main() starts
-- Use auto-run for simplest testing path
-
-## WebSocket Gateway (Ready)
-
-```javascript
-const WebSocket = require('ws');
-const net = require('net');
-const wss = new WebSocket.Server({ port: 8080 });
-
-wss.on('connection', (ws) => {
-  const tcp = net.connect(46631, 'localhost');
-  ws.on('message', (d) => tcp.write(d));
-  tcp.on('data', (d) => ws.send(d));
-  ws.on('close', () => tcp.end());
-  tcp.on('close', () => ws.close());
-});
-```
-
 ## Success Criteria
 
 **MVP**: Game loads in browser, hotseat playable, <10s load time ✅  
+**Current**: Game runs, needs rendering verification and cleanup fix
 **Full**: Multiplayer stable, deployed on this server, public URL

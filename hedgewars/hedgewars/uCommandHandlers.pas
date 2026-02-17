@@ -27,7 +27,7 @@ procedure freeModule;
 
 implementation
 uses uCommands, uTypes, uVariables, uIO, uDebug, uConsts, uScript, uUtils, SDLh, uWorld, uRandom, uCaptions
-    , uVisualGearsList, uGearsHedgehog, uChat
+    , uVisualGearsList, uGearsHedgehog, uChat, uConsole
      {$IFDEF USE_VIDEO_RECORDING}, uVideoRec {$ENDIF};
 
 var cTagsMasks : array[0..15] of byte = (7, 0, 0, 0, 0, 4, 5, 6, 15, 8, 8, 8, 8, 12, 13, 14);
@@ -541,14 +541,18 @@ end;
 
 procedure chSetMap(var s: shortstring);
 begin
+WriteLnToConsole('[HANDLER] chSetMap called with: ' + s);
 if isDeveloperMode then
     begin
+    WriteLnToConsole('[HANDLER] chSetMap setting cifMap flag');
     if s = '' then
         cPathz[ptMapCurrent]:= s
     else
         cPathz[ptMapCurrent]:= cPathz[ptMaps] + '/' + s;
     InitStepsFlags:= InitStepsFlags or cifMap
-    end;
+    end
+else
+    WriteLnToConsole('[HANDLER] chSetMap BLOCKED by isDeveloperMode=false');
 cMapName:= s;
 ScriptLoad('Maps/' + s + '/map.lua', false)
 end;
@@ -564,13 +568,19 @@ if isDeveloperMode then
 end;
 
 procedure chSetSeed(var s: shortstring);
+var devStr: shortstring;
 begin
+if isDeveloperMode then devStr:= 'TRUE' else devStr:= 'FALSE';
+AddFileLog('[DEBUG chSetSeed] isDeveloperMode=' + devStr + ' s=' + copy(s, 1, 32));
 if isDeveloperMode then
     begin
     SetRandomSeed(s, true);
     cSeed:= s;
-    InitStepsFlags:= InitStepsFlags or cifRandomize
+    InitStepsFlags:= InitStepsFlags or cifRandomize;
+    AddFileLog('[DEBUG chSetSeed] Set cifRandomize flag')
     end
+else
+    AddFileLog('[DEBUG chSetSeed] BLOCKED by isDeveloperMode check')
 end;
 
 procedure chAmmoMenu(var s: shortstring);

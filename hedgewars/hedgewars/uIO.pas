@@ -127,6 +127,7 @@ var ipaddr: TIPAddress;
 begin
 {$IFDEF EMSCRIPTEN}
     WriteToConsole('Init browser IPC... ');
+    IPCSock:= PTCPSocket(1); // Non-null marker for browser
     WriteLnToConsole(msgOK);
 {$ELSE}
     WriteToConsole('Init SDL_Net... ');
@@ -160,13 +161,19 @@ var loTicks: Word;
     isProcessed: boolean;
     nick, msg: shortstring;
     i: LongInt;
+    unwrapped: shortstring;
 begin
+WriteLnToConsole('[IPC LEVEL1] cmd=' + s[1] + ' len=' + inttostr(Length(s)) + ' preview=' + copy(s, 1, 40));
 isProcessed := true;
 
 case s[1] of
      '!': begin AddFileLog('Ping? Pong!'); isPonged:= true; end;
      '?': SendIPC(_S'!');
-     'e': ParseCommand(copy(s, 2, Length(s) - 1), true);
+     'e': begin
+          unwrapped:= copy(s, 2, Length(s) - 1);
+          WriteLnToConsole('[IPC LEVEL2] Unwrapped e-command: ' + unwrapped);
+          ParseCommand(unwrapped, true)
+          end;
      'E': OutError(copy(s, 2, Length(s) - 1), true);
      'W': OutError(copy(s, 2, Length(s) - 1), false);
      'M': ParseCommand('landcheck ' + s, true);
@@ -233,20 +240,28 @@ end;
 procedure IPCCheckSock;
 var i: LongInt;
     s: shortstring;
+{$IFDEF EMSCRIPTEN}
+    totalRead: LongInt;
+{$ENDIF}
 begin
 {$IFDEF EMSCRIPTEN}
-    // Browser: read from JS callback
-    i:= hw_ipc_recv(@s[1], 255);
-    if i > 0 then
-    begin
-        s[0]:= char(i);
-        SocketString:= SocketString + s;
-        while (Length(SocketString) > 1) and (Length(SocketString) > byte(SocketString[1])) do
+    // Browser: drain queue like desktop drains socket
+    // Budget prevents UI freeze if queue grows large
+    totalRead:= 0;
+    repeat
+        i:= hw_ipc_recv(@s[1], 255 - Length(SocketString));
+        if i > 0 then
         begin
-            ParseIPCCommand(copy(SocketString, 2, byte(SocketString[1])));
-            Delete(SocketString, 1, Succ(byte(SocketString[1])))
+            s[0]:= char(i);
+            SocketString:= SocketString + s;
+            totalRead:= totalRead + i;
+            while (Length(SocketString) > 1) and (Length(SocketString) > byte(SocketString[1])) do
+            begin
+                ParseIPCCommand(copy(SocketString, 2, byte(SocketString[1])));
+                Delete(SocketString, 1, Succ(byte(SocketString[1])))
+            end
         end
-    end;
+    until (i <= 0) or (totalRead >= 8192);
 {$ELSE}
     if IPCSock = nil then
         exit;

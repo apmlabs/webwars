@@ -1,13 +1,13 @@
 # Agent Status Tracking - WebWars (Hedgewars WASM Port)
 
 ## Current Status
-Last updated: 2026-02-17T16:00:00Z
+Last updated: 2026-02-17T21:26:00Z
 
 ### Project Status
-- **Phase**: IPC Protocol - First Read Success! 🎉
-- **Last Action**: Engine successfully read 149 bytes from JS callback
-- **Current Blocker**: Engine waiting for IPC reply, stuck in blocking call
-- **Target**: Complete protocol handshake, start game loop
+- **Phase**: Game Loop Running - Debugging Asset Loading & Rendering
+- **Last Action**: Game successfully runs for 360 ticks, detects win, plays sounds
+- **Current Blocker**: Build broken during debug output reduction attempt
+- **Target**: Verify rendering works, fix cleanup crash, reduce console spam
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -15,37 +15,46 @@ Last updated: 2026-02-17T16:00:00Z
 | A | Baseline Build | ✅ COMPLETE | Native hwengine builds successfully |
 | A | pas2c Validation | ✅ COMPLETE | All Pascal→C conversion working |
 | A | Emscripten Compile | ✅ COMPLETE | hwengine.wasm built and running |
-| A | Asset Packaging | ✅ COMPLETE | 51MB essential assets packaged |
+| A | Asset Packaging | ✅ COMPLETE | 187MB assets packaged |
 | A | Browser Loading | ✅ COMPLETE | Engine loads and executes |
 | A | Boot Flow | ✅ COMPLETE | Auto-start with Module.arguments |
-| A | IPC Transport | ✅ COMPLETE | JS callback reads 149 bytes! |
-| A | IPC Protocol | 🟡 IN PROGRESS | Engine waiting for reply |
-| A | Browser MVP | NOT STARTED | Need complete handshake |
+| A | IPC Transport | ✅ COMPLETE | Bidirectional IPC working |
+| A | IPC Protocol | ✅ COMPLETE | All commands parsed and executed |
+| A | Map Loading | ✅ COMPLETE | Cake map with mask.png loads |
+| A | Spawn System | ✅ COMPLETE | Hedgehogs spawn successfully |
+| A | Game Loop | ✅ COMPLETE | Runs 360+ ticks, sends state updates |
+| A | Win Detection | ✅ COMPLETE | Detects winners, plays sounds |
+| A | Browser MVP | 🟡 IN PROGRESS | Need rendering verification |
 | B | WebSocket Gateway | NOT STARTED | Gateway code ready |
 | B | Server Integration | NOT STARTED | Need hedgewars-server binary |
 | B | Multiplayer Test | NOT STARTED | Depends on server |
 | C | Deployment | ✅ COMPLETE | Systemd service running |
 
-### Major Milestone: IPC Transport Working! 🎉
+### Major Milestone: Game Loop Running! 🎉
 
 **The Breakthrough:**
-- ✅ Removed SDL_net, created browser IPC shim
-- ✅ Added `-d EMSCRIPTEN` to pas2c flags
-- ✅ Pascal conditionals now work correctly
-- ✅ `InitIPC()` uses browser path: "Init browser IPC... ok"
-- ✅ `IPCCheckSock()` calls `hw_ipc_recv()` → JS callback
-- ✅ **Engine read all 149 bytes from queue!**
+- ✅ Assets load (fonts, sounds, maps)
+- ✅ Spawn algorithm works (no FindPlace errors)
+- ✅ Game loop executes (360+ ticks)
+- ✅ Win detection functional
+- ✅ Sound playback works
+- ✅ IPC bidirectional communication
+- ❌ Rendering status unknown (canvas not verified)
+- ❌ Cleanup crash (RuntimeError: unreachable)
+- ❌ Console spam (5000+ lines from debug mode)
 
-**Current Blocker:**
-Engine is stuck in `SendIPCAndWaitReply()` - waiting for response from frontend. Need to:
-1. Identify what response it expects (likely '!' pong)
-2. Send response from JS
-3. Or complete the protocol sequence
+**Current Issues:**
+1. **Data file path warning**: `dependency: datafile_../../bin/hwengine.data` appears but file loads anyway
+2. **Main loop timing error**: SDL vsync calls before Emscripten main loop exists
+3. **Cleanup crash**: `RuntimeError: unreachable` during shutdown
+4. **Output volume**: Debug mode (-g4 -sASSERTIONS=2) causes massive stack traces
+5. **Build broken**: CMake reconfiguration attempt broke Rust linking
 
 **Output Files:**
 - `hwengine.html` - 22KB (loader page)
 - `hwengine.js` - 470KB (JavaScript glue with auto-start)
-- `hwengine.wasm` - 4.1MB (game engine)
+- `hwengine.wasm` - 4.2MB (game engine)
+- `hwengine.data` - 187MB (assets)
 
 **Deployment:**
 - Systemd service: `webwars-server.service`
@@ -195,3 +204,25 @@ sudo systemctl restart webwars-server
 5. **Cross-Compilation**: Rust wasm32-unknown-emscripten integration
 6. **CORS Resolution**: Custom server for cross-origin asset loading
 7. **Module Integration**: Proper Emscripten Module extension pattern
+
+### Critical IPC Implementation Files
+
+**Browser IPC Shim (C → JS bridge):**
+- `hedgewars/project_files/hwc/ipc_browser.c` - EM_JS bindings
+  - `hw_ipc_recv()` - Engine reads from JS via `hw_ipc_read_js()`
+  - `SDLNet_TCP_Send()` - Engine writes to JS via `hw_ipc_write_js()`
+  - SDL_net stubs (SDLNet_Init, SDLNet_TCP_Open, etc.)
+
+**JavaScript Message Queue:**
+- `hedgewars/project_files/web/pre.js` - Module.HWEngine object
+  - `readIPC(bufPtr, maxLen)` - Called by C, returns bytes from queue
+  - `writeIPC(bufPtr, len)` - Called by C when engine sends data
+  - `sendMessage(msg)` - Adds length-prefixed message to queue
+  - `startHotseatGame()` - Queues initial game setup
+
+**Pascal IPC Protocol:**
+- `hedgewars/hedgewars/uIO.pas` - Engine IPC implementation
+  - `IPCCheckSock()` - Reads via `hw_ipc_recv()`, parses messages
+  - `ParseIPCCommand(s)` - Handles commands: '!' sets isPonged, '?' sends '!'
+  - `IPCWaitPongEvent()` - Loops calling IPCCheckSock() until isPonged
+  - `SendIPCAndWaitReply(s)` - Sends message + '?', waits for '!'

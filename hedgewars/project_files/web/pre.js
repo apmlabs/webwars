@@ -1,6 +1,52 @@
 // Hedgewars Engine Message Queue for Browser
 // Implements stdin/stdout for engine IPC protocol
 
+// Fix asset loading path - force .data and .wasm to load from server root
+var Module = Module || {};
+Module.locateFile = function(path, prefix) {
+    console.log('[locateFile] Called with path=' + path + ' prefix=' + prefix);
+    // Force both wasm + data to be fetched from server root (same dir as hwengine.html)
+    if (path.endsWith('.data')) {
+        console.log('[locateFile] Returning: hwengine.data');
+        return 'hwengine.data';
+    }
+    if (path.endsWith('.wasm')) {
+        console.log('[locateFile] Returning: hwengine.wasm');
+        return 'hwengine.wasm';
+    }
+    console.log('[locateFile] Returning: ' + prefix + path);
+    return prefix + path;
+};
+
+// Log when data file starts/finishes loading
+Module.preRun = Module.preRun || [];
+Module.preRun.push(function() {
+    console.log('[DATA] preRun: Filesystem should be mounted now');
+    try {
+        var stat = FS.stat('/Data');
+        console.log('[DATA] /Data exists, mode=' + stat.mode);
+    } catch(e) {
+        console.error('[DATA] /Data NOT FOUND:', e.message);
+    }
+});
+
+// WebGL debugging: track invalid texture parameter calls
+var WebGLDebug = {
+    invalidCalls: new Map(),
+    maxLog: 5,
+    
+    logInvalidTexParam: function(target, pname) {
+        var key = target + ':' + pname;
+        if (!this.invalidCalls.has(key)) {
+            this.invalidCalls.set(key, 1);
+            if (this.invalidCalls.size <= this.maxLog) {
+                console.warn('[WebGL Debug] Invalid texParameter: target=0x' + target.toString(16) + 
+                           ' pname=0x' + pname.toString(16) + ' (decimal: ' + pname + ')');
+            }
+        }
+    }
+};
+
 var HWEngine = {
     messageQueue: [],
     outputBuffer: [],
@@ -17,6 +63,27 @@ var HWEngine = {
             console.log('[IPC] Provided', count, 'bytes to engine');
         }
         return count;
+    },
+    
+    // Write IPC bytes (called from C when engine sends)
+    writeIPC: function(bufPtr, len) {
+        var bytes = new Uint8Array(Module.HEAPU8.buffer, bufPtr, len);
+        var hex = Array.from(bytes).map(function(b) { return b.toString(16).padStart(2, '0'); }).join(' ');
+        var ascii = Array.from(bytes).map(function(b) { return (b >= 32 && b < 127) ? String.fromCharCode(b) : '.'; }).join('');
+        console.log('[IPC->JS] len=' + len + ' hex: ' + hex + ' ascii: "' + ascii + '"');
+        
+        // Auto-respond to pings: match exact 4-byte ping format [0x03, 0x3f, 0x00, 0x00]
+        if (len === 4 && bytes[0] === 0x03 && bytes[1] === 0x3f && bytes[2] === 0x00 && bytes[3] === 0x00) {
+            console.log('[IPC] Received ping [03 3f 00 00], sending pong [03 21 00 00]');
+            // Insert pong at FRONT of queue as a block
+            Array.prototype.unshift.apply(this.messageQueue, [0x03, 0x21, 0x00, 0x00]);
+        }
+        
+        // Auto-respond to config request 'C': match [0x03, 0x43, 0x00, 0x00]
+        if (len === 4 && bytes[0] === 0x03 && bytes[1] === 0x43 && bytes[2] === 0x00 && bytes[3] === 0x00) {
+            console.log('[IPC] Received config request, sending game setup');
+            this.startHotseatGame();
+        }
     },
     
     // Add a message to the queue (length-prefixed protocol)
@@ -72,15 +139,28 @@ var HWEngine = {
         // Basic game setup messages
         this.sendMessage('eseed {' + Math.random().toString(36).substring(7) + '}');
         this.sendMessage('e$template_filter 0');
-        this.sendMessage('e$mapgen 0');
+        this.sendMessage('e$mapgen 2');  // 2 = Maze generator (guaranteed flat corridors)
         this.sendMessage('e$maze_size 0');
         
-        // Add two teams
+        // Ammo configuration (60 digits for 60 ammo types)
+        this.sendMessage('eammloadt 999999999999999999999999999999999999999999999999999999999999');
+        this.sendMessage('eammprob 000000000000000000000000000000000000000000000000000000000000');
+        this.sendMessage('eammdelay 000000000000000000000000000000000000000000000000000000000000');
+        this.sendMessage('eammreinf 000000000000000000000000000000000000000000000000000000000000');
+        this.sendMessage('eammstore');
+        
+        // Add two teams with 1 hedgehog each
         this.sendMessage('eaddteam <hash> 0 Red');
         this.sendMessage('eaddhh 0 100 Player1');
         
-        this.sendMessage('eaddteam <hash> 1 Blue');  
+        this.sendMessage('eaddteam <hash> 1 Blue');
         this.sendMessage('eaddhh 0 100 Player2');
+        
+        // Cake map has mask.png for spawn zones
+        this.sendMessage('emap Cake');
+        
+        // Set game type and start
+        this.sendMessage('TL');  // gmtLocal
         
         // Start game
         this.sendMessage('?');
@@ -114,9 +194,8 @@ Module.postRun = Module.postRun || [];
 Module.preRun.push(function() {
     console.log('[preRun] FS.init wiring');
     
-    // Queue IPC messages BEFORE main() starts
-    console.log('[preRun] Queueing IPC messages');
-    HWEngine.startHotseatGame();
+    // Don't queue messages here - respond to 'C' command instead
+    console.log('[preRun] Ready for IPC');
     
     var stdinCount = 0;
     var first = [];
@@ -143,10 +222,11 @@ Module.preRun.push(function() {
     
     FS.init(stdin, stdout, stderr);
     
-    HWEngine.queueSize = function() { return HWEngine.messageQueue.length; };
-    setInterval(function() { 
-        console.log('[stdin] count=', stdinCount, 'queue=', HWEngine.queueSize()); 
-    }, 1000);
+    // Remove stdin spam logging
+    // HWEngine.queueSize = function() { return HWEngine.messageQueue.length; };
+    // setInterval(function() { 
+    //     console.log('[stdin] count=', stdinCount, 'queue=', HWEngine.queueSize()); 
+    // }, 1000);
 });
 
 Module.print = Module.print || function(text) {
@@ -196,6 +276,23 @@ if (!Module.canvas) {
                 alert('WebGL context lost. You will need to reload the page.');
                 e.preventDefault();
             }, false);
+            
+            // Wrap getContext to instrument texParameteri calls
+            var originalGetContext = canvas.getContext.bind(canvas);
+            canvas.getContext = function(type, attrs) {
+                var ctx = originalGetContext(type, attrs);
+                if (ctx && (type === 'webgl2' || type === 'webgl')) {
+                    var originalTexParameteri = ctx.texParameteri.bind(ctx);
+                    ctx.texParameteri = function(target, pname, param) {
+                        try {
+                            originalTexParameteri(target, pname, param);
+                        } catch(e) {
+                            WebGLDebug.logInvalidTexParam(target, pname);
+                        }
+                    };
+                }
+                return ctx;
+            };
         }
         return canvas;
     })();

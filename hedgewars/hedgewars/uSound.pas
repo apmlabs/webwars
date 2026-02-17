@@ -851,6 +851,11 @@ end;
 procedure PlayMusic;
 var s: shortstring;
 begin
+    {$IFDEF EMSCRIPTEN}
+    // Disable music for EMSCRIPTEN builds to avoid audio codec crashes
+    exit;
+    {$ENDIF}
+    
     if (MusicFN = '') or (not isMusicEnabled) then
         exit;
     if SuddenDeath and (SDMusicFN <> '') then
