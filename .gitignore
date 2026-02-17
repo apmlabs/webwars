@@ -36,3 +36,4 @@ npm-debug.log*
 tmp/
 temp/
 *.tmp
+hedgewars/rust/lib-hwengine-future/target/

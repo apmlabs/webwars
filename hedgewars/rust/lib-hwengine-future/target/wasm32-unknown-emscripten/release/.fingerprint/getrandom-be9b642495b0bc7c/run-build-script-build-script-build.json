@@ -1,1 +1,0 @@
-{"rustc":1100337564441796057,"features":"","declared_features":"","target":0,"profile":0,"path":0,"deps":[[18408407127522236545,"build_script_build",false,15659524824900663842]],"local":[{"RerunIfChanged":{"output":"wasm32-unknown-emscripten/release/build/getrandom-be9b642495b0bc7c/output","paths":["build.rs"]}}],"rustflags":["-C","link-arg=-s"],"config":0,"compile_kind":0}
