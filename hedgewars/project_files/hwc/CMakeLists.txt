@@ -6,7 +6,6 @@ if(EMSCRIPTEN)
     set(SDL2_INCLUDE_DIRS "${CMAKE_SYSROOT}/include/SDL2")
     set(SDL2_LIBRARIES "")
     set(SDL2_MIXER_LIBRARIES "")
-    set(SDL2_NET_LIBRARIES "")  # Not used in browser build
     set(SDL2_IMAGE_LIBRARIES "")
     set(SDL2_TTF_LIBRARIES "")
     set(SDL2_FOUND TRUE)
@@ -107,7 +106,10 @@ add_custom_target(engine_c DEPENDS ${engine_sources})
 
 
 if(BUILD_ENGINE_JS)
-    add_flag_append(CMAKE_C_FLAGS "--memory-init-file 0 -O0 --js-opts 0 -g4 --use-preload-plugins -s ASSERTIONS=2 -s USE_SDL=2 -s USE_SDL_IMAGE=1 -s USE_LIBPNG=1 -s USE_SDL_TTF=2 -s USE_VORBIS=1 -s USE_OGG=1 -s INITIAL_MEMORY=100007936 -s GL_UNSAFE_OPTS=0 -s INVOKE_RUN=0 -s EXPORTED_RUNTIME_METHODS=['callMain'] -s EXPORTED_FUNCTIONS=\"['_hwengine_RunEngine', '_hwengine_MainLoop']\" --post-js ${CMAKE_SOURCE_DIR}/project_files/web/post.js --pre-js ${CMAKE_SOURCE_DIR}/project_files/web/pre.js")
+    set(HW_PRE_JS  "${CMAKE_SOURCE_DIR}/project_files/web/pre.js")
+    set(HW_POST_JS "${CMAKE_SOURCE_DIR}/project_files/web/post.js")
+    
+    add_flag_append(CMAKE_C_FLAGS "--memory-init-file 0 -O0 --js-opts 0 -g4 --use-preload-plugins -s ASSERTIONS=2 -s USE_SDL=2 -s USE_SDL_IMAGE=1 -s USE_LIBPNG=1 -s USE_SDL_TTF=2 -s USE_VORBIS=1 -s USE_OGG=1 -s INITIAL_MEMORY=100007936 -s GL_UNSAFE_OPTS=0 -s INVOKE_RUN=0 -s EXPORTED_RUNTIME_METHODS=['callMain'] -s EXPORTED_FUNCTIONS=\"['_hwengine_RunEngine', '_hwengine_MainLoop']\" --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
 endif()
 
 #compile the c files
@@ -135,6 +137,7 @@ endif()
 
 if(BUILD_ENGINE_JS)
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
+    set_property(TARGET hwengine APPEND PROPERTY LINK_DEPENDS "${HW_PRE_JS};${HW_POST_JS}")
 endif()
 
 target_link_libraries(hwengine  fpcrtl

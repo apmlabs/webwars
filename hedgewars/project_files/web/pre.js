@@ -101,9 +101,7 @@ Module.preRun.push(function() {
     
     function stdin() {
         var b = HWEngine.readByte();
-        if (b === -1 || b === undefined || b === null) {
-            return null; // No data available
-        }
+        if (b === -1 || b === undefined) return null;
         
         stdinCount++;
         if (first.length < 64) first.push(b & 0xFF);
@@ -121,16 +119,12 @@ Module.preRun.push(function() {
         HWEngine.onStderrByte(ch);
     }
     
-    // Wire stdio to engine
     FS.init(stdin, stdout, stderr);
     
-    // Monitor stdin activity
     HWEngine.queueSize = function() { return HWEngine.messageQueue.length; };
     setInterval(function() { 
         console.log('[stdin] count=', stdinCount, 'queue=', HWEngine.queueSize()); 
     }, 1000);
-    
-    console.log('[HW] stdin/stdout/stderr wired successfully');
 });
 
 Module.print = Module.print || function(text) {
