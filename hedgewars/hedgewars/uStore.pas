@@ -512,7 +512,9 @@ for ii:= Low(TSprite) to High(TSprite) do
                     if ((ii = sprWater) or (ii = sprSDWater)) and ((cReducedQuality and (rq2DWater or rqClampLess)) = 0) then
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
                     end;
+{$IFNDEF EMSCRIPTEN}
                 glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_PRIORITY, priority);
+{$ENDIF}
 // This should maybe be flagged. It wastes quite a bit of memory.
                 if not reload then
                     begin
