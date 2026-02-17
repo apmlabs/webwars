@@ -12,7 +12,7 @@ mkdir -p build/pas2c
 cd build/pas2c
 
 echo "Configuring with pas2c..."
-cmake ../../hedgewars -DNOSERVER=ON -DBUILD_ENGINE_C=ON -DCMAKE_BUILD_TYPE=Release
+cmake ../../hedgewars -DNOSERVER=ON -DNOVIDEOREC=ON -DBUILD_ENGINE_C=ON -DCMAKE_BUILD_TYPE=Release
 
 echo "Building..."
 make -j$(nproc)
