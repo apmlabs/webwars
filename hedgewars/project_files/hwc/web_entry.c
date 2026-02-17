@@ -1,0 +1,179 @@
+#include <emscripten/emscripten.h>
+
+// External declaration of the engine entry point
+extern int hwengine_RunEngine(int argc, char **argv);
+
+// Wrapper that provides --internal flag without needing JS heap manipulation
+EMSCRIPTEN_KEEPALIVE
+int hwengine_RunEngine_internal(void) {
+    char *argv[] = {
+        (char*)"--internal",
+        (char*)"--prefix",
+        (char*)"/Data",
+        (char*)"--user-prefix",
+        (char*)"/Data",
+        NULL
+    };
+    return hwengine_RunEngine(5, argv);
+}
+
+// ============================================================
+// emscripten_set_main_loop replacement for hwengine_MainLoop
+// ============================================================
+//
+// The generated hwengine_MainLoop() is a blocking while-loop.
+// With ASYNCIFY, every SDL_Delay and SDL_GL_SwapWindow triggers
+// a full WASM stack save/restore (~2+ per frame). This is the
+// primary performance bottleneck.
+//
+// We use --wrap=hwengine_MainLoop to intercept the call and
+// replace it with emscripten_set_main_loop, which uses
+// requestAnimationFrame — zero ASYNCIFY overhead on the hot path.
+// ============================================================
+
+#include "fpcrtl.h"
+#include "hwengine.h"
+
+// Forward declare the original (in case we ever need it)
+extern void __real_hwengine_MainLoop(void);
+
+// From hwengine.c (not in header but is a global symbol)
+extern boolean hwengine_DoTimer(LongInt Lag);
+
+// String constants (static in hwengine.c, so we define our own)
+static const string255 ml_str_quit = STRINIT("quit");
+static const string255 ml_str_fullscr = STRINIT("fullscr ");
+
+// State persisted across frames
+static LongWord ml_PrevTime;
+static boolean ml_isTerminated;
+static TGameState ml_previousGameState;
+
+static void mainloop_frame(void) {
+    TSDL_Event event;
+    boolean wheelEvent = false;
+
+    if (ml_isTerminated || !allOK) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+
+    SDL_PumpEvents();
+    while (SDL_PeepEvents(&event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT) > 0) {
+        switch (event.type_) {
+        case SDL_KEYDOWN:
+            if (isInChatMode)
+                uchat_KeyPressChat(event.key.keysym);
+            else if (GameState >= gsGame)
+                uinputhandler_ProcessKey_1(event.key);
+            break;
+        case SDL_KEYUP:
+            if (!isInChatMode && GameState >= gsGame)
+                uinputhandler_ProcessKey_1(event.key);
+            break;
+        case SDL_TEXTINPUT:
+            if (isInChatMode)
+                uchat_TextInput(&event.text);
+            break;
+        case SDL_WINDOWEVENT:
+            switch (event.window.event) {
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+                cHasFocus = true;
+                uworld_onFocusStateChanged();
+                break;
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+                cHasFocus = false;
+                uworld_onFocusStateChanged();
+                break;
+            case SDL_WINDOWEVENT_RESTORED:
+                if (GameState == gsSuspend)
+                    GameState = ml_previousGameState;
+                cWindowedMaximized = false;
+                break;
+            case SDL_WINDOWEVENT_MAXIMIZED:
+                cWindowedMaximized = true;
+                break;
+            case SDL_WINDOWEVENT_RESIZED:
+                cNewScreenWidth = uutils_Max(2 * (event.window.data1 / 2), cMinScreenWidth);
+                cNewScreenHeight = uutils_Max(2 * (event.window.data2 / 2), cMinScreenHeight);
+                cScreenResizeDelay = RealTicks + 500;
+                break;
+            }
+            break;
+        case SDL_MOUSEMOTION:
+            uinputhandler_ProcessMouseMotion(event.motion.xrel, event.motion.yrel);
+            break;
+        case SDL_MOUSEBUTTONDOWN:
+            if (GameState == gsConfirm)
+                ucommands_ParseCommand_2(ml_str_quit, true);
+            else if (GameState >= gsGame)
+                uinputhandler_ProcessMouseButton(event.button, true);
+            break;
+        case SDL_MOUSEBUTTONUP:
+            if (GameState >= gsGame)
+                uinputhandler_ProcessMouseButton(event.button, false);
+            break;
+        case SDL_MOUSEWHEEL:
+            wheelEvent = true;
+            uinputhandler_ProcessMouseWheel(event.wheel.y);
+            break;
+        case SDL_JOYAXISMOTION:
+            uinputhandler_ControllerAxisEvent(event.jaxis.which, event.jaxis.axis, event.jaxis.value);
+            break;
+        case SDL_JOYHATMOTION:
+            uinputhandler_ControllerHatEvent(event.jhat.which, event.jhat.hat, event.jhat.value);
+            break;
+        case SDL_JOYBUTTONDOWN:
+            uinputhandler_ControllerButtonEvent(event.jbutton.which, event.jbutton.button, true);
+            break;
+        case SDL_JOYBUTTONUP:
+            uinputhandler_ControllerButtonEvent(event.jbutton.which, event.jbutton.button, false);
+            break;
+        case SDL_QUITEV:
+            ml_isTerminated = true;
+            break;
+        }
+    }
+
+    if (!wheelEvent)
+        uinputhandler_ResetMouseWheel();
+
+    if (CursorMovementX != 0 || CursorMovementY != 0)
+        ucursor_handlePositionUpdate(CursorMovementX, CursorMovementY);
+
+    if (cScreenResizeDelay != 0 && cScreenResizeDelay < RealTicks &&
+        (cNewScreenWidth != cScreenWidth || cNewScreenHeight != cScreenHeight)) {
+        cScreenResizeDelay = 0;
+        cWindowedWidth = cNewScreenWidth;
+        cWindowedHeight = cNewScreenHeight;
+        cScreenWidth = cWindowedWidth;
+        cScreenHeight = cWindowedHeight;
+        ucommands_ParseCommand_2(_strconcat(ml_str_fullscr, uutils_IntToStr((LongInt)cFullScreen)), true);
+        uscript_ScriptOnScreenResize();
+        uworld_InitCameraBorders();
+        uworld_InitTouchInterface();
+        ustore_InitZoom(ZoomValue);
+    }
+
+    LongWord CurrTime = SDL_GetTicks();
+    if (ml_PrevTime + (LongWord)cTimerInterval <= CurrTime) {
+        ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)((int64_t)CurrTime - (int64_t)ml_PrevTime));
+        ml_PrevTime = CurrTime;
+    }
+    // No SDL_Delay — requestAnimationFrame handles frame pacing
+
+    uio_IPCCheckSock();
+}
+
+void __wrap_hwengine_MainLoop(void) {
+    ml_previousGameState = gsStart;
+    ml_isTerminated = false;
+    ml_PrevTime = SDL_GetTicks();
+
+    // Disable SDL's automatic emscripten_sleep calls in SDL_Delay,
+    // SDL_GL_SwapWindow, etc. We handle frame pacing via rAF instead.
+    SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0");
+
+    // fps=0 means use requestAnimationFrame, simulate_infinite_loop=1
+    emscripten_set_main_loop(mainloop_frame, 0, 1);
+}
