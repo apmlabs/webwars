@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T09:57:00Z  
+**Last Updated**: 2026-02-17T12:29:00Z  
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`  
-**Status**: ✅ Build 100% complete - hwengine.wasm successfully generated
+**Status**: ✅ Boot flow fixed - Testing stdin reading
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -12,14 +12,25 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 
 ### Build Complete! 🎉
 - ✅ All source code compiled to WebAssembly
-- ✅ Output: hwengine.html (22KB), hwengine.js (464KB), hwengine.wasm (4.1MB)
-- ✅ All 8 core patches applied and working
-- ✅ HWLIBRARY flag enabled for --internal mode
+- ✅ Output: hwengine.html (22KB), hwengine.js (470KB), hwengine.wasm (4.1MB)
+- ✅ Boot flow fixed: Auto-run with Module.arguments
+- ✅ IPC messages queued in preRun (149 bytes)
+- ✅ Systemd service deployed
+- 🟡 Testing: stdin reading and IPC protocol
+
+### Deployment
+- **Service**: `webwars-server.service` (systemd)
+- **URL**: http://54.80.204.92:8081/hwengine.html
+- **Commands**:
+  - Status: `sudo systemctl status webwars-server`
+  - Logs: `sudo journalctl -u webwars-server -f`
+  - Restart: `sudo systemctl restart webwars-server`
 
 ### Next Steps
-1. Test IPC protocol with hotseat game setup (30 min)
-2. Verify rendering and gameplay (1 hour)
-3. Deploy MVP on this server (15 min)
+1. Verify stdin() is called and reads queued messages
+2. Check IPC protocol framing (length-prefixed)
+3. Debug any protocol issues
+4. Verify game starts with hotseat setup
 
 ## Key Technical Points
 
@@ -30,6 +41,7 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - **OpenGL**: GLES2/WebGL2 with gl_emscripten_compat.h
 - **Multiplayer**: WebSocket gateway bridges browser to TCP server (port 46631)
 - **Assets**: ~218MB total, ~30-40MB essential
+- **Boot**: Auto-run with Module.arguments, IPC queued in preRun
 
 ## Build Commands
 
@@ -40,7 +52,7 @@ source ~/.cargo/env
 ./scripts/build-wasm.sh
 ```
 
-## Files Modified (8 patches)
+## Files Modified (14 patches)
 
 **CMake:**
 - `hedgewars/CMakeLists.txt` - PhysFS/Lua bundled builds, skip Platform/
@@ -48,7 +60,7 @@ source ~/.cargo/env
 - `hedgewars/misc/libphyslayer/CMakeLists.txt` - Remove .bc suffix
 - `hedgewars/misc/libphysfs/CMakeLists.txt` - Modern CMake
 - `hedgewars/misc/liblua/CMakeLists.txt` - Remove lua_emscripten_internal
-- `hedgewars/project_files/hwc/CMakeLists.txt` - Memory alignment, SDL_NET, HWLIBRARY
+- `hedgewars/project_files/hwc/CMakeLists.txt` - Memory alignment, SDL_NET, HWLIBRARY, link dependencies
 
 **Source:**
 - `hedgewars/rust/lib-hwengine-future/Cargo.toml` - staticlib
@@ -60,8 +72,28 @@ source ~/.cargo/env
 - `hedgewars/project_files/hwc/rtl/gl_emscripten_compat.h` - NEW
 - `hedgewars/project_files/hwc/rtl/misc.h` - glShaderSource
 
+**JavaScript:**
+- `hedgewars/project_files/web/pre.js` - NEW (Message queue, preRun IPC)
+- `hedgewars/project_files/web/post.js` - NEW (Runtime init)
+
 **Scripts:**
 - `scripts/build-wasm.sh` - Complete config
+
+## Boot Flow Architecture
+
+**Correct Flow (Current):**
+1. `Module.arguments` set in pre.js: `['--internal', '--prefix', '/Data']`
+2. `Module.preRun` queues IPC messages via `HWEngine.startHotseatGame()`
+3. `FS.init(stdin, stdout, stderr)` wires stdio in preRun
+4. Emscripten auto-runs main() with Module.arguments
+5. Engine processes `--internal` flag (HWLIBRARY mode)
+6. Engine reads from stdin (should drain 149-byte queue)
+
+**Key Lessons:**
+- Don't call `Module.run()` inside `onRuntimeInitialized` (re-entry)
+- Don't use `-sINVOKE_RUN=0` with manual `run()` call (assertion)
+- Queue IPC messages in `preRun` before main() starts
+- Use auto-run for simplest testing path
 
 ## WebSocket Gateway (Ready)
 

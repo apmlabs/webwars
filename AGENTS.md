@@ -1,12 +1,12 @@
 # Agent Status Tracking - WebWars (Hedgewars WASM Port)
 
 ## Current Status
-Last updated: 2026-02-17T09:57:00Z
+Last updated: 2026-02-17T12:29:00Z
 
 ### Project Status
-- **Phase**: Frontend Integration - IPC Protocol Ready
-- **Last Action**: Fixed HWLIBRARY flag to enable --internal mode
-- **Current Task**: Test IPC protocol message processing
+- **Phase**: Frontend Integration - Boot Flow Fixed
+- **Last Action**: Removed INVOKE_RUN=0 to allow auto-start, created systemd service
+- **Current Task**: Test stdin reading and IPC protocol
 - **Target**: Playable game in browser
 
 ### Implementation Tracks
@@ -17,28 +17,51 @@ Last updated: 2026-02-17T09:57:00Z
 | A | Emscripten Compile | ✅ COMPLETE | hwengine.wasm built and running |
 | A | Asset Packaging | ✅ COMPLETE | 51MB essential assets packaged |
 | A | Browser Loading | ✅ COMPLETE | Engine loads and executes |
-| A | IPC Protocol | 🟡 IN PROGRESS | Need demo file or protocol implementation |
+| A | Boot Flow | ✅ COMPLETE | Auto-start with Module.arguments |
+| A | IPC Protocol | 🟡 IN PROGRESS | Testing stdin reading |
 | A | Browser MVP | NOT STARTED | Depends on IPC |
 | B | WebSocket Gateway | NOT STARTED | Gateway code ready |
 | B | Server Integration | NOT STARTED | Need hedgewars-server binary |
 | B | Multiplayer Test | NOT STARTED | Depends on server |
-| C | Deployment | NOT STARTED | Deploy on this server |
+| C | Deployment | 🟡 IN PROGRESS | Systemd service created |
 
-### Major Milestone Achieved! 🎉
+### Major Milestone: Boot Flow Fixed! 🎉
 
-**Engine Successfully Running in Browser:**
-- ✅ hwengine.wasm loads (4.8MB)
-- ✅ Assets load (51MB)
-- ✅ Engine executes and responds to function calls
-- ✅ Error messages confirm engine is running: "You must specify a demo file"
+**Boot Flow Journey:**
+1. ❌ Initial: Called `_hwengine_RunEngine()` directly - bypassed argument parsing
+2. ❌ Tried: `Module.callMain()` - function doesn't exist in Emscripten output
+3. ❌ Tried: `Module.run()` in onRuntimeInitialized - caused re-entry assertion
+4. ✅ **Solution**: Remove `-sINVOKE_RUN=0`, let Emscripten auto-run with `Module.arguments`
+
+**Current Architecture:**
+- `Module.arguments` set in pre.js with `['--internal', '--prefix', '/Data']`
+- IPC messages queued in `Module.preRun` (before main starts)
+- stdin/stdout wired via `FS.init()` in preRun
+- Emscripten auto-runs main() with arguments
+- Engine should read from stdin (149 bytes queued)
 
 **Output Files:**
-- `hwengine-mvp.html` - 22KB (loader page)
-- `hwengine-mvp.js` - 653KB (JavaScript glue with message queue)
-- `hwengine-mvp.wasm` - 4.8MB (game engine)
-- `hwengine-mvp.data` - 51MB (game assets)
+- `hwengine.html` - 22KB (loader page)
+- `hwengine.js` - 470KB (JavaScript glue with auto-start)
+- `hwengine.wasm` - 4.1MB (game engine)
 
-**Test URL:** http://54.80.204.92:8081/mvp.html
+**Deployment:**
+- Systemd service: `webwars-server.service`
+- Auto-starts on boot, auto-restarts on crash
+- Logs to systemd journal
+- URL: http://54.80.204.92:8081/hwengine.html
+
+**Test Commands:**
+```bash
+# Check service status
+sudo systemctl status webwars-server
+
+# View logs
+sudo journalctl -u webwars-server -f
+
+# Restart service
+sudo systemctl restart webwars-server
+```
 
 ### Build Progress (100% Compilation, 85% Integration)
 
