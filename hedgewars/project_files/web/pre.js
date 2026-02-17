@@ -66,12 +66,16 @@ var HWEngine = {
         }
     },
 
-    // Ammo string: 60 digits, one per ammo type (amNothing excluded, types 1-60)
+    // Ammo string: exactly 60 digits (one per TAmmoType 1..60, amNothing excluded)
     // 9=infinite, 0=disabled
-    defaultAmmo: '9999999999999999999999999999999999999999999999999999999999990',
-    zeroAmmo:    '0000000000000000000000000000000000000000000000000000000000000',
+    defaultAmmo: '999999999999999999999999999999999999999999999999999999999999',
+    zeroAmmo:    '000000000000000000000000000000000000000000000000000000000000',
 
     sendAmmoAndTeam: function(hash, color, name, hogs) {
+        // Sanity check: engine expects exactly 60 chars per ammo string
+        if (this.defaultAmmo.length !== 60 || this.zeroAmmo.length !== 60) {
+            console.error('[HW] FATAL: ammo string length wrong! default=' + this.defaultAmmo.length + ' zero=' + this.zeroAmmo.length);
+        }
         // Ammo store MUST be sent before each team (per Hedgewars protocol)
         this.sendMessage('eammloadt ' + this.defaultAmmo);
         this.sendMessage('eammprob ' + this.zeroAmmo);
