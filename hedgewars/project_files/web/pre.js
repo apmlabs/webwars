@@ -79,8 +79,8 @@ if (typeof Module === 'undefined') {
     var Module = {};
 }
 
-// Prevent auto-run of main() - we'll call it explicitly from the button
-Module.noInitialRun = true;
+// Prevent auto-run of main() - we'll queue messages first
+Module.noInitialRun = false;  // Let it run automatically
 
 // Set command-line arguments for the engine
 Module.arguments = [
@@ -95,6 +95,10 @@ Module.postRun = Module.postRun || [];
 // Wire stdin/stdout/stderr in preRun
 Module.preRun.push(function() {
     console.log('[preRun] FS.init wiring');
+    
+    // Queue IPC messages BEFORE main() starts
+    console.log('[preRun] Queueing IPC messages');
+    HWEngine.startHotseatGame();
     
     var stdinCount = 0;
     var first = [];
