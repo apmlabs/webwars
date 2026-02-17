@@ -1,0 +1,34 @@
+[package]
+edition = "2021"
+name = "hedgewars-server"
+version = "0.9.0"
+authors = [ "Andrey Korotaev <a.korotaev@hedgewars.org>" ]
+
+[features]
+tls-connections = ["tokio-native-tls"]
+official-server = ["mysql_async", "sha1", "tls-connections"]
+default = []
+
+[dependencies]
+base64 = "0.13"
+bitflags = "1.3"
+bytes = "1.1"
+chrono = "0.4"
+env_logger = "0.8"
+getopts = "0.2"
+log = "0.4"
+mysql_async = { version = "0.29.0", optional = true }
+nom = "7.1"
+rand = "0.8"
+serde = "1.0"
+serde_yaml = "0.8"
+serde_derive = "1.0"
+sha1 = { version = "0.10.0", optional = true }
+slab = "0.4"
+tokio = { version = "1.36", features = ["full"]}
+tokio-native-tls = { version = "0.3", optional = true }
+
+hedgewars-network-protocol = { path = "../hedgewars-network-protocol" }
+
+[dev-dependencies]
+proptest = "1.0"

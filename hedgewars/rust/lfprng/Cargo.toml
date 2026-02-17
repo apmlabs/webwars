@@ -1,0 +1,8 @@
+[package]
+name = "lfprng"
+version = "0.1.0"
+authors = ["Andrey Korotaev <a.korotaev@hedgewars.org>"]
+edition = "2018"
+
+[dependencies]
+rand = "0.9"

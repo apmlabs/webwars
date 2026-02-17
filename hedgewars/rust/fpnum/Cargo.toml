@@ -1,0 +1,8 @@
+[package]
+name = "fpnum"
+version = "0.1.0"
+authors = ["Andrey Korotaev <a.korotaev@hedgewars.org>"]
+edition = "2021"
+
+[dependencies]
+saturate = "0.1.0"

@@ -1,0 +1,402 @@
+<!DOCTYPE HTML>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<!-- There is, at present, no official xsd for (X)HTML5. A pity. Usefulness would depend on the parser and extensions made by the site.  -->
+    <title>Hedgewars Hats</title>
+
+    <style type="text/css">
+* {padding: 0; margin: 0; }
+body
+{
+    background: url('//hg.hedgewars.org/hedgewars/raw-file/tip/share/hedgewars/Data/Themes/Nature/Sky.png') fixed no-repeat bottom left;
+    background-color: #0B203D;
+    color: #FFD902;
+    -moz-background-size: 200%;
+    background-size: 100% 100%;
+    font-family: sans-serif;
+}
+form, p
+{
+    background-color: #0B203D;
+    padding: 1em;
+    margin: 1em;
+    border-style: solid;
+    border-radius: 5px;
+    border-width: 2px;
+    border-color: #FFD902;
+}
+h1 {
+    text-shadow: 0 0 2px white;
+    color: black;
+    margin:10px;
+}
+a {
+    color: #BFBED0;
+    text-decoration: none;
+}
+.hat, .hatLocal
+{
+    margin-top: 12px;
+    margin-left: 20px;
+    float: left;
+    height: 32px;
+    width: 32px;
+    color: transparent;
+}
+.hat
+{
+    background-image: url("//hg.hedgewars.org/hedgewars/raw-file/tip/share/hedgewars/Data/Graphics/Hedgehog/Idle.png");
+}
+.hatLocal
+{
+    background-image: url("../share/hedgewars/Data/Graphics/Hedgehog/Idle.png");
+}
+.girder
+{
+    width: 100%;
+    height: 30px;
+    clear: left;
+    background-image: url('//hg.hedgewars.org/hedgewars/raw-file/tip/share/hedgewars/Data/Themes/Nature/Girder.png');
+    background-repeat: repeat-x;
+}
+.hide { visibility: hidden; }
+a div
+{
+    margin-top: -5px;
+    height: 32px;
+    width: 32px;
+}
+    </style>
+    <script type="application/ecmascript">
+//<![CDATA[
+let IS_LOCAL=false; // set to true to fetch graves locally. Useful for testing.
+let masks;
+if (IS_LOCAL) {
+/* JavaScript version of a sprite sheet - this could be pretty trivially done in pure HTML, but maintenance
+would be easier with a server-side portion. list of sprites could be gotten from server, but would require XSS whitelisting */
+// Last updated: 1.0.0
+masks = ['4gsuif','AkuAku','android','angel','anzac','Bandit','barrelhider','bb_bob','bb_bub','bb_cororon','bb_kululun','beefeater','beefeaterhat','bishop','bobby','bobby2v','bubble','bushhider','cap_blue','cap_green','cap_junior','cap_red','cap_thinking','cap_yellow','car','chef','chuckl','clown','clown-copper','clown-crossed','constructor','Coonskin3','Cowboy','cratehider','crown','cyborg1','cyborg2','cyclops','Dan','Dauber','DayAndNight','Disguise','dish_Ladle','dish_SauceBoatSilver','dish_Teacup','dish_Teapot','doctor','Dragon','dwarf','eastertop','Einstein','Elvis','Eva_00b','Eva_00y','Evil','flag_french','flag_germany','flag_italy','flag_usa','footballhelmet','fr_apple','fr_banana','fr_lemon','fr_orange','fr_pumpkin','fr_tomato','Gasmask','Glasses','hair_blue','hair_green','hair_grey','hair_orange','hair_pink','hair_purple','hair_red','hair_yellow','HogInTheHat','hogpharoah','IndianChief','InfernalHorns','Jason','jester','Joker','judo','kiss_criss','kiss_frehley','kiss_simmons','kiss_stanley','knight','lambda','lambdahat','Laminaria','lamp','laurel','leprechaun','mechanicaltoy','MegaHogX','metalband','Meteorhelmet','mexicansunbrero','mickey_ears','Moustache','Moustache_glasses','mp3','Mummy','mv_Spidey','mv_Venom','naruto','NinjaFull','NinjaStraight','NinjaTriangle','noface','ntd_Falcon','ntd_Kirby','ntd_Link','ntd_Samus','nurse','nursehat','OldMan','Pantsu','pinksunhat','pirate_bandana','pirate_eyepatch','pirate_hat','pirate_jack','pirate_jack_bandana','Plunger',
+'poke_ash','poke_ash_hat','poke_charmander','poke_chikorita','poke_diglett','poke_jigglypuff','poke_lugia','poke_mudkip','poke_pikachu','poke_slowpoke','poke_squirtle','poke_voltorb','policecap','policegirl','punkman','quotecap','Rain','Rambo','RamboClean','rasta','RobinHood','royalguard','RSR','Samurai','Santa','scif_2001O','scif_2001Y','scif_BrainSlug','scif_BrainSlug2','scif_cosmonaut','scif_cyberpunk','scif_Geordi','scif_SparkssHelmet','scif_swDarthvader','scif_swStormtrooper','sf_balrog','sf_blanka','sf_blankatoothless','sf_chunli','sf_guile','sf_guile_hat','sf_honda','sf_ken','sf_ryu','sf_vega','sf_vega_hat','ShaggyYeti','ShortHair_Black','ShortHair_Brown','ShortHair_Grey','ShortHair_Red','ShortHair_Yellow','simple_green','simple_red','simple_yellow','Skull','Sleepwalker','sm_daisy','sm_luigi','sm_mario','sm_peach','sm_toad','sm_wario','Sniper','snorkel','snowhog','SparkleSuperFun','spartan','spcartman','spkenny','spkyle','spstan','sth_Amy','sth_AmyClassic','sth_Eggman','sth_Knux','sth_Metal','sth_Shadow','sth_Sonic','sth_SonicClassic','sth_Super','sth_Tails','stormcloud',
+'StrawHat','StrawHatEyes','StrawHatFacial','Sunglasses','SunWukong','swordsmensquire','TeamHeadband','TeamSoldier','TeamWheatley','Terminator_Glasses','tf_demoman','tf_scout','thug','thugclean','tiara','tophats','touhou_chen','touhou_marisa','touhou_patchouli','touhou_remelia','touhou_suwako','touhou_yukari','ushanka','vampirichog','vc_gakupo','vc_gumi','vc_kaito','vc_len','vc_luka','vc_meiko','vc_miku','vc_rin','Viking','war_airwarden02','war_airwarden03','war_americanww2helmet','war_britmedic','war_britpthhelmet','war_britsapper','war_desertgrenadier1','war_desertgrenadier2','war_desertgrenadier4','war_desertgrenadier5','war_desertmedic','war_desertofficer','war_desertsapper1','war_desertsapper2','war_frenchww1gasmask','war_frenchww1helmet','war_germanww1helmet2','war_germanww1tankhelm','war_germanww2medic','war_germanww2pith','war_grenadier1','war_plainpith','war_sovietcomrade1','war_sovietcomrade2','war_trenchfrench01','war_trenchfrench02','war_trenchgrenadier1','war_trenchgrenadier2','war_trenchgrenadier3','war_UNPeacekeeper01','war_UNPeacekeeper02','WhySoSerious','WizardHat','Zombi','zoo_Bat','zoo_Beaver','zoo_Bunny','zoo_chicken','zoo_crocodile','zoo_Deer','zoo_elephant','zoo_fish','zoo_frog','zoo_Hedgehog','zoo_Moose','zoo_octopus','zoo_Pig','zoo_Porkey','zoo_Sheep','zoo_snail','zoo_turtle'
+,'NoHat','cap_team','hair_team','TeamTophat'
+];
+}
+else
+{
+masks = [];
+}
+
+let themes = {
+// Last updated: 1.0.0
+"Art":1,
+"Beach":1,
+"Bamboo":1,
+"Bath":1,
+//"Blox":0, //unused, has no Sky.png or Border.png
+"Brick":0,
+"Cake":0,
+"Castle":1,
+"Cave":1,
+"City":1,
+"Cheese":0,
+"Christmas":1,
+"Compost":1,
+"CrazyMission":0,
+"Deepspace":0,
+"Desert":1,
+"EarthRise":0,
+"Eyes":0,
+"Freeway":0,
+"Fruit":1,
+"Halloween":1,
+"Hell":0,
+"Hoggywood":1,
+"Island":0,
+"Jungle":1,
+"Golf":1,
+"Nature":1,
+"Olympics":1,
+"Planes":0,
+"Sheep":1,
+"Snow":1,
+"Stage":1,
+"Underwater":1};
+let girder;
+let animationInterval;
+
+let staticMasks = [];
+
+on_xml_loaded = function(ex)
+{
+    let resp = this.responseText;
+    let r = />([^<]*).png</g;
+    let x;
+    while(x = r.exec(resp))
+    {
+        masks.push(x[1]);
+    }
+    on_hats_loaded();
+}
+
+on_xml_error = function()
+{
+    let p = document.createElement("p");
+    p.appendChild(document.createTextNode("ERROR: List of hats could not be fetched from the server!"));
+    document.body.appendChild(p);
+}
+
+window.onload = function()
+{
+    // Load list of hats
+    if (!IS_LOCAL) {
+        // Request list of hats from repository URL
+        let xml=new XMLHttpRequest();
+        xml.open("GET", "//hg.hedgewars.org/hedgewars/file/tip/share/hedgewars/Data/Graphics/Hats/");
+        xml.addEventListener("error", on_xml_error);
+        xml.onload = on_xml_loaded;
+        xml.send();
+    }
+    else
+    {
+        on_hats_loaded();
+    }
+}
+
+on_hats_loaded = function()
+{
+    // Exclude NoHat as uninteresting. Exclude team hats as we can't properly display them yet
+    // TODO: Add support for team hats
+    let disallowedMasks = {
+        "NoHat":true,
+        "hair_team":true,
+        "cap_team":true,
+        "TeamTophat":true,
+    };
+
+    // Render girders
+    let s = document.styleSheets[0].cssRules;
+    for(let i=0;i<s.length;i++)
+    {
+        if (s[i].selectorText.toLowerCase() === ".girder")
+            girder = s[i];
+    }
+
+    let a = document.createElement("a");
+    let g = document.createElement("div");
+    g.className="girder";
+    if (IS_LOCAL) {
+        a.className="hatLocal";
+    } else {
+        a.className="hat";
+    }
+    a.appendChild(document.createElement("div"));
+    a.lastChild.appendChild(document.createTextNode(""));
+
+    // Render hats
+    let missingMasks = [];
+    let img;
+    let j = 0;
+    let toDelete = [];
+    for (let i=0;i<masks.length;i++)
+    {
+        if (disallowedMasks[masks[i]] === true) {
+            missingMasks.push(masks[i]);
+            toDelete.push(i);
+            continue;
+        }
+        let h = document.body.appendChild(a.cloneNode(true));
+        if (IS_LOCAL)
+            h.href = "../share/hedgewars/Data/Graphics/Hats/"+masks[i]+".png";
+        else
+            h.href = "//hg.hedgewars.org/hedgewars/raw-file/tip/share/hedgewars/Data/Graphics/Hats/"+masks[i]+".png";
+
+        img = new Image();
+        img.onload = function() {
+            let name = this.id.substr(7);
+            if (this.height === 32) {
+                staticMasks[name] = true;
+            }
+            this.remove();
+        }
+        img.src = h.href;
+        img.id = "__mask_"+masks[i];
+
+        h.lastChild.style.backgroundImage = 'url("'+h.href+'")';
+        h.title = masks[i];
+        h.idle = Math.floor(Math.random()*19);
+        if (j%17 === 16 || i === masks.length-1)
+            document.body.appendChild(g.cloneNode(false));
+        j++;
+    }
+    // Cleanup masks array
+    for (let i=0; i<toDelete.length; i++)
+        masks.splice(toDelete[i], 1);
+
+    // List missing hats
+    if (missingMasks.length > 0)
+    {
+        let pm = document.createElement("p");
+        pm.appendChild(document.createTextNode("Other hats: "));
+        for (let i=0; i<missingMasks.length; i++)
+        {
+            if (missingMasks[i] === "NoHat")
+                continue;
+            let link = document.createElement("a");
+            if (IS_LOCAL)
+                link.href = "../share/hedgewars/Data/Graphics/Hats/"+missingMasks[i]+".png";
+            else
+                link.href = "//hg.hedgewars.org/hedgewars/raw-file/tip/share/hedgewars/Data/Graphics/Hats/"+missingMasks[i]+".png";
+            link.appendChild(document.createTextNode(missingMasks[i]));
+            pm.appendChild(link);
+            if (i < missingMasks.length -1)
+                pm.appendChild(document.createTextNode(", "));
+        }
+        document.body.appendChild(document.createElement("br"));
+        document.body.appendChild(pm);
+    }
+
+    // Quick and dirty animation
+    animationInterval = setInterval(animateHogs, 128);
+
+    // Theme selection drop-down list
+    let form = document.body.appendChild(document.createElement("form"));
+
+    let opt = document.createElement("option");
+    opt.appendChild(document.createTextNode(""));
+
+    let label = document.createElement("label");
+    label.htmlFor = "theme_select";
+    label.appendChild(document.createTextNode("Theme: "));
+    form.appendChild(label);
+
+    let sel = form.appendChild(document.createElement("select"));
+    sel.id = "theme_select";
+    sel.onchange = switchTheme;
+    for(let theme in themes)
+    {
+        sel.appendChild(opt.cloneNode(true));
+        sel.lastChild.value = theme;
+        sel.lastChild.lastChild.data = theme;
+        if(theme === "Nature")
+            sel.lastChild.selected = true;
+    }
+    form.appendChild(document.createElement("br"));
+
+    // Checkbox: Switch animation
+    let chk = document.createElement("input");
+    chk.id = "anim";
+    chk.type = "checkbox";
+    chk.onclick = switchAnim;
+    chk.checked = true;
+    form.appendChild(chk);
+    label = document.createElement("label");
+    label.htmlFor = "anim";
+    label.appendChild(document.createTextNode(" Animate hats"));
+    form.appendChild(label);
+
+    form.appendChild(document.createElement("br"));
+
+    // Checkbox: Hide girders
+    chk = document.createElement("input");
+    chk.id = "hide_girders";
+    chk.type = "checkbox";
+    chk.onclick = hideGirders;
+    chk.checked = true;
+    form.appendChild(chk);
+    label = document.createElement("label");
+    label.htmlFor = "hide_girders";
+    label.appendChild(document.createTextNode(" Show girders"));
+    form.appendChild(label);
+
+    document.body.appendChild(form);
+
+    switchTheme();
+}
+
+function animateHogs()
+{
+    let a = document.getElementsByTagName("a");
+    for (let i=0;i<a.length;i++)
+    {
+        if (a[i].className !== "hat" && a[i].className !== "hatLocal")
+            continue;
+        // Cycle through hedgehog and hat animation frames
+
+        // Hedgehog
+        a[i].style.backgroundPosition=Math.floor(a[i].idle/16)*-32+"px "+(a[i].idle%16)*-32+"px";
+
+        let maskName = a[i].title;
+        // Hat
+        if (staticMasks[maskName] === true) {
+            // Hat offset for static hats
+            if (a[i].idle === 2 || a[i].idle === 7 || a[i].idle === 12)
+                a[i].firstChild.style.marginTop="-4px";
+            else if (a[i].idle === 16)
+                a[i].firstChild.style.marginTop="-6px";
+            else
+                a[i].firstChild.style.marginTop="-5px";
+
+            a[i].firstChild.style.backgroundPosition="0px 0px";
+        }
+        else
+        {
+            // Animated hat frames
+            a[i].firstChild.style.backgroundPosition=Math.floor(a[i].idle/16)*-32+"px "+(a[i].idle%16)*-32+"px";
+        }
+
+        // Next frame
+        a[i].idle++;
+        if (a[i].idle > 18)
+            a[i].idle = 0;
+    }
+}
+
+// Turn on or off hog+hat animation
+function switchAnim()
+{
+    if (animationInterval)
+    {
+        clearInterval(animationInterval);
+        animationInterval = null;
+    }
+    else animationInterval = setInterval(animateHogs, 128);
+}
+
+// Turn on or off girders
+function hideGirders()
+{
+    let g = document.getElementsByClassName("girder");
+    for(let i=0;i<g.length;i++)
+        if (this.checked)
+            g[i].className = "girder";
+        else
+            g[i].className = "girder hide";
+
+}
+
+// Select theme according to drop-down list value
+function switchTheme()
+{
+    let prefix;
+    if (!IS_LOCAL)
+        prefix = "//hg.hedgewars.org/hedgewars/raw-file/tip";
+    else
+        prefix = "..";
+    let theme = this.value || "Nature";
+    document.body.style.backgroundImage='url("'+prefix+'/share/hedgewars/Data/Themes/'+theme+'/Sky.png")';
+    if (themes[theme])
+        girder.style.backgroundImage='url("'+prefix+'/share/hedgewars/Data/Themes/'+theme+'/Girder.png")';
+    else
+        girder.style.backgroundImage='url("'+prefix+'/share/hedgewars/Data/Graphics/Girder.png")';
+}
+//]]>
+    </script>
+</head>
+<body>
+<h1>List of Hedgewars hats</h1>
+<noscript>
+<p><strong>ERROR</strong>: We're so sorry, but this webpage only works with JavaScript enabled. It seems JavaScript is disabled or not supported in your browser.<br/>
+Normally, this webpage would display an animated preview of the hats in Hedgewars.</p>
+</noscript>
+</body>
+</html>

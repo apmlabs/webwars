@@ -1,12 +1,13 @@
-# Build artifacts
+# Build artifacts only
 build/
-hedgewars/
+hedgewars/build/
 *.o
 *.a
 *.so
 *.wasm
 *.js.mem
 *.data
+*.wasm.map
 
 # Dependencies
 node_modules/

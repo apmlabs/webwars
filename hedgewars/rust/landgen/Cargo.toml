@@ -1,0 +1,19 @@
+[package]
+name = "landgen"
+version = "0.1.0"
+authors = ["Andrey Korotaev <a.korotaev@hedgewars.org>"]
+edition = "2021"
+
+[dependencies]
+integral-geometry = { path = "../integral-geometry" }
+land2d = { path = "../land2d" }
+vec2d = { path = "../vec2d" }
+png = "0.17"
+rand = "0.9"
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "benchmark"
+harness = false
