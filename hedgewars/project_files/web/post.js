@@ -32,11 +32,11 @@ Module.onRuntimeInitialized = function() {
             
             // Start engine via main() to trigger argument parsing
             try {
-                console.log('[boot] about to callMain', Module.arguments);
-                Module.callMain(Module.arguments);
+                console.log('[boot] about to run', Module.arguments);
+                Module.run();
                 console.log('[HW] Engine started successfully');
             } catch(e) {
-                console.error('[HW] callMain failed:', e);
+                console.error('[HW] run failed:', e);
                 Module.setStatus('Error: ' + e.message);
                 engineStarted = false; // Allow retry
             }
