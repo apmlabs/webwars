@@ -143,6 +143,8 @@ if(EMSCRIPTEN)
         -sJSPI
         "-sJSPI_EXPORTS=['_hwengine_RunEngine_internal']"
         "-sJSPI_IMPORTS=['emscripten_sleep']"
+        -sSUPPORT_LONGJMP=wasm
+        -fwasm-exceptions
         -Wl,--wrap=hwengine_MainLoop
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
         "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal")

@@ -402,7 +402,9 @@ begin
 isPonged:= false;
 repeat
     IPCCheckSock;
+    {$IFNDEF EMSCRIPTEN}
     SDL_Delay(1)
+    {$ENDIF}
 until isPonged or (not allOK)
 end;
 

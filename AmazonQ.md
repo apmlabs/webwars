@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-18T11:02:00Z
+**Last Updated**: 2026-02-18T13:35:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Full project analysis complete, performance fixes deployed — awaiting browser test
+**Status**: JSPI init suspend eliminated — awaiting browser test
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -29,7 +29,10 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **etheme command** - theme textures now load (sky, water, clouds, sprites)
 - ✅ **ASYNCIFY_REMOVE globs** - safe 5% WASM reduction (FreeType/PNG/Vorbis/dynCall excluded)
 - ✅ **IPC logging removed** - no more console.log blocking in hot path
-- 🟡 **Current**: Awaiting browser test to verify texture loading + performance
+- ✅ **JSPI migration** - switched from ASYNCIFY to JSPI (-sJSPI), 23% smaller WASM (3.97MB vs 5.15MB)
+- ✅ **invoke_* eliminated** - `-sSUPPORT_LONGJMP=wasm` + `-fwasm-exceptions` confirmed zero invoke_* trampolines
+- ✅ **Init suspend eliminated** - IPCWaitPongEvent busy-polls without SDL_Delay in EMSCRIPTEN builds
+- 🟡 **Current**: Awaiting browser test to verify JSPI init works (no more SuspendError)
 
 ### Known Issues
 
@@ -120,6 +123,34 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 10 - February 18, 2026 (13:13-13:35 UTC)
+
+**JSPI SuspendError deep diagnosis and init suspend elimination.**
+
+**Phase 1: Browser Test — SuspendError Confirmed**
+- Browser showed: `SuspendError: trying to suspend without WebAssembly.promising` at "Getting game config..."
+- Diagnostic `[HW] Async exports: []` was a false negative — JSPI wrapping IS present in generated JS
+- `exportPattern=/^(_hwengine_RunEngine_internal|main|__main_argc_argv)$/` wraps with `WebAssembly.promising`
+- `importPattern=/^(emscripten_sleep|invoke_.*|__asyncjs__.*)$/` wraps with `WebAssembly.Suspending`
+
+**Phase 2: invoke_* Trampolines — Eliminated (Not the Cause)**
+- Confirmed zero `invoke_*` functions in generated JS — `-sSUPPORT_LONGJMP=wasm` + `-fwasm-exceptions` working
+- Lua's setjmp/longjmp fully handled in WASM, no JS trampolines
+
+**Phase 3: Root Cause Found — `_emscripten_sleep` Is a JS Function**
+- `var _emscripten_sleep = function(ms) { ... return Asyncify.handleAsync(innerFunc) }`
+- `Asyncify.handleAsync` is `async startAsync => { try { return await startAsync() } finally {} }`
+- Even though `instrumentWasmImports` wraps it with `WebAssembly.Suspending`, the internal JS async execution creates frames JSPI can't suspend through
+- This is a fundamental Emscripten limitation with JSPI — `emscripten_sleep` is JS, not WASM
+
+**Phase 4: Fix — Eliminate Init Suspend (Option C)**
+- Modified `uIO.pas`: `{$IFNDEF EMSCRIPTEN} SDL_Delay(1) {$ENDIF}` in `IPCWaitPongEvent`
+- IPC messages are pre-queued in JS before `RunEngine_internal` — pong is already available
+- Busy-poll finds pong immediately, zero suspends needed during init
+- Rebuilt and deployed with JSPI (3.97MB WASM)
+
+**Remaining JSPI Risk**: AI `SDL_Delay(700)` and `SDL_Delay(100)` in `uAI.pas` will still trigger `emscripten_sleep` during gameplay. These will need the same treatment (busy-poll or skip) when AI runs.
 
 ### Session 9 - February 18, 2026 (09:06-11:02 UTC)
 

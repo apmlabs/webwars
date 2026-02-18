@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-18T01:19:00Z
+Last updated: 2026-02-18T13:35:00Z
 
 ### Project Status
-- **Phase**: Rendering + Textures Fixed — ASYNCIFY Corrected
-- **Last Action**: Reverted ASYNCIFY_IGNORE_INDIRECT (broke init), replaced with ASYNCIFY_REMOVE globs
-- **Current Blocker**: Awaiting browser test to verify texture loading + performance
-- **Target**: Playable frame rate in browser
+- **Phase**: JSPI Migration — Init Suspend Eliminated
+- **Last Action**: Removed SDL_Delay from IPCWaitPongEvent for EMSCRIPTEN builds (busy-poll instead)
+- **Current Blocker**: Awaiting browser test to verify JSPI init works (no more SuspendError)
+- **Target**: Playable frame rate in browser with JSPI (smaller WASM, zero per-frame overhead)
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -358,6 +358,21 @@ The engine loads sky, water, clouds, and sprites from `ptCurrTheme` (e.g. `/Them
 ### 19. Always Copy Custom HTML After Build
 Emscripten regenerates `hwengine.html` on every build (because target suffix is `.html`). The custom dark-themed HTML in `web/hwengine.html` must be copied to `build/wasm/bin/` after each build. Without it, the generic Emscripten shell loads — which lacks the Module setup needed for the game to start.
 
+### 20. JSPI Cannot Suspend Through JS Frames — Unlike ASYNCIFY
+JSPI (JavaScript Promise Integration, `-sJSPI`, ASYNCIFY=2) is the modern replacement for ASYNCIFY. It's faster (no stack instrumentation, ~23% smaller WASM) but has a hard constraint: **the entire call chain between a `WebAssembly.promising()` export and a `WebAssembly.Suspending()` import must be pure WASM — no JS frames allowed.** ASYNCIFY tolerated JS trampolines because it rewrites the whole stack machine; JSPI cannot. Key implications:
+- `invoke_*` JS trampolines (from setjmp/longjmp) break JSPI → fix with `-sSUPPORT_LONGJMP=wasm` + `-fwasm-exceptions`
+- `SDL_Delay` → `emscripten_sleep` is a JS function that calls `Asyncify.handleAsync` (async JS) → creates JS frames in the suspend path
+- Any `EM_JS` function on the stack when a suspend happens will break JSPI
+- **Best fix**: eliminate suspends entirely where possible (e.g., busy-poll instead of sleep when data is already available)
+- Use `-sSUPPORT_LONGJMP=wasm` and `-fwasm-exceptions` to eliminate `invoke_*` trampolines
+- Verify with: `grep 'function invoke_' hwengine.js` — must return zero results for JSPI safety
+
+### 21. Eliminate SDL_Delay from IPCWaitPongEvent in EMSCRIPTEN Builds
+`IPCWaitPongEvent` loops with `SDL_Delay(1)` waiting for pong. In browser, IPC messages are pre-queued in JS before `RunEngine_internal` is called, so the pong is already available. `SDL_Delay` triggers `emscripten_sleep` which requires ASYNCIFY/JSPI suspend machinery. Fix: `{$IFNDEF EMSCRIPTEN} SDL_Delay(1) {$ENDIF}` — busy-poll is fine since data is already there. This eliminates the need for any suspend during engine init.
+
+### 22. JSPI SuspendError Root Cause: `_emscripten_sleep` Is a JS Function
+Even with zero `invoke_*` trampolines (`-sSUPPORT_LONGJMP=wasm` + `-fwasm-exceptions` confirmed working), JSPI still fails with SuspendError during init. Root cause: Emscripten's `_emscripten_sleep` is implemented as a **JS function** that calls `Asyncify.handleAsync()` (an async JS function). Even though `instrumentWasmImports` wraps it with `WebAssembly.Suspending`, the internal JS execution creates frames that JSPI cannot suspend through. The fix is to eliminate the need to call `emscripten_sleep` entirely during init (Option C: busy-poll). For gameplay suspends (AI `SDL_Delay`), JSPI may still fail — those will need either: (a) the same busy-poll treatment, (b) a pure-WASM sleep implementation, or (c) fallback to ASYNCIFY for those code paths. Key diagnostic: check `var _emscripten_sleep=` in generated JS — if it contains `Asyncify.handleAsync`, it's a JS function, not a WASM import, and JSPI will fail when it tries to suspend through it.
+
 ---
 
 ## 🐛 KEY BUG PATTERNS
@@ -385,6 +400,8 @@ Emscripten regenerates `hwengine.html` on every build (because target suffix is 
 | Bare -sASYNCIFY without whitelist | Instruments ALL functions, ~50% overhead | Use ASYNCIFY_REMOVE with glob patterns for safe categories |
 | ASYNCIFY_IGNORE_INDIRECT + ASYNCIFY_ADD at -O2 | Inlined functions vanish as symbols, silently breaks unwind chain | Use ASYNCIFY_REMOVE instead; or use ASYNCIFY_ADVISE to verify names |
 | Build without copying custom HTML | Emscripten overwrites hwengine.html with generic shell | Always `cp web/hwengine.html build/wasm/bin/` after build |
+| Use JSPI without eliminating JS-frame suspends | `_emscripten_sleep` is a JS function, JSPI can't suspend through it | Remove `SDL_Delay` from init paths; busy-poll instead |
+| Assume invoke_* is the only JSPI blocker | Even with zero invoke_*, `_emscripten_sleep` JS impl breaks JSPI | Check `var _emscripten_sleep=` in generated JS for `Asyncify.handleAsync` |
 
 ---
 
