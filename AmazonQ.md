@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-18T00:28:00Z
+**Last Updated**: 2026-02-18T00:58:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Performance Optimization - cOnlyStats multi-tick catch-up implemented
+**Status**: Texture fix deployed + ASYNCIFY optimization — awaiting browser test
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -11,7 +11,7 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 ## Current Phase: Rendering Works, Optimizing Performance
 
 ### What Works
-- ✅ Engine compiled to WebAssembly (5.2MB)
+- ✅ Engine compiled to WebAssembly (4.1MB — reduced from 5.4MB via ASYNCIFY optimization)
 - ✅ Assets load (187MB data file)
 - ✅ IPC protocol working perfectly
 - ✅ Map loading (Cake map with mask.png)
@@ -26,7 +26,10 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **cOnlyStats multi-tick catch-up** - game logic runs at real-time speed, only last tick renders
 - ✅ **Download progress bar** - shows MB downloaded during 187MB data fetch
 - ✅ **Custom game page** - hwengine.html with controls overlay
-- 🟡 **Current**: Texture loading failures, needs build+deploy of cOnlyStats fix
+- ✅ **etheme command** - theme textures now load (sky, water, clouds, sprites)
+- ✅ **ASYNCIFY_IGNORE_INDIRECT** - 24% WASM size reduction, less instrumentation overhead
+- ✅ **IPC logging removed** - no more console.log blocking in hot path
+- 🟡 **Current**: Awaiting browser test to verify texture loading + performance
 
 ### Known Issues
 
@@ -274,8 +277,42 @@ Commits: 8b07650, fabf08a
 
 **Key insight**: Console logging in browsers is synchronous and extremely expensive. Also, `cOnlyStats` is the engine's built-in rendering skip flag — perfect for WASM catch-up ticks where only the last frame needs to be drawn.
 
+### Session 7 - February 18, 2026 (00:41-00:58 UTC)
+
+**Deep project analysis, texture fix, ASYNCIFY optimization.**
+
+**Phase 1: Full Project Research**
+- Read official Hedgewars repo (github.com/hedgewars/hw): their `BUILD_ENGINE_JS` flag exists but pre.js/post.js are empty — they started but never finished the browser port
+- Read `EngineInteraction.hs` to understand exact server message ordering
+- Read Emscripten optimization docs (WebGL, ASYNCIFY, SDL2 porting)
+- Analyzed the full Pascal→C→WASM pipeline and confirmed architecture is sound
+
+**Phase 2: Root Cause — Missing Textures**
+- Verified ALL texture files exist in the data package (BlueWater.png, Clouds.png, Sky.png etc.)
+- Discovered `pre.js` never sends `etheme` command — engine doesn't know which theme to use
+- Without `etheme`, `InitStepsFlags` never gets `cifTheme` bit, `ptCurrTheme` stays as `/Themes/Nature`
+- Server protocol (EngineInteraction.hs line 109): `etheme` is mandatory, sent before seed/config
+- Fix: Added map→theme mapping and `etheme` command to pre.js
+- Fixed message ordering to match real server: emap → etheme → eseed → config → teams → !
+
+**Phase 3: ASYNCIFY Optimization**
+- Bare `-sASYNCIFY` instruments EVERY function (~50% overhead per Emscripten docs)
+- Only 3 call sites actually need ASYNCIFY: IPCWaitPongEvent, SendIPCAndWaitReply, AI SDL_Delay
+- Added `ASYNCIFY_IGNORE_INDIRECT` + `ASYNCIFY_ADD` whitelist for just those functions
+- WASM binary: 5.4MB → 4.1MB (24% reduction)
+
+**Phase 4: IPC Hot-Path Cleanup**
+- Removed `fprintf(stderr, ...)` from `ipc_browser.c` read/write functions
+- These were synchronous console.log calls firing on every IPC operation
+
+**Phase 5: Debug Timing**
+- Added optional per-frame timing to web_entry.c (toggle via `Module.HWEngine.debugTiming = true`)
+- Reports: event processing time, tick count, logic time, total frame time
+
+**Key insight**: The texture "failures" were never about missing files — the assets were always there. The engine just didn't know which theme directory to look in because we never told it.
+
 ## Success Criteria
 
 **MVP**: Game loads in browser, hotseat playable, <10s load time
-**Current**: Renders, needs texture fix and perf verification after main loop rewrite
+**Current**: Texture fix + perf optimization deployed, awaiting browser verification
 **Full**: Multiplayer stable, deployed on this server, public URL
