@@ -47,6 +47,7 @@ static const string255 ml_str_fullscr = STRINIT("fullscr ");
 // State persisted across frames
 static LongWord ml_PrevTime;
 static boolean ml_isTerminated;
+static int ml_frameCount;
 static TGameState ml_previousGameState;
 
 // Debug timing (toggled via JS: Module.HWEngine.debugTiming = true)
@@ -162,6 +163,7 @@ static void mainloop_frame(void) {
     }
 
     LongWord CurrTime = SDL_GetTicks();
+    ml_frameCount++;
     if (doDebug) t1 = emscripten_get_now();
     // Count how many ticks we need to catch up
     int ticksNeeded = 0;
@@ -175,7 +177,8 @@ static void mainloop_frame(void) {
         ticksNeeded = 128;
 
     // Run catch-up ticks with rendering disabled (game logic only)
-    if (ticksNeeded > 1) {
+    // Skip optimization for first 32 frames to let land textures generate
+    if (ticksNeeded > 1 && ml_frameCount > 32) {
         cOnlyStats = true;
         for (int i = 0; i < ticksNeeded - 1 && !ml_isTerminated; i++) {
             ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)cTimerInterval);

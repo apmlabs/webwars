@@ -116,7 +116,7 @@ if(BUILD_ENGINE_JS)
     set(HW_DATA_DIR "${CMAKE_SOURCE_DIR}/share/hedgewars/Data")
     set(HW_DEMO_FILE "${CMAKE_SOURCE_DIR}/test.hwd")
     
-    add_flag_append(CMAKE_C_FLAGS "-O2 -sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=100007936 -sGL_UNSAFE_OPTS=0 -sLZ4=1 --preload-file ${HW_DATA_DIR}@/Data --preload-file ${HW_DEMO_FILE}@/test.hwd --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
+    add_flag_append(CMAKE_C_FLAGS "-sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=268435456 -sGL_UNSAFE_OPTS=0 -sLZ4=1 --preload-file ${HW_DATA_DIR}@/Data --preload-file ${HW_DEMO_FILE}@/test.hwd --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
 endif()
 
 #compile the c files
