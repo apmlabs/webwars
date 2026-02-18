@@ -18,11 +18,11 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-17T23:16:00Z
+Last updated: 2026-02-18T01:19:00Z
 
 ### Project Status
-- **Phase**: Rendering + Textures Fixed — Performance Optimization
-- **Last Action**: Added etheme command, ASYNCIFY_IGNORE_INDIRECT, removed IPC logging
+- **Phase**: Rendering + Textures Fixed — ASYNCIFY Corrected
+- **Last Action**: Reverted ASYNCIFY_IGNORE_INDIRECT (broke init), replaced with ASYNCIFY_REMOVE globs
 - **Current Blocker**: Awaiting browser test to verify texture loading + performance
 - **Target**: Playable frame rate in browser
 
@@ -352,8 +352,11 @@ The engine's `cOnlyStats` boolean (in `uVariables.h`) skips `DrawWorld`, `Proces
 ### 17. etheme Is Mandatory — Textures Depend on Theme Path
 The engine loads sky, water, clouds, and sprites from `ptCurrTheme` (e.g. `/Themes/Cake/`). This path is ONLY set when the `etheme` command is received via IPC. Without it, `InitStepsFlags` lacks `cifTheme` and textures load from the wrong path. The real server (EngineInteraction.hs:109) always sends `etheme` before seed/config. For preset maps, the map.cfg contains the theme name on line 1, but the engine only reads line 2 (MaxHedgehogs) — the theme must still be sent via IPC.
 
-### 18. Use ASYNCIFY_IGNORE_INDIRECT to Slash WASM Size
-Bare `-sASYNCIFY` instruments every function for potential async unwinding (~50% overhead, per Emscripten docs). With `ASYNCIFY_IGNORE_INDIRECT`, only functions reachable through direct calls from `ASYNCIFY_IMPORTS` get instrumented. Pair with `ASYNCIFY_ADD` to whitelist specific functions that DO need it (e.g. `IPCWaitPongEvent`, `SDL_Delay` in AI). Result: 5.4MB → 4.1MB WASM (24% reduction).
+### 18. ASYNCIFY_IGNORE_INDIRECT + ASYNCIFY_ADD Is Fragile at -O2
+`ASYNCIFY_IGNORE_INDIRECT` requires listing every function in the async call chain via `ASYNCIFY_ADD`. But `-O2` inlines functions, removing them as symbols — `ASYNCIFY_ADD` silently ignores missing names, breaking the unwind chain. Use `ASYNCIFY_ADVISE` to discover the real symbol names. Safer alternative: `ASYNCIFY_REMOVE` with glob patterns for known-safe categories (FreeType, PNG, Vorbis, dynCall). Result: 5.4MB → 5.15MB (5% reduction, modest but correct).
+
+### 19. Always Copy Custom HTML After Build
+Emscripten regenerates `hwengine.html` on every build (because target suffix is `.html`). The custom dark-themed HTML in `web/hwengine.html` must be copied to `build/wasm/bin/` after each build. Without it, the generic Emscripten shell loads — which lacks the Module setup needed for the game to start.
 
 ---
 
@@ -379,7 +382,9 @@ Bare `-sASYNCIFY` instruments every function for potential async unwinding (~50%
 | console.log in hot path | Synchronous, blocks main thread, kills FPS | Remove all debug logging from frame loop |
 | Multiple DoTimer calls per frame | Each call renders (DrawWorld+SwapBuffers) | Use cOnlyStats=true for catch-up ticks |
 | Skip etheme in IPC | Engine can't find theme textures (sky, water, clouds) | Always send etheme before seed/config |
-| Bare -sASYNCIFY without whitelist | Instruments ALL functions, ~50% overhead | Use ASYNCIFY_IGNORE_INDIRECT + ASYNCIFY_ADD |
+| Bare -sASYNCIFY without whitelist | Instruments ALL functions, ~50% overhead | Use ASYNCIFY_REMOVE with glob patterns for safe categories |
+| ASYNCIFY_IGNORE_INDIRECT + ASYNCIFY_ADD at -O2 | Inlined functions vanish as symbols, silently breaks unwind chain | Use ASYNCIFY_REMOVE instead; or use ASYNCIFY_ADVISE to verify names |
+| Build without copying custom HTML | Emscripten overwrites hwengine.html with generic shell | Always `cp web/hwengine.html build/wasm/bin/` after build |
 
 ---
 

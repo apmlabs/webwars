@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-18T00:58:00Z
+**Last Updated**: 2026-02-18T01:19:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Texture fix deployed + ASYNCIFY optimization — awaiting browser test
+**Status**: ASYNCIFY corrected (REMOVE globs), custom HTML restored — awaiting browser test
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -11,7 +11,7 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 ## Current Phase: Rendering Works, Optimizing Performance
 
 ### What Works
-- ✅ Engine compiled to WebAssembly (4.1MB — reduced from 5.4MB via ASYNCIFY optimization)
+- ✅ Engine compiled to WebAssembly (5.15MB — reduced from 5.4MB via ASYNCIFY_REMOVE optimization)
 - ✅ Assets load (187MB data file)
 - ✅ IPC protocol working perfectly
 - ✅ Map loading (Cake map with mask.png)
@@ -27,7 +27,7 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **Download progress bar** - shows MB downloaded during 187MB data fetch
 - ✅ **Custom game page** - hwengine.html with controls overlay
 - ✅ **etheme command** - theme textures now load (sky, water, clouds, sprites)
-- ✅ **ASYNCIFY_IGNORE_INDIRECT** - 24% WASM size reduction, less instrumentation overhead
+- ✅ **ASYNCIFY_REMOVE globs** - safe 5% WASM reduction (FreeType/PNG/Vorbis/dynCall excluded)
 - ✅ **IPC logging removed** - no more console.log blocking in hot path
 - 🟡 **Current**: Awaiting browser test to verify texture loading + performance
 
@@ -311,8 +311,36 @@ Commits: 8b07650, fabf08a
 
 **Key insight**: The texture "failures" were never about missing files — the assets were always there. The engine just didn't know which theme directory to look in because we never told it.
 
+### Session 8 - February 18, 2026 (01:02-01:19 UTC)
+
+**Fix broken ASYNCIFY, restore custom HTML, deep ASYNCIFY analysis.**
+
+**Phase 1: Diagnosis**
+- Browser showed generic Emscripten HTML (green spinner) — build overwrote custom hwengine.html
+- Engine returned 0 immediately after "Getting game config..." — ASYNCIFY chain was broken
+- `ASYNCIFY_IGNORE_INDIRECT` + `ASYNCIFY_ADD` from session 7 was the cause
+
+**Phase 2: ASYNCIFY Deep Analysis**
+- Used `ASYNCIFY_ADVISE` to get full list: 2867 functions need instrumentation
+- Checked our original ASYNCIFY_ADD list against ADVISE output: 4 of 7 functions were MISSING (inlined at -O2)
+  - `hwengine_GameRoutine`, `hwengine_Game`, `hwengine_GenLandPreview`, `uio_IPCWaitPongEvent` — all inlined away
+  - `uai_ProcessBot` — wrong name (real name: `uai_Think`)
+- Traced actual call chains: `hwengine_RunEngine_internal` → `hwengine_RunEngine` → `uio_SendIPCAndWaitReply` → `SDL_Delay` → `emscripten_sleep`
+- Categorized all 2867 functions: 596 Pascal engine, 385 Rust, 312 FreeType, 266 SDL, 149 Lua, etc.
+
+**Phase 3: Correct ASYNCIFY Optimization**
+- Replaced `ASYNCIFY_IGNORE_INDIRECT` + `ASYNCIFY_ADD` with `ASYNCIFY_REMOVE` glob patterns
+- Removed safe categories: `FT_*,ft_*,tt_*,cff_*,af_*,ps_*,pfr_*,bdf_*,pcf_*,dynCall_*,png_*,vorbis_*,ov_*,ogg_*`
+- WASM: 5.4MB → 5.15MB (5% reduction — modest but correct, no broken unwind chains)
+
+**Phase 4: Custom HTML Fix**
+- Copied `web/hwengine.html` back to `build/wasm/bin/` after build
+- Added lesson 19: always copy custom HTML after build (Emscripten regenerates it)
+
+**Key insight**: `ASYNCIFY_IGNORE_INDIRECT` + `ASYNCIFY_ADD` is fundamentally fragile with `-O2` because the compiler inlines functions, removing them as symbols. ASYNCIFY silently ignores missing names. `ASYNCIFY_REMOVE` with globs is the safe approach — keeps default instrumentation but excludes known-safe library code.
+
 ## Success Criteria
 
 **MVP**: Game loads in browser, hotseat playable, <10s load time
-**Current**: Texture fix + perf optimization deployed, awaiting browser verification
+**Current**: ASYNCIFY corrected, custom HTML restored, awaiting browser verification
 **Full**: Multiplayer stable, deployed on this server, public URL
