@@ -28,8 +28,6 @@ var HWEngine = {
 
     writeIPC: function(bufPtr, len) {
         var bytes = new Uint8Array(Module.HEAPU8.buffer, bufPtr, len);
-        var ascii = Array.from(bytes).map(function(b) { return (b >= 32 && b < 127) ? String.fromCharCode(b) : '.'; }).join('');
-        console.log('[IPC->JS] ' + ascii);
 
         // Auto-respond to pings
         if (len >= 2 && bytes[1] === 0x3f) {
@@ -188,21 +186,5 @@ Module.printErr = function(text) {
     console.error('[Engine Error]', text);
 };
 
-Module.setStatus = function(text) {
-    if (text) {
-        var el = document.getElementById('status');
-        if (el) el.innerHTML = text;
-    }
-};
-
-if (!Module.canvas) {
-    Module.canvas = (function() {
-        var canvas = document.getElementById('canvas');
-        if (canvas) {
-            canvas.addEventListener("webglcontextlost", function(e) { e.preventDefault(); }, false);
-        }
-        return canvas;
-    })();
-}
-
-Module.setStatus('Downloading...');
+// setStatus and canvas are defined in hwengine.html before this script loads.
+// Do NOT redefine them here — the HTML versions handle the progress bar UI.
