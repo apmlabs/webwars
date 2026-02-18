@@ -82,10 +82,15 @@ var HWEngine = {
     defaultDelay:'000000000000020000000000000000000000000000000000000000000000',
     defaultReinf:'000000000000000000000000000000000000000000000000000000000000',
 
-    // Maps suitable for standard play (no special modes)
-    maps: ['Cake','Castle','Cave','Islands','Mushrooms','Tree','Cheese','Bath',
-           'Bamboo','Battlefield','Blox','Cogs','EarthRise','Hammock','Hedgelove',
-           'Hogville','Lonely_Island','Plane','Sticks','Trash'],
+    // Map → theme mapping (from each map's map.cfg line 1)
+    mapThemes: {
+        'Cake':'Cake','Castle':'Nature','Cave':'Island','Islands':'Deepspace',
+        'Mushrooms':'Nature','Tree':'Halloween','Cheese':'Cheese','Bath':'Bath',
+        'Bamboo':'Bamboo','Battlefield':'Nature','Blox':'Blox','Cogs':'EarthRise',
+        'EarthRise':'EarthRise','Hammock':'Nature','Hedgelove':'Nature',
+        'Hogville':'Nature','Lonely_Island':'Island','Plane':'Planes',
+        'Sticks':'Bamboo','Trash':'Compost'
+    },
 
     sendAmmoAndTeam: function(hash, color, name, hogs) {
         // Sanity check: engine expects exactly 60 chars per ammo string
@@ -114,13 +119,22 @@ var HWEngine = {
         console.log('[HW] Starting hotseat game...');
 
         var seed = '{' + Math.random().toString(36).substring(2, 10) + '}';
+        var maps = Object.keys(this.mapThemes);
+        var map = maps[Math.floor(Math.random() * maps.length)];
+        var theme = this.mapThemes[map];
+        console.log('[HW] Selected map: ' + map + ' theme: ' + theme);
 
-        // 1. Global config (matches real Hedgewars server sequence)
+        // Order matches real Hedgewars server (EngineInteraction.hs)
+        // 1. Map + theme
+        this.sendMessage('emap ' + map);
+        this.sendMessage('etheme ' + theme);
+
+        // 2. Seed + game config
         this.sendMessage('eseed ' + seed);
-        this.sendMessage('e$gmflags 0');          // default game flags
+        this.sendMessage('e$gmflags 0');
         this.sendMessage('e$damagepct 100');
-        this.sendMessage('e$turntime 45000');      // 45 second turns
-        this.sendMessage('e$sd_turns 15');          // sudden death after 15 turns
+        this.sendMessage('e$turntime 45000');
+        this.sendMessage('e$sd_turns 15');
         this.sendMessage('e$casefreq 5');
         this.sendMessage('e$minestime 3000');
         this.sendMessage('e$minesnum 4');
@@ -136,21 +150,15 @@ var HWEngine = {
         this.sendMessage('e$worldedge 0');
         this.sendMessage('e$template_filter 0');
         this.sendMessage('e$feature_size 12');
-        this.sendMessage('e$mapgen 0');            // 0 = random
+        this.sendMessage('e$mapgen 0');
 
-        // 2. Teams (ammo store sent per-team, before each team)
+        // 3. Teams (ammo store sent per-team)
         this.sendAmmoAndTeam('x', '4980735', 'Red Team',
             ['Hog A1', 'Hog A2', 'Hog A3', 'Hog A4']);
-
         this.sendAmmoAndTeam('x', '16776960', 'Blue Team',
             ['Hog B1', 'Hog B2', 'Hog B3', 'Hog B4']);
 
-        // 3. Map (random from pool, after teams)
-        var map = this.maps[Math.floor(Math.random() * this.maps.length)];
-        console.log('[HW] Selected map: ' + map);
-        this.sendMessage('emap ' + map);
-
-        // 4. Game type and start
+        // 4. Start
         this.sendMessage('TL');
         this.sendMessage('!');
     }
