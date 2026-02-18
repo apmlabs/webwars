@@ -21,9 +21,9 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 Last updated: 2026-02-17T23:16:00Z
 
 ### Project Status
-- **Phase**: Rendering Confirmed - Performance Optimization (cOnlyStats multi-tick)
-- **Last Action**: Implemented cOnlyStats catch-up ticks + download progress bar, awaiting build/deploy
-- **Current Blocker**: Needs build+deploy to verify performance fix; texture loading failures remain
+- **Phase**: Rendering + Textures Fixed — Performance Optimization
+- **Last Action**: Added etheme command, ASYNCIFY_IGNORE_INDIRECT, removed IPC logging
+- **Current Blocker**: Awaiting browser test to verify texture loading + performance
 - **Target**: Playable frame rate in browser
 
 ### Implementation Tracks
@@ -349,6 +349,12 @@ When pas2c generates C code you can't modify (regenerated on every build), use t
 ### 16. Use cOnlyStats for Multi-Tick Catch-Up in WASM
 The engine's `cOnlyStats` boolean (in `uVariables.h`) skips `DrawWorld`, `ProcessVisualGears`, and `SwapBuffers`. For WASM frame pacing: set `cOnlyStats=true` for N-1 catch-up ticks (game logic only), then `cOnlyStats=false` for the final tick (with rendering). This avoids wasting GPU work on frames that will never be displayed.
 
+### 17. etheme Is Mandatory — Textures Depend on Theme Path
+The engine loads sky, water, clouds, and sprites from `ptCurrTheme` (e.g. `/Themes/Cake/`). This path is ONLY set when the `etheme` command is received via IPC. Without it, `InitStepsFlags` lacks `cifTheme` and textures load from the wrong path. The real server (EngineInteraction.hs:109) always sends `etheme` before seed/config. For preset maps, the map.cfg contains the theme name on line 1, but the engine only reads line 2 (MaxHedgehogs) — the theme must still be sent via IPC.
+
+### 18. Use ASYNCIFY_IGNORE_INDIRECT to Slash WASM Size
+Bare `-sASYNCIFY` instruments every function for potential async unwinding (~50% overhead, per Emscripten docs). With `ASYNCIFY_IGNORE_INDIRECT`, only functions reachable through direct calls from `ASYNCIFY_IMPORTS` get instrumented. Pair with `ASYNCIFY_ADD` to whitelist specific functions that DO need it (e.g. `IPCWaitPongEvent`, `SDL_Delay` in AI). Result: 5.4MB → 4.1MB WASM (24% reduction).
+
 ---
 
 ## 🐛 KEY BUG PATTERNS
@@ -372,6 +378,8 @@ The engine's `cOnlyStats` boolean (in `uVariables.h`) skips `DrawWorld`, `Proces
 | Include hwengine.h before fpcrtl.h | fpcrtl_dimension_t undefined | Always include fpcrtl.h first |
 | console.log in hot path | Synchronous, blocks main thread, kills FPS | Remove all debug logging from frame loop |
 | Multiple DoTimer calls per frame | Each call renders (DrawWorld+SwapBuffers) | Use cOnlyStats=true for catch-up ticks |
+| Skip etheme in IPC | Engine can't find theme textures (sky, water, clouds) | Always send etheme before seed/config |
+| Bare -sASYNCIFY without whitelist | Instruments ALL functions, ~50% overhead | Use ASYNCIFY_IGNORE_INDIRECT + ASYNCIFY_ADD |
 
 ---
 
