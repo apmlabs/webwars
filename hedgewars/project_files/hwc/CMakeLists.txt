@@ -142,6 +142,8 @@ if(EMSCRIPTEN)
         -sSTACK_SIZE=5MB
         -sASYNCIFY
         -sASYNCIFY_STACK_SIZE=131072
+        -sASYNCIFY_IGNORE_INDIRECT
+        "-sASYNCIFY_ADD=hwengine_GameRoutine,hwengine_Game,hwengine_GenLandPreview,uio_IPCWaitPongEvent,uio_SendIPCAndWaitReply,uai_ProcessBot,SDL_Delay"
         -Wl,--wrap=hwengine_MainLoop
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
         "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal")

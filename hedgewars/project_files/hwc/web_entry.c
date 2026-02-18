@@ -49,9 +49,15 @@ static LongWord ml_PrevTime;
 static boolean ml_isTerminated;
 static TGameState ml_previousGameState;
 
+// Debug timing (toggled via JS: Module.HWEngine.debugTiming = true)
+EM_JS(int, hw_debug_timing, (), { return Module.HWEngine && Module.HWEngine.debugTiming ? 1 : 0; });
+
 static void mainloop_frame(void) {
     TSDL_Event event;
     boolean wheelEvent = false;
+    double t0 = 0, t1 = 0, t2 = 0, t3 = 0;
+    int doDebug = hw_debug_timing();
+    if (doDebug) t0 = emscripten_get_now();
 
     if (ml_isTerminated || !allOK) {
         emscripten_cancel_main_loop();
@@ -156,6 +162,7 @@ static void mainloop_frame(void) {
     }
 
     LongWord CurrTime = SDL_GetTicks();
+    if (doDebug) t1 = emscripten_get_now();
     // Count how many ticks we need to catch up
     int ticksNeeded = 0;
     LongWord tmpTime = ml_PrevTime;
@@ -186,6 +193,11 @@ static void mainloop_frame(void) {
         ml_PrevTime = CurrTime;
 
     uio_IPCCheckSock();
+    if (doDebug) {
+        t3 = emscripten_get_now();
+        emscripten_log(0, "FRAME: events=%.1fms ticks=%d logic=%.1fms total=%.1fms",
+            t1-t0, ticksNeeded, t3-t1, t3-t0);
+    }
 }
 
 void __wrap_hwengine_MainLoop(void) {

@@ -17,11 +17,7 @@ EM_JS(void, hw_ipc_write_js, (const unsigned char* buf, int len), {
 
 // Replacement for SDL_net IPC read
 int hw_ipc_recv(unsigned char* buf, int maxlen) {
-    int n = hw_ipc_read_js(buf, maxlen);
-    if (n > 0) {
-        fprintf(stderr, "[IPC] Read %d bytes\n", n);
-    }
-    return n;
+    return hw_ipc_read_js(buf, maxlen);
 }
 
 // Stub out SDL_net functions (not used in browser)
@@ -33,13 +29,7 @@ void* SDLNet_TCP_Open(void* addr) { return (void*)1; }
 
 // REAL send function - forward to JS
 int SDLNet_TCP_Send(void* sock, const void* data, int len) {
-    fprintf(stderr, "[IPC] Send %d bytes: ", len);
-    const unsigned char* bytes = (const unsigned char*)data;
-    for (int i = 0; i < len && i < 32; i++) {
-        fprintf(stderr, "%02x ", bytes[i]);
-    }
-    fprintf(stderr, "\n");
-    hw_ipc_write_js(bytes, len);
+    hw_ipc_write_js((const unsigned char*)data, len);
     return len;
 }
 
