@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-18T01:19:00Z
+**Last Updated**: 2026-02-18T11:02:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: ASYNCIFY corrected (REMOVE globs), custom HTML restored — awaiting browser test
+**Status**: Full project analysis complete, performance fixes deployed — awaiting browser test
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -120,6 +120,18 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 9 - February 18, 2026 (09:06-11:02 UTC)
+
+**Full project analysis, bug fixes, clean rebuild.**
+
+- Deep research: upstream repo, pas2c pipeline, Rust mapgen, SDL2 Emscripten docs, ASYNCIFY vs JSPI
+- Confirmed all resource files exist in source AND .data package — texture issues were never about missing files
+- Found and fixed IPC console.log in writeIPC hot path (blocked main thread on every message)
+- Found and fixed pre.js overwriting HTML's Module.setStatus (broke progress bar)
+- Removed -O2/-O3 conflict, increased INITIAL_MEMORY to 256MB
+- Clean rebuild with consistent -O3, deployed and restarted server
+- Noted linker warnings: ai_add_team_hedgehog/ai_have_plan FFI signature mismatches (upstream issue)
 
 ### Session 1 - February 17, 2026 (01:00-03:35 UTC)
 
