@@ -172,11 +172,16 @@ var Module={
   print:function(){console.log(Array.prototype.slice.call(arguments).join(' '))},
   canvas:document.getElementById('canvas'),
   setStatus:function(text){
-    if(!text){spinnerEl.style.display='none';progressEl.hidden=true}
-    var m=text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
-    if(m){progressEl.value=100*parseInt(m[2]);progressEl.max=100*parseInt(m[4]);progressEl.hidden=false;text=m[1]}
-    else{progressEl.hidden=true}
-    statusEl.textContent=text;
+    if(!text){spinnerEl.style.display='none';progressEl.hidden=true;statusEl.textContent='Ready';return}
+    var m=text.match(/\((\d+)\/(\d+)\)/);
+    if(m){
+      var loaded=parseInt(m[1]),total=parseInt(m[2]);
+      progressEl.value=loaded;progressEl.max=total;progressEl.hidden=false;
+      statusEl.textContent='Downloading... '+(loaded/1048576|0)+' / '+(total/1048576|0)+' MB';
+    } else {
+      progressEl.hidden=true;
+      statusEl.textContent=text;
+    }
   },
   totalDependencies:0,
   monitorRunDependencies:function(left){

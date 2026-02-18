@@ -156,11 +156,34 @@ static void mainloop_frame(void) {
     }
 
     LongWord CurrTime = SDL_GetTicks();
-    if (ml_PrevTime + (LongWord)cTimerInterval <= CurrTime) {
-        ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)((int64_t)CurrTime - (int64_t)ml_PrevTime));
-        ml_PrevTime = CurrTime;
+    // Count how many ticks we need to catch up
+    int ticksNeeded = 0;
+    LongWord tmpTime = ml_PrevTime;
+    while (tmpTime + (LongWord)cTimerInterval <= CurrTime) {
+        ticksNeeded++;
+        tmpTime += (LongWord)cTimerInterval;
     }
-    // No SDL_Delay — requestAnimationFrame handles frame pacing
+    // Cap to avoid runaway (e.g. after tab-away or loading)
+    if (ticksNeeded > 128)
+        ticksNeeded = 128;
+
+    // Run catch-up ticks with rendering disabled (game logic only)
+    if (ticksNeeded > 1) {
+        cOnlyStats = true;
+        for (int i = 0; i < ticksNeeded - 1 && !ml_isTerminated; i++) {
+            ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)cTimerInterval);
+            ml_PrevTime += (LongWord)cTimerInterval;
+        }
+        cOnlyStats = false;
+    }
+    // Final tick with rendering enabled
+    if (ticksNeeded > 0 && !ml_isTerminated) {
+        ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)cTimerInterval);
+        ml_PrevTime += (LongWord)cTimerInterval;
+    }
+    // If still behind, skip ahead
+    if (ml_PrevTime + (LongWord)cTimerInterval <= CurrTime)
+        ml_PrevTime = CurrTime;
 
     uio_IPCCheckSock();
 }
