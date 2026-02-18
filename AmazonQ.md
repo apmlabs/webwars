@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-18T13:35:00Z
+**Last Updated**: 2026-02-18T16:28:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: JSPI init suspend eliminated — awaiting browser test
+**Status**: JSPI working — game renders in browser, performance optimization needed
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -32,7 +32,9 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **JSPI migration** - switched from ASYNCIFY to JSPI (-sJSPI), 23% smaller WASM (3.97MB vs 5.15MB)
 - ✅ **invoke_* eliminated** - `-sSUPPORT_LONGJMP=wasm` + `-fwasm-exceptions` confirmed zero invoke_* trampolines
 - ✅ **Init suspend eliminated** - IPCWaitPongEvent busy-polls without SDL_Delay in EMSCRIPTEN builds
-- 🟡 **Current**: Awaiting browser test to verify JSPI init works (no more SuspendError)
+- ✅ **SDL asyncify disabled** - SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0") before engine init
+- ✅ **JSPI rendering confirmed** - game renders in browser with JSPI (3.97MB WASM)
+- 🟡 **Current**: Performance optimization — game renders but runs slowly
 
 ### Known Issues
 
@@ -150,7 +152,16 @@ cd build/wasm && make -j$(nproc)
 - Busy-poll finds pong immediately, zero suspends needed during init
 - Rebuilt and deployed with JSPI (3.97MB WASM)
 
-**Remaining JSPI Risk**: AI `SDL_Delay(700)` and `SDL_Delay(100)` in `uAI.pas` will still trigger `emscripten_sleep` during gameplay. These will need the same treatment (busy-poll or skip) when AI runs.
+**Phase 5: Still Failing — Found Real Root Cause (AddProgress → SwapBuffers)**
+- IPCWaitPongEvent fix was necessary but not sufficient — SuspendError persisted
+- Traced init path: after font loading, `AddProgress()` calls `SwapBuffers()` → `SDL_GL_SwapWindow()`
+- SDL2's Emscripten backend calls `emscripten_sleep(0)` inside SwapWindow when `SDL_EMSCRIPTEN_ASYNCIFY` hint is enabled (default)
+- The hint was only set to "0" in `__wrap_hwengine_MainLoop` — too late, init already called SwapBuffers
+- Fix: moved `SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0")` to top of `hwengine_RunEngine_internal()`
+- Had to restructure web_entry.c — moved function after fpcrtl.h/hwengine.h includes to access SDL_SetHint
+- **Result: JSPI working! Game renders in browser with 3.97MB WASM**
+
+**Remaining**: Performance is still slow (same as pre-JSPI). AI `SDL_Delay` in uAI.pas will need treatment when AI runs.
 
 ### Session 9 - February 18, 2026 (09:06-11:02 UTC)
 

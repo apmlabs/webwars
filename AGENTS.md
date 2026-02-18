@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-18T13:35:00Z
+Last updated: 2026-02-18T16:28:00Z
 
 ### Project Status
-- **Phase**: JSPI Migration — Init Suspend Eliminated
-- **Last Action**: Removed SDL_Delay from IPCWaitPongEvent for EMSCRIPTEN builds (busy-poll instead)
-- **Current Blocker**: Awaiting browser test to verify JSPI init works (no more SuspendError)
-- **Target**: Playable frame rate in browser with JSPI (smaller WASM, zero per-frame overhead)
+- **Phase**: JSPI Working — Game Renders in Browser
+- **Last Action**: Fixed SuspendError by disabling SDL_EMSCRIPTEN_ASYNCIFY before engine init
+- **Current Blocker**: Performance — game renders but runs slowly (same issue as pre-JSPI)
+- **Target**: Playable frame rate in browser with JSPI
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -372,6 +372,9 @@ JSPI (JavaScript Promise Integration, `-sJSPI`, ASYNCIFY=2) is the modern replac
 
 ### 22. JSPI SuspendError Root Cause: `_emscripten_sleep` Is a JS Function
 Even with zero `invoke_*` trampolines (`-sSUPPORT_LONGJMP=wasm` + `-fwasm-exceptions` confirmed working), JSPI still fails with SuspendError during init. Root cause: Emscripten's `_emscripten_sleep` is implemented as a **JS function** that calls `Asyncify.handleAsync()` (an async JS function). Even though `instrumentWasmImports` wraps it with `WebAssembly.Suspending`, the internal JS execution creates frames that JSPI cannot suspend through. The fix is to eliminate the need to call `emscripten_sleep` entirely during init (Option C: busy-poll). For gameplay suspends (AI `SDL_Delay`), JSPI may still fail — those will need either: (a) the same busy-poll treatment, (b) a pure-WASM sleep implementation, or (c) fallback to ASYNCIFY for those code paths. Key diagnostic: check `var _emscripten_sleep=` in generated JS — if it contains `Asyncify.handleAsync`, it's a JS function, not a WASM import, and JSPI will fail when it tries to suspend through it.
+
+### 23. SDL_GL_SwapWindow Calls emscripten_sleep During Init (AddProgress)
+The engine's `AddProgress()` function renders a loading progress bar and calls `SwapBuffers()` → `SDL_GL_SwapWindow()`. SDL2's Emscripten backend checks the `SDL_EMSCRIPTEN_ASYNCIFY` hint — when enabled (default), `SDL_GL_SwapWindow` calls `emscripten_sleep(0)` to yield to the browser. This creates a JS-frame suspend that breaks JSPI. Fix: call `SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0")` at the very start of `hwengine_RunEngine_internal()`, before any engine initialization. This must happen before `SDL_Init` and before any `AddProgress` calls. The hint was previously set only in `__wrap_hwengine_MainLoop` (too late — init already called SwapBuffers multiple times by then).
 
 ---
 
