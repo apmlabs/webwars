@@ -3,20 +3,6 @@
 // External declaration of the engine entry point
 extern int hwengine_RunEngine(int argc, char **argv);
 
-// Wrapper that provides --internal flag without needing JS heap manipulation
-EMSCRIPTEN_KEEPALIVE
-int hwengine_RunEngine_internal(void) {
-    char *argv[] = {
-        (char*)"--internal",
-        (char*)"--prefix",
-        (char*)"/Data",
-        (char*)"--user-prefix",
-        (char*)"/Data",
-        NULL
-    };
-    return hwengine_RunEngine(5, argv);
-}
-
 // ============================================================
 // emscripten_set_main_loop replacement for hwengine_MainLoop
 // ============================================================
@@ -33,6 +19,26 @@ int hwengine_RunEngine_internal(void) {
 
 #include "fpcrtl.h"
 #include "hwengine.h"
+
+// Wrapper that provides --internal flag without needing JS heap manipulation.
+// Placed after includes so SDL_SetHint is declared (via SDLh.h).
+EMSCRIPTEN_KEEPALIVE
+int hwengine_RunEngine_internal(void) {
+    // Disable SDL's emscripten_sleep in SwapWindow/Delay BEFORE engine init.
+    // AddProgress() calls SwapBuffers during loading — with JSPI this causes
+    // SuspendError because emscripten_sleep is a JS function.
+    SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0");
+
+    char *argv[] = {
+        (char*)"--internal",
+        (char*)"--prefix",
+        (char*)"/Data",
+        (char*)"--user-prefix",
+        (char*)"/Data",
+        NULL
+    };
+    return hwengine_RunEngine(5, argv);
+}
 
 // Forward declare the original (in case we ever need it)
 extern void __real_hwengine_MainLoop(void);
@@ -207,10 +213,6 @@ void __wrap_hwengine_MainLoop(void) {
     ml_previousGameState = gsStart;
     ml_isTerminated = false;
     ml_PrevTime = SDL_GetTicks();
-
-    // Disable SDL's automatic emscripten_sleep calls in SDL_Delay,
-    // SDL_GL_SwapWindow, etc. We handle frame pacing via rAF instead.
-    SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0");
 
     // fps=0 means use requestAnimationFrame, simulate_infinite_loop=1
     emscripten_set_main_loop(mainloop_frame, 0, 1);
