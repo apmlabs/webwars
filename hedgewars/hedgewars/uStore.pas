@@ -701,15 +701,16 @@ begin
         // output sdl error if loading failed when data source was available
         if rwops <> nil then
             begin
-            // anounce that loading failed
-            OutError(logMsg + ' ' + msgFailed, false);
+            // anounce that loading failed (suppress non-critical failures)
+            if (imageFlags and ifCritical) <> 0 then
+                OutError(logMsg + ' ' + msgFailed, false);
 
             if SDLCheck(false, 'LoadImage: ' + logMsg + ' ' + msgFailed, (imageFlags and ifCritical) <> 0) then
                 exit;
             // rwops was already freed by IMG_Load_RW
             rwops:= nil;
             end
-        else
+        else if (imageFlags and ifCritical) <> 0 then
             OutError(logMsg + ' ' + msgFailed, (imageFlags and ifCritical) <> 0);
         exit;
         end;

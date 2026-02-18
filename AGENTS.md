@@ -21,9 +21,9 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 Last updated: 2026-02-17T23:16:00Z
 
 ### Project Status
-- **Phase**: Rendering Confirmed - Performance Optimization
-- **Last Action**: Replaced blocking main loop with emscripten_set_main_loop, eliminated ASYNCIFY overhead
-- **Current Blocker**: Texture loading failures (theme sprites, sky, water, clouds)
+- **Phase**: Rendering Confirmed - Performance Optimization (cOnlyStats multi-tick)
+- **Last Action**: Implemented cOnlyStats catch-up ticks + download progress bar, awaiting build/deploy
+- **Current Blocker**: Needs build+deploy to verify performance fix; texture loading failures remain
 - **Target**: Playable frame rate in browser
 
 ### Implementation Tracks
@@ -343,6 +343,12 @@ ASYNCIFY saves/restores the entire WASM stack on every `emscripten_sleep`, `SDL_
 ### 14. Use --wrap for Generated Code Interception
 When pas2c generates C code you can't modify (regenerated on every build), use the linker `--wrap=symbol_name` flag. Define `__wrap_symbol_name()` in your own C file as the replacement, and `__real_symbol_name()` to call the original. Include the generated headers via `#include "fpcrtl.h"` then `#include "hwengine.h"` (order matters — fpcrtl.h defines types used by generated headers). Add `${CMAKE_CURRENT_BINARY_DIR}` to include paths for generated .h files.
 
+### 15. Console Logging Blocks the Browser Main Thread
+`console.log` / `emscripten_log` in browsers is synchronous and extremely expensive. At 480 calls/sec it can drop frame rate from 60fps to 3-6fps. Remove all debug logging from hot paths.
+
+### 16. Use cOnlyStats for Multi-Tick Catch-Up in WASM
+The engine's `cOnlyStats` boolean (in `uVariables.h`) skips `DrawWorld`, `ProcessVisualGears`, and `SwapBuffers`. For WASM frame pacing: set `cOnlyStats=true` for N-1 catch-up ticks (game logic only), then `cOnlyStats=false` for the final tick (with rendering). This avoids wasting GPU work on frames that will never be displayed.
+
 ---
 
 ## 🐛 KEY BUG PATTERNS
@@ -364,6 +370,8 @@ When pas2c generates C code you can't modify (regenerated on every build), use t
 | Guess IPC protocol | Subtle ordering bugs | Read EngineInteraction.hs |
 | Use ASYNCIFY for main loop | 120+ stack save/restore per second | emscripten_set_main_loop + --wrap |
 | Include hwengine.h before fpcrtl.h | fpcrtl_dimension_t undefined | Always include fpcrtl.h first |
+| console.log in hot path | Synchronous, blocks main thread, kills FPS | Remove all debug logging from frame loop |
+| Multiple DoTimer calls per frame | Each call renders (DrawWorld+SwapBuffers) | Use cOnlyStats=true for catch-up ticks |
 
 ---
 

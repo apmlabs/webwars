@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-17T23:16:00Z
+**Last Updated**: 2026-02-18T00:28:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Rendering Confirmed - Performance Optimization (emscripten_set_main_loop)
+**Status**: Performance Optimization - cOnlyStats multi-tick catch-up implemented
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -23,7 +23,10 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **Rendering confirmed** - game renders on canvas
 - ✅ **Optimized build** - switched from -O0 to -O2
 - ✅ **emscripten_set_main_loop** - eliminated ASYNCIFY overhead on hot path
-- 🟡 **Current**: Texture loading failures, still needs perf work
+- ✅ **cOnlyStats multi-tick catch-up** - game logic runs at real-time speed, only last tick renders
+- ✅ **Download progress bar** - shows MB downloaded during 187MB data fetch
+- ✅ **Custom game page** - hwengine.html with controls overlay
+- 🟡 **Current**: Texture loading failures, needs build+deploy of cOnlyStats fix
 
 ### Known Issues
 
@@ -242,6 +245,34 @@ Commits: 8b07650, fabf08a
 - Fixed gitignore to track web_entry.c and ipc_browser.c
 
 **Key insight**: ASYNCIFY is catastrophically slow for main loops. Use `emscripten_set_main_loop` + `--wrap` to intercept generated code. Set `SDL_EMSCRIPTEN_ASYNCIFY=0` to prevent SDL from adding its own emscripten_sleep calls.
+
+### Session 6 - February 18, 2026 (00:00-00:28 UTC)
+
+**Performance diagnosis and multi-tick catch-up with cOnlyStats.**
+
+**Phase 1: Performance Diagnosis**
+- Game rendered but ran at 3-6 FPS, unplayable
+- Identified two root causes:
+  1. Debug `emscripten_log` calls producing ~480 console.log/sec — browser console logging is synchronous and blocks main thread
+  2. Each DoTimer call includes full rendering (DrawWorld + SwapBuffers), so 4 ticks/frame = 4 renders with only last visible
+- First fix attempt (1 tick/frame) fixed wasted renders but game time crawled — only 8ms game time per 16ms real frame
+
+**Phase 2: Engine Analysis**
+- Analyzed `hwengine.c` DoTimer function: rendering (DrawWorld, SwapBuffers) is inseparable from game logic within a single call
+- Discovered `cOnlyStats` boolean in `uVariables.h` — engine's built-in mechanism to skip rendering
+- When `cOnlyStats=true`: `DrawWorld`, `ProcessVisualGears`, and `SwapBuffers` are all skipped
+
+**Phase 3: Multi-Tick Solution**
+- Implemented cOnlyStats-based catch-up in web_entry.c:
+  - Calculate ticksNeeded from elapsed time vs cTimerInterval (8ms)
+  - Set `cOnlyStats=true` for N-1 catch-up ticks (game logic only, no GPU work)
+  - Set `cOnlyStats=false` for final tick (with rendering)
+  - Cap at 128 ticks to prevent runaway after tab-away
+- Fixed download progress bar: updated `Module.setStatus` regex to parse Emscripten's `(loaded/total)` byte format, display as MB
+
+**Status**: Code written but not yet built/deployed — build was interrupted
+
+**Key insight**: Console logging in browsers is synchronous and extremely expensive. Also, `cOnlyStats` is the engine's built-in rendering skip flag — perfect for WASM catch-up ticks where only the last frame needs to be drawn.
 
 ## Success Criteria
 

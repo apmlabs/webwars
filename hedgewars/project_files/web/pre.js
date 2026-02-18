@@ -67,9 +67,25 @@ var HWEngine = {
     },
 
     // Ammo string: exactly 60 digits (one per TAmmoType 1..60, amNothing excluded)
-    // 9=infinite, 0=disabled
-    defaultAmmo: '999999999999999999999999999999999999999999999999999999999999',
+    // 9=infinite, 0=disabled. Default scheme based on real Hedgewars:
+    // Positions: Grenade Cluster Bazooka Bee Shotgun PickHammer Skip Rope Mine Deagle
+    //            Dynamite FirePunch Whip BaseballBat Parachute Airstrike MineStrike
+    //            BlowTorch Girder Teleport Switch Mortar Kamikaze Cake Seduction
+    //            Watermelon HellishBomb Napalm Drill Ballgun RCPlane LowGravity
+    //            ExtraDamage Invulnerable ExtraTime LaserSight Vampiric SniperRifle
+    //            Jetpack Molotov Birdy PortalGun Piano GasBomb SineGun Flamethrower
+    //            SMine Hammer Resurrector DrillStrike Snowball Tardis LandGun IceGun
+    //            Knife Rubber AirMine Creeper Minigun Sentry
+    defaultAmmo: '939192919291929192919191919191919191919191919191919191919191',
     zeroAmmo:    '000000000000000000000000000000000000000000000000000000000000',
+    defaultProb: '040504050405040504050404040404040404040404040404040404040404',
+    defaultDelay:'000000000000020000000000000000000000000000000000000000000000',
+    defaultReinf:'000000000000000000000000000000000000000000000000000000000000',
+
+    // Maps suitable for standard play (no special modes)
+    maps: ['Cake','Castle','Cave','Islands','Mushrooms','Tree','Cheese','Bath',
+           'Bamboo','Battlefield','Blox','Cogs','EarthRise','Hammock','Hedgelove',
+           'Hogville','Lonely_Island','Plane','Sticks','Trash'],
 
     sendAmmoAndTeam: function(hash, color, name, hogs) {
         // Sanity check: engine expects exactly 60 chars per ammo string
@@ -78,9 +94,9 @@ var HWEngine = {
         }
         // Ammo store MUST be sent before each team (per Hedgewars protocol)
         this.sendMessage('eammloadt ' + this.defaultAmmo);
-        this.sendMessage('eammprob ' + this.zeroAmmo);
-        this.sendMessage('eammdelay ' + this.zeroAmmo);
-        this.sendMessage('eammreinf ' + this.zeroAmmo);
+        this.sendMessage('eammprob ' + this.defaultProb);
+        this.sendMessage('eammdelay ' + this.defaultDelay);
+        this.sendMessage('eammreinf ' + this.defaultReinf);
         this.sendMessage('eammstore');
 
         // addteam format: "eaddteam <hash> <color_decimal> <name>"
@@ -129,8 +145,10 @@ var HWEngine = {
         this.sendAmmoAndTeam('x', '16776960', 'Blue Team',
             ['Hog B1', 'Hog B2', 'Hog B3', 'Hog B4']);
 
-        // 3. Map (after teams)
-        this.sendMessage('emap Cake');
+        // 3. Map (random from pool, after teams)
+        var map = this.maps[Math.floor(Math.random() * this.maps.length)];
+        console.log('[HW] Selected map: ' + map);
+        this.sendMessage('emap ' + map);
 
         // 4. Game type and start
         this.sendMessage('TL');
@@ -140,7 +158,7 @@ var HWEngine = {
 
 Module.HWEngine = HWEngine;
 Module.noInitialRun = false;
-Module.arguments = ['--prefix', '/Data', '--user-prefix', '/Data', '--nomusic', '--nosound', 'test.hwd'];
+Module.arguments = ['--prefix', '/Data', '--user-prefix', '/Data', 'test.hwd'];
 Module.preRun = Module.preRun || [];
 Module.postRun = Module.postRun || [];
 

@@ -852,10 +852,11 @@ procedure PlayMusic;
 var s: shortstring;
 begin
     {$IFDEF EMSCRIPTEN}
-    // Disable music for EMSCRIPTEN builds to avoid audio codec crashes
+    // TODO: Mix_LoadMUS_RW/Mix_PauseMusic/Mix_ResumeMusic have signature
+    // mismatches between Pascal bindings and Emscripten SDL2_mixer.
+    // Fix SDLh.pas bindings before re-enabling.
     exit;
     {$ENDIF}
-    
     if (MusicFN = '') or (not isMusicEnabled) then
         exit;
     if SuddenDeath and (SDMusicFN <> '') then
@@ -893,7 +894,8 @@ begin
            end;
        end;
 
-    SDLCheck(Mix_FadeInMusic(Mus, -1, 3000) <> -1, 'Mix_FadeInMusic', false)
+    if Mus <> nil then
+        SDLCheck(Mix_FadeInMusic(Mus, -1, 3000) <> -1, 'Mix_FadeInMusic', false)
 end;
 
 procedure SetVolume(vol: LongInt);
