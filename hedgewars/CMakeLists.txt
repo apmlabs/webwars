@@ -145,7 +145,14 @@ else()
     add_flag_append(CMAKE_C_FLAGS_DEBUG "-Wextra -O0")
     add_flag_append(CMAKE_CXX_FLAGS "-Wall -pipe")
     add_flag_append(CMAKE_CXX_FLAGS_RELEASE "-O3")
-    add_flag_append(CMAKE_CXX_FLAGS_DEBUG "-Wextra -O0")    
+    add_flag_append(CMAKE_CXX_FLAGS_DEBUG "-Wextra -O0")
+    # JSPI requires WASM-based longjmp: JS-based invoke_* trampolines
+    # re-enter WASM without WebAssembly.promising, causing SuspendError.
+    # Must apply globally so Lua (which uses setjmp/longjmp) is compiled consistently.
+    # -fwasm-exceptions enables native WASM exception handling required by SUPPORT_LONGJMP=wasm.
+    if(EMSCRIPTEN)
+        add_flag_append(CMAKE_C_FLAGS "-sSUPPORT_LONGJMP=wasm -fwasm-exceptions")
+    endif()
 endif()       
 
 #CMake adds a lot of additional configuration flags, so let's clear them up
