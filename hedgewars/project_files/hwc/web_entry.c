@@ -55,18 +55,52 @@ static LongWord ml_PrevTime;
 static boolean ml_isTerminated;
 static int ml_frameCount;
 static TGameState ml_previousGameState;
+static double ml_lastFrameTime;
 
 // Debug timing (toggled via JS: Module.HWEngine.debugTiming = true)
 EM_JS(int, hw_debug_timing, (), { return Module.HWEngine && Module.HWEngine.debugTiming ? 1 : 0; });
+
+// Wrap RAF callback with error catching — if mainloop_frame throws,
+// the browser silently stops calling requestAnimationFrame.
+EM_JS(void, hw_install_error_catcher, (), {
+    var origSetMainLoop = _emscripten_set_main_loop;
+    if (Module._loopWrapped) return;
+    Module._loopWrapped = true;
+    // Patch the browser's RAF callback after emscripten_set_main_loop sets it up
+    var origRAF = window.requestAnimationFrame;
+    window.requestAnimationFrame = function(cb) {
+        return origRAF.call(window, function(ts) {
+            try { cb(ts); } catch(e) {
+                console.error('[Engine] RAF EXCEPTION killed loop:', e);
+                console.error('[Engine] Stack:', e.stack);
+                throw e;
+            }
+        });
+    };
+    // Monitor for long tasks blocking the main thread
+    if (window.PerformanceObserver) {
+        try {
+            new PerformanceObserver(function(list) {
+                list.getEntries().forEach(function(entry) {
+                    if (entry.duration > 50)
+                        console.warn('[Engine] LONG TASK: ' + entry.duration.toFixed(0) + 'ms at ' + entry.startTime.toFixed(0));
+                });
+            }).observe({entryTypes: ['longtask']});
+        } catch(e) {}
+    }
+});
 
 static void mainloop_frame(void) {
     TSDL_Event event;
     boolean wheelEvent = false;
     double t0 = 0, t1 = 0, t2 = 0, t3 = 0;
-    int doDebug = hw_debug_timing();
-    if (doDebug) t0 = emscripten_get_now();
+    int doDebug = 1;
+    t0 = emscripten_get_now();
+    double frameDelta = t0 - ml_lastFrameTime;
+    ml_lastFrameTime = t0;
 
     if (ml_isTerminated || !allOK) {
+        emscripten_log(0, "PERF LOOP EXIT f=%d terminated=%d allOK=%d", ml_frameCount, (int)ml_isTerminated, (int)allOK);
         emscripten_cancel_main_loop();
         return;
     }
@@ -192,20 +226,23 @@ static void mainloop_frame(void) {
         }
         cOnlyStats = false;
     }
+    t2 = emscripten_get_now();
     // Final tick with rendering enabled
     if (ticksNeeded > 0 && !ml_isTerminated) {
         ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)cTimerInterval);
         ml_PrevTime += (LongWord)cTimerInterval;
     }
+    t3 = emscripten_get_now();
     // If still behind, skip ahead
     if (ml_PrevTime + (LongWord)cTimerInterval <= CurrTime)
         ml_PrevTime = CurrTime;
 
     uio_IPCCheckSock();
-    if (doDebug) {
-        t3 = emscripten_get_now();
-        emscripten_log(0, "FRAME: events=%.1fms ticks=%d logic=%.1fms total=%.1fms",
-            t1-t0, ticksNeeded, t3-t1, t3-t0);
+    double frameEnd = emscripten_get_now();
+    // Log every frame for first 300, then every 60th or when slow
+    if (ml_frameCount < 300 || ml_frameCount % 60 == 0 || frameDelta > 50) {
+        emscripten_log(0, "PERF f=%d rafDelta=%.0fms ticks=%d catchup=%.1fms render=%.1fms total=%.1fms",
+            ml_frameCount, frameDelta, ticksNeeded, t2-t1, t3-t2, frameEnd-t0);
     }
 }
 
@@ -213,6 +250,9 @@ void __wrap_hwengine_MainLoop(void) {
     ml_previousGameState = gsStart;
     ml_isTerminated = false;
     ml_PrevTime = SDL_GetTicks();
+
+    // Catch silent exceptions that kill the RAF loop
+    hw_install_error_catcher();
 
     // fps=0 means use requestAnimationFrame, simulate_infinite_loop=1
     emscripten_set_main_loop(mainloop_frame, 0, 1);

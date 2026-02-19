@@ -116,7 +116,7 @@ if(BUILD_ENGINE_JS)
     set(HW_DATA_DIR "${CMAKE_SOURCE_DIR}/share/hedgewars/Data")
     set(HW_DEMO_FILE "${CMAKE_SOURCE_DIR}/test.hwd")
     
-    add_flag_append(CMAKE_C_FLAGS "-sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=268435456 -sGL_UNSAFE_OPTS=0 -sLZ4=1 --preload-file ${HW_DATA_DIR}@/Data --preload-file ${HW_DEMO_FILE}@/test.hwd --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
+    add_flag_append(CMAKE_C_FLAGS "-sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=268435456 -sGL_UNSAFE_OPTS=1 -sGL_POOL_TEMP_BUFFERS=1 -sLZ4=1 --preload-file ${HW_DATA_DIR}@/Data --preload-file ${HW_DEMO_FILE}@/test.hwd --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
 endif()
 
 #compile the c files
@@ -136,8 +136,8 @@ if(EMSCRIPTEN)
         -sSDL2_IMAGE_FORMATS=["png"]
         -sUSE_SDL_TTF=2
         -sMIN_WEBGL_VERSION=2 
-        -sMAX_WEBGL_VERSION=2 
-        -sFULL_ES2=1
+        -sMAX_WEBGL_VERSION=2
+        -sGL_PREINITIALIZED_CONTEXT
         -sALLOW_MEMORY_GROWTH=1
         -sSTACK_SIZE=5MB
         -sJSPI

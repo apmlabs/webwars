@@ -154,11 +154,14 @@ document.addEventListener('pointerlockchange',function(){
   else{setTimeout(function(){if(!document.pointerLockElement)prompt.style.display='flex'},200)}
 });
 
-/* ── Canvas sizing ── */
+/* ── Canvas sizing + resolution scale ── */
+var hwResScale=0.5; // TEST: half resolution to check if fill-bound
 function resizeCanvas(){
   var c=document.getElementById('canvas');
-  c.width=window.innerWidth;
-  c.height=window.innerHeight-36;
+  c.width=Math.round(window.innerWidth*hwResScale);
+  c.height=Math.round((window.innerHeight-36)*hwResScale);
+  c.style.width=window.innerWidth+'px';
+  c.style.height=(window.innerHeight-36)+'px';
 }
 window.addEventListener('resize',resizeCanvas);
 resizeCanvas();
@@ -168,9 +171,26 @@ var statusEl=document.getElementById('status-text');
 var progressEl=document.getElementById('progress');
 var spinnerEl=document.getElementById('spinner');
 
+/* ── Create WebGL2 context with optimal attributes BEFORE Emscripten loads ── */
+var hwCanvas=document.getElementById('canvas');
+var hwGL=hwCanvas.getContext('webgl2',{
+  alpha:false,
+  antialias:false,
+  depth:false,
+  desynchronized:true,
+  failIfMajorPerformanceCaveat:false,
+  powerPreference:'high-performance',
+  premultipliedAlpha:true,
+  preserveDrawingBuffer:false,
+  stencil:false
+});
+if(!hwGL) console.error('[GL-INIT] Failed to create WebGL2 context!');
+else console.log('[GL-INIT] WebGL2 context created with attributes:',JSON.stringify(hwGL.getContextAttributes()));
+
 var Module={
   print:function(){console.log(Array.prototype.slice.call(arguments).join(' '))},
-  canvas:document.getElementById('canvas'),
+  canvas:hwCanvas,
+  preinitializedWebGLContext:hwGL,
   setStatus:function(text){
     if(!text){spinnerEl.style.display='none';progressEl.hidden=true;statusEl.textContent='Ready';return}
     var m=text.match(/\((\d+)\/(\d+)\)/);
@@ -192,6 +212,138 @@ var Module={
 };
 Module.setStatus('Downloading...');
 window.onerror=function(e){Module.setStatus('Error — see console');spinnerEl.style.display='none'};
+
+/* ── Probe A: Pure JS RAF cadence (independent of engine) ── */
+(function(){
+  var rafDeltas=[], rafLast=performance.now(), rafN=0;
+  function rafProbe(ts){
+    var d=ts-rafLast; rafLast=ts; rafDeltas.push(d); rafN++;
+    if(rafN%120===0){
+      rafDeltas.sort(function(a,b){return a-b});
+      var sum=0; for(var i=0;i<rafDeltas.length;i++) sum+=rafDeltas[i];
+      console.log('[RAF-PROBE] n='+rafDeltas.length+' min='+rafDeltas[0].toFixed(1)+' avg='+(sum/rafDeltas.length).toFixed(1)+' max='+rafDeltas[rafDeltas.length-1].toFixed(1)+' vis='+document.visibilityState+' focus='+document.hasFocus());
+      rafDeltas=[];
+    }
+    requestAnimationFrame(rafProbe);
+  }
+  requestAnimationFrame(rafProbe);
+})();
+
+/* ── Probe D: GL diagnostics + GPU timer + pass counters ── */
+/* Uses hwGL directly — single context, no getContext calls */
+(function(){
+  var drawCalls=0, probeFrame=0;
+  var gl=hwGL;
+  if(!gl){console.error('[GL-PROBE] No hwGL context!');return;}
+
+  var isWGL2=typeof WebGL2RenderingContext!=='undefined'&&gl instanceof WebGL2RenderingContext;
+  console.log('[GL-PROBE] isWebGL2='+isWGL2+' version='+gl.getParameter(gl.VERSION));
+  var dbg=gl.getExtension('WEBGL_debug_renderer_info');
+  if(dbg){
+    console.log('[GL-PROBE] RENDERER: '+gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL));
+    console.log('[GL-PROBE] VENDOR: '+gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL));
+  }
+  console.log('[GL-PROBE] Context attributes: '+JSON.stringify(gl.getContextAttributes()));
+  console.log('[GL-PROBE] canvas===Module.canvas: '+(gl.canvas===Module.canvas));
+  console.log('[GL-PROBE] resolution: '+gl.canvas.width+'x'+gl.canvas.height+' scale='+hwResScale);
+
+  // Pass counters
+  var clears=0, fboBinds=0, texUploads=0, progSwitches=0;
+  var origClear=gl.clear.bind(gl);
+  gl.clear=function(){clears++;return origClear.apply(gl,arguments)};
+  var origBindFB=gl.bindFramebuffer.bind(gl);
+  gl.bindFramebuffer=function(){fboBinds++;return origBindFB.apply(gl,arguments)};
+  var origTexImage=gl.texImage2D.bind(gl);
+  gl.texImage2D=function(){texUploads++;return origTexImage.apply(gl,arguments)};
+  var origTexSub=gl.texSubImage2D.bind(gl);
+  gl.texSubImage2D=function(){texUploads++;return origTexSub.apply(gl,arguments)};
+  var origUseProgram=gl.useProgram.bind(gl);
+  gl.useProgram=function(){progSwitches++;return origUseProgram.apply(gl,arguments)};
+
+  var tqExt=gl.getExtension('EXT_disjoint_timer_query_webgl2')||gl.getExtension('EXT_disjoint_timer_query');
+  console.log('[GL-PROBE] Timer ext: '+(tqExt?'available':'NONE'));
+
+  var origDrawArrays=gl.drawArrays.bind(gl);
+  var origDrawElements=gl.drawElements.bind(gl);
+
+  if(tqExt&&isWGL2){
+    console.log('[GL-PROBE] GPU timer queries AVAILABLE');
+    var TIME_ELAPSED=tqExt.TIME_ELAPSED_EXT, GPU_DISJOINT=tqExt.GPU_DISJOINT_EXT;
+    var pendingQ=[], gpuTimes=[], qActive=false, curQ=null;
+    gl.drawArrays=function(){
+      drawCalls++;
+      if(!qActive){curQ=gl.createQuery();gl.beginQuery(TIME_ELAPSED,curQ);qActive=true;}
+      return origDrawArrays.apply(gl,arguments);
+    };
+    gl.drawElements=function(){
+      drawCalls++;
+      if(!qActive){curQ=gl.createQuery();gl.beginQuery(TIME_ELAPSED,curQ);qActive=true;}
+      return origDrawElements.apply(gl,arguments);
+    };
+    function gpuFrameEnd(){
+      if(qActive&&curQ){gl.endQuery(TIME_ELAPSED);pendingQ.push(curQ);qActive=false;curQ=null;}
+      while(pendingQ.length>0){
+        var q=pendingQ[0];
+        if(!gl.getQueryParameter(q,gl.QUERY_RESULT_AVAILABLE)) break;
+        if(!gl.getParameter(GPU_DISJOINT)) gpuTimes.push(gl.getQueryParameter(q,gl.QUERY_RESULT)/1e6);
+        gl.deleteQuery(q);pendingQ.shift();
+      }
+      if(gpuTimes.length>=30){
+        gpuTimes.sort(function(a,b){return a-b});
+        var s=0;for(var i=0;i<gpuTimes.length;i++)s+=gpuTimes[i];
+        console.log('[GPU-PROBE] n='+gpuTimes.length+' min='+gpuTimes[0].toFixed(2)+'ms avg='+(s/gpuTimes.length).toFixed(2)+'ms p50='+gpuTimes[gpuTimes.length>>1].toFixed(2)+'ms p95='+gpuTimes[Math.floor(gpuTimes.length*0.95)].toFixed(2)+'ms max='+gpuTimes[gpuTimes.length-1].toFixed(2)+'ms px='+(gl.canvas.width*gl.canvas.height)+' pending='+pendingQ.length);
+        gpuTimes=[];
+      }
+      requestAnimationFrame(gpuFrameEnd);
+    }
+    requestAnimationFrame(gpuFrameEnd);
+  } else {
+    console.log('[GL-PROBE] GPU timer queries NOT available');
+    gl.drawArrays=function(){drawCalls++;return origDrawArrays.apply(gl,arguments)};
+    gl.drawElements=function(){drawCalls++;return origDrawElements.apply(gl,arguments)};
+  }
+
+  // Combined draw + pass counter report
+  var lastDraw=0,lastClear=0,lastFbo=0,lastTex=0,lastProg=0;
+  setInterval(function(){
+    if(drawCalls!==lastDraw){
+      probeFrame++;
+      var dd=drawCalls-lastDraw,dc=clears-lastClear,df=fboBinds-lastFbo,dt=texUploads-lastTex,dp=progSwitches-lastProg;
+      if(probeFrame<=60||probeFrame%30===0||dd>200)
+        console.log('[GL-PROBE] f='+probeFrame+' draws='+dd+' clears='+dc+' fboBinds='+df+' texUploads='+dt+' progSwitch='+dp);
+      lastDraw=drawCalls;lastClear=clears;lastFbo=fboBinds;lastTex=texUploads;lastProg=progSwitches;
+    }
+  },100);
+
+  // Resolution scale API
+  if(!window.Module) window.Module={};
+  if(!Module.HWEngine) Module.HWEngine={};
+  Module.HWEngine.setResScale=function(s){
+    hwResScale=s;resizeCanvas();
+    console.log('[GL-PROBE] Resolution changed: '+gl.canvas.width+'x'+gl.canvas.height+' scale='+s);
+  };
+
+  console.log('[GL-PROBE] Hooked on preinitializedWebGLContext. Use Module.HWEngine.setResScale(0.5) to test');
+})();
+
+/* ── Probe C: Wrap MainLoop.runner to measure total JS-thread time per frame ── */
+(function(){
+  var probeN=0;
+  var checkInterval=setInterval(function(){
+    if(typeof MainLoop==='undefined'||!MainLoop.func) return;
+    clearInterval(checkInterval);
+    var origRunner=MainLoop.runner;
+    MainLoop.runner=function(){
+      var t0=performance.now();
+      origRunner();
+      var t1=performance.now();
+      probeN++;
+      if(probeN<=300||probeN%60===0||(t1-t0)>50)
+        console.log('[RUNNER-PROBE] f='+probeN+' runnerTotal='+(t1-t0).toFixed(1)+'ms');
+    };
+    console.log('[RUNNER-PROBE] Wrapped MainLoop.runner');
+  },100);
+})();
 </script>
 <script async src="hwengine.js"></script>
 </body>

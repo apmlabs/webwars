@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-18T16:28:00Z
+**Last Updated**: 2026-02-19T10:19:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: JSPI working — game renders in browser, performance optimization needed
+**Status**: Performance deep-dive — GPU timer queries working, fill-rate test in progress
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -34,7 +34,13 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **Init suspend eliminated** - IPCWaitPongEvent busy-polls without SDL_Delay in EMSCRIPTEN builds
 - ✅ **SDL asyncify disabled** - SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0") before engine init
 - ✅ **JSPI rendering confirmed** - game renders in browser with JSPI (3.97MB WASM)
-- 🟡 **Current**: Performance optimization — game renders but runs slowly
+- ✅ **GL_PREINITIALIZED_CONTEXT** - WebGL2 context created in JS with optimal attributes, passed to Emscripten
+- ✅ **Context attributes locked** - antialias:false, alpha:false, desynchronized:true, powerPreference:high-performance
+- ✅ **GPU timer queries working** - EXT_disjoint_timer_query_webgl2 confirmed on Intel Iris Plus
+- ✅ **GL_UNSAFE_OPTS=1** - skip redundant WebGL validation in Emscripten glue
+- ✅ **GL_POOL_TEMP_BUFFERS=1** - reuse temporary buffers
+- ✅ **Pass counters added** - clears, FBO binds, tex uploads, program switches per frame
+- 🟡 **Current**: Fill-rate test at 0.5x resolution to determine GPU bottleneck type
 
 ### Known Issues
 
@@ -125,6 +131,59 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 20 - February 19, 2026 (09:29-10:19 UTC)
+
+**GPU timer queries working, context ownership locked, fill-rate diagnosis in progress.**
+
+**Phase 1: Clean Build + Deploy (GPU timer probe + MSAA fix)**
+- Deployed clean build with reverted pre.js + uStore.pas MSAA attributes + GPU timer probe
+- First results: context attributes showed antialias:false but GPU-PROBE never fired
+- Identified probe bug: `getContext('webgl2')` in probe was polling before engine created context
+
+**Phase 2: Fixed GPU Timer Probe**
+- Rewrote probe to try both `EXT_disjoint_timer_query_webgl2` and `EXT_disjoint_timer_query`
+- Used RAF-aligned frame boundaries with pending query queue
+- Timer ext confirmed available on Intel Iris Plus via ANGLE/D3D11
+- GPU-PROBE now fires correctly every 30 samples
+
+**Phase 3: Context Attribute Regression Discovered**
+- After clean rebuild, context attributes reverted to `antialias:true, alpha:true, desynchronized:false`
+- Root cause: SDL/EGL creates context with defaults, probe's `getContext` call may have created default context first
+- Previous "working" attributes were from a build that had the monkey-patch residue
+
+**Phase 4: GL_PREINITIALIZED_CONTEXT Implementation**
+- Create WebGL2 context in JS with explicit attributes BEFORE Emscripten loads
+- Pass via `Module.preinitializedWebGLContext` + `-sGL_PREINITIALIZED_CONTEXT` linker flag
+- Probe uses same `hwGL` variable directly — no `getContext` calls anywhere
+- Result: `canvas===Module.canvas: true`, attributes confirmed correct
+- One canvas, one context, one set of attributes — impossible to mismatch
+
+**Phase 5: GL Optimization Flags**
+- `GL_UNSAFE_OPTS=1` — skip redundant WebGL validation in Emscripten glue
+- `GL_POOL_TEMP_BUFFERS=1` — reuse temporary buffers
+
+**Phase 6: Pass Counter Analysis (Ground Truth)**
+- Added counters: clears, FBO binds, texImage2D/texSubImage2D, program switches
+- Results per ~100ms interval: `draws=222 clears=2 fboBinds=0 texUploads=0 progSwitch=0`
+- This is a single-pass, single-program, single-FBO renderer
+- GPU time is purely fill/overdraw + blending
+
+**Phase 7: GPU Timer Ground Truth (Correct Context)**
+- Calm: GPU avg=49-56ms, p50=52-57ms, draws=188-222, px=647075
+- Explosion: GPU avg=111ms, p50=103ms, p95=201ms, draws=630-793
+- Post-explosion: GPU avg=40-65ms, draws=248-350
+
+**Phase 8: Fill-Rate Test (In Progress)**
+- Set canvas to 0.5x resolution (quarter pixels) to test fill-bound hypothesis
+- Also testing depth:false (2D game likely doesn't need depth buffer)
+- Awaiting results from user
+
+**Key Findings:**
+- GPU is genuinely spending 50ms on calm frames with ~200 draws through ANGLE/D3D11
+- Single-pass renderer: no multipass, no FBO switches, no texture churn, no program switches
+- Fill/overdraw + alpha blending is the primary suspect
+- Resolution scale test will confirm fill-bound vs draw-bound
 
 ### Session 10 - February 18, 2026 (13:13-13:35 UTC)
 

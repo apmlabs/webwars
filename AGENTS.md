@@ -405,6 +405,7 @@ The engine's `AddProgress()` function renders a loading progress bar and calls `
 | Build without copying custom HTML | Emscripten overwrites hwengine.html with generic shell | Always `cp web/hwengine.html build/wasm/bin/` after build |
 | Use JSPI without eliminating JS-frame suspends | `_emscripten_sleep` is a JS function, JSPI can't suspend through it | Remove `SDL_Delay` from init paths; busy-poll instead |
 | Assume invoke_* is the only JSPI blocker | Even with zero invoke_*, `_emscripten_sleep` JS impl breaks JSPI | Check `var _emscripten_sleep=` in generated JS for `Asyncify.handleAsync` |
+| grep/read hwengine.js without strict limits | Minified JS is ONE line, megabytes long — floods context and crashes agent | NEVER grep/read hwengine.js directly. Use `wc -c` to check size, then `dd bs=1 skip=X count=Y` or search with byte-limited tools only |
 
 ---
 

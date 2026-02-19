@@ -933,6 +933,10 @@ begin
 {$IFNDEF DARWIN}
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1); // force hw rendering except on macOS
 {$ENDIF}
+{$IFDEF EMSCRIPTEN}
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 0);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 0);
+{$ENDIF}
 end;
 
 procedure SetupOpenGL;
