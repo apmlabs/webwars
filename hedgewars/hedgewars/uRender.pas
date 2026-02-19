@@ -947,6 +947,10 @@ begin
     if f = cScaleFactor then
         exit;
 
+{$IFDEF GL2}
+    FlushBatch();
+{$ENDIF}
+
     // for going back to default scaling just pop matrix
     if f = cDefaultZoomLevel then
         begin
