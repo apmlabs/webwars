@@ -21,10 +21,10 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 Last updated: 2026-02-19T13:47:00Z
 
 ### Project Status
-- **Phase**: Sprite Batch System Working — GPU time down 80-95%
-- **Last Action**: Fixed rendering correctness — converted DrawSpriteRotatedF/DrawSpritePivotedF to CPU transforms
-- **Current Blocker**: Rendering correctness — verifying hedgehog visibility and blinking fix
-- **Target**: Playable frame rate in browser with correct rendering
+- **Phase**: Game Fully Playable — 60fps, correct rendering, no flicker
+- **Last Action**: Fixed rotation sign, FlushBatch in untint/setTintAdd, desynchronized:false
+- **Current Blocker**: None — game plays to completion
+- **Target**: Multiplayer via WebSocket
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -381,6 +381,9 @@ When batching sprites with `BatchQuad`, vertices are accumulated in a CPU buffer
 
 ### 25. GL_STREAM_DRAW for ANGLE Per-Frame Uploads
 ANGLE (Chrome's WebGL→D3D11 layer) handles buffer usage hints differently: `GL_STREAM_DRAW` uses a shared global streaming ring buffer (append-only, no GPU stalls, cheap recycling via D3D buffer rename). `GL_STATIC_DRAW` creates a dedicated D3D buffer per GL buffer — if re-uploaded after draw, it invalidates and falls back to streaming with extra overhead. Always use `GL_STREAM_DRAW` for per-frame batch uploads.
+
+### 26. desynchronized:true Causes Black Frame Flicker with glClear
+`desynchronized:true` uses single-buffer (front buffer) rendering — the display controller reads directly from the buffer being drawn to. When `glClear` wipes the buffer to black at the start of each frame, the display can scan it out before the scene is drawn, causing a black flash. `preserveDrawingBuffer:true` only prevents the **browser** from clearing between frames — it doesn't help when our own code calls `glClear`. Fix: use `desynchronized:false` (standard double-buffering). The 16ms latency cost is imperceptible for non-twitch games.
 
 ---
 
