@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-19T13:47:00Z
+**Last Updated**: 2026-02-19T17:20:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Sprite batch system working — GPU time down 80-95%, fixing rendering correctness
+**Status**: Game fully playable — 60fps, correct rendering, correct physics, no flicker
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -43,7 +43,9 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **Sprite batch system** - BatchQuad/FlushBatch replaces per-sprite GL calls, GPU time 38-45ms → 1-9ms avg
 - ✅ **CPU transforms** - DrawTextureRotatedF, DrawHedgehog, DrawTexture, DrawTexture2, DrawTextureFromRectDir, DrawTextureRotated, DrawSpriteRotatedF, DrawSpriteRotatedFReal, DrawSpritePivotedF all converted to CPU-side vertex transform + BatchQuad
 - ✅ **GL_STREAM_DRAW** - ANGLE streaming ring buffer for per-frame batch uploads
-- 🟡 **Current**: Fixing rendering correctness (blinking, hedgehog visibility)
+- ✅ **Rotation fixed** - All CPU transforms now match original openglRotatef sign convention
+- ✅ **No flicker** - desynchronized:false for proper double-buffered compositing
+- ✅ **FlushBatch on all state changes** - Tint, untint, setTintAdd, BeginWater, DrawLine, etc.
 
 ### Known Issues
 
@@ -134,6 +136,36 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 22 - February 19, 2026 (13:57-17:20 UTC)
+
+**Fixed inverted rotation, blinking, and black frame flicker. Game fully playable at 60fps.**
+
+**Phase 1: Deep Analysis — Rotation Sign Bug**
+- Compared all CPU-transform functions against original Hedgewars source (fetched from GitHub raw)
+- Found all 6 converted functions used `cos(-Angle * ...)` instead of `cos(Angle * ...)`
+- Root cause: `hglRotatef(Angle, 0, 0, 1)` rotates CCW by Angle, but `cos(-Angle)` gives CW rotation
+- This inverted gun aiming (up→down), hedgehog body rotation, and made UFO/jetpack feel wrong
+- Fixed: DrawSpriteRotatedF, DrawSpriteRotatedFReal, DrawSpritePivotedF, DrawHedgehog, DrawTextureRotatedF, DrawTextureRotated
+
+**Phase 2: Missing FlushBatch in untint/setTintAdd**
+- `untint()` changed tint uniform without flushing pending batched quads
+- `setTintAdd()` changed blend mode uniform without flushing
+- Added FlushBatch() to both functions in GL2 path
+
+**Phase 3: Black Frame Flicker — desynchronized Context**
+- `desynchronized:true` uses single-buffer (front buffer) rendering
+- Display controller reads directly from the buffer being drawn to
+- `glClear` at frame start wipes buffer to black — display can scan it out before scene is drawn
+- First tried `preserveDrawingBuffer:true` — still flickered (preserveDrawingBuffer only prevents browser clearing, not our own glClear)
+- Fix: `desynchronized:false` — standard double-buffering, display only sees complete frames
+- 16ms latency cost is imperceptible for a turn-based game
+
+**Final Performance (Cave map, 905x715)**
+- GPU: 0-1ms calm, 7-9ms with water (well under 16ms budget)
+- CPU: render=0.2-0.5ms, total=0.3-0.8ms
+- Frame pacing: solid 16-17ms rafDelta (60fps)
+- Full game played to completion: Red Team wins, allOK=1
 
 ### Session 21 - February 19, 2026 (11:19-13:47 UTC)
 

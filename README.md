@@ -18,7 +18,8 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 - ✅ Rendering works on canvas
 - ✅ Sprite batch system — GPU time down 80-95% (38-45ms → 1-9ms)
 - ✅ JSPI (no ASYNCIFY overhead on main loop)
-- 🟡 Rendering correctness (hedgehog visibility fix deployed, verifying)
+- ✅ Correct rotation and rendering — no flicker
+- ✅ Full game plays to completion (allOK=1)
 - ❌ Cleanup crashes on shutdown
 
 ### Live Demo
