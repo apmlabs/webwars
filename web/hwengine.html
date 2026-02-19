@@ -178,7 +178,7 @@ var hwGL=hwCanvas.getContext('webgl2',{
   failIfMajorPerformanceCaveat:false,
   powerPreference:'high-performance',
   premultipliedAlpha:true,
-  preserveDrawingBuffer:false,
+  preserveDrawingBuffer:true,
   stencil:false
 });
 if(!hwGL) console.error('[GL-INIT] Failed to create WebGL2 context!');
