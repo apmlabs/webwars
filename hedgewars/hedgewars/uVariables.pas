@@ -2729,7 +2729,7 @@ begin
     cAltDamage      := false;
     cHolidaySilliness := true;
     cTimerInterval  := 8;
-    cReducedQuality := rqNone;
+    cReducedQuality := {$IFDEF EMSCRIPTEN}rqAntiBoom{$ELSE}rqNone{$ENDIF};
     cLanguageFName  := 'en.txt';
     cFullScreen     := false;
 
