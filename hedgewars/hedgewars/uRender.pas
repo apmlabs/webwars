@@ -77,6 +77,10 @@ procedure setTintAdd            (enable: boolean);
 // call this to finish the rendering of current frame
 procedure FinishRender();
 
+{$IFDEF GL2}
+procedure FlushBatch();
+{$ENDIF}
+
 function isAreaOffscreen(X, Y, Width, Height: LongInt): boolean; 
 function isCircleOffscreen(X, Y, RadiusSquared: LongInt): boolean; 
 
@@ -129,6 +133,22 @@ var VertexBuffer : array [0 ..59] of TVertex2f;
     LastTint: LongWord = 0;
 {$IFNDEF GL2}
     LastColorPointer , LastTexCoordPointer , LastVertexPointer : Pointer;
+{$ENDIF}
+
+{$IFDEF GL2}
+{ ── Sprite Batch System ── }
+const
+    BATCH_MAX_QUADS = 1024;
+    BATCH_VERTS_PER_QUAD = 6; { two triangles }
+    BATCH_FLOATS_PER_VERT = 4; { x, y, u, v }
+    BATCH_BUFFER_SIZE = BATCH_MAX_QUADS * BATCH_VERTS_PER_QUAD * BATCH_FLOATS_PER_VERT * 4; { bytes }
+
+var
+    batchBuf: array[0..BATCH_MAX_QUADS * BATCH_VERTS_PER_QUAD * BATCH_FLOATS_PER_VERT - 1] of GLfloat;
+    batchCount: LongInt;
+    batchTexId: GLuint;
+    batchVBO: GLuint;
+    batchInited: Boolean;
 {$ENDIF}
 
 {$IFDEF USE_S3D_RENDERING}
@@ -241,6 +261,9 @@ end;
 
 procedure FinishRender();
 begin
+{$IFDEF GL2}
+FlushBatch();
+{$ENDIF}
 
 {$IFDEF USE_S3D_RENDERING}
 if (cStereoMode = smHorizontal) or (cStereoMode = smVertical) then
@@ -770,6 +793,65 @@ begin
 {$ENDIF}
 end;
 
+{$IFDEF GL2}
+{ ── Sprite Batch: flush accumulated quads in one draw call ── }
+procedure FlushBatch();
+var count: LongInt;
+begin
+    if batchCount = 0 then exit;
+    count:= batchCount * BATCH_VERTS_PER_QUAD;
+
+    glBindTexture(GL_TEXTURE_2D, batchTexId);
+    glBindBuffer(GL_ARRAY_BUFFER, batchVBO);
+    glBufferData(GL_ARRAY_BUFFER, count * BATCH_FLOATS_PER_VERT * 4, @batchBuf[0], GL_STREAM_DRAW);
+
+    glEnableVertexAttribArray(aVertex);
+    glEnableVertexAttribArray(aTexCoord);
+    glVertexAttribPointer(aVertex,   2, GL_FLOAT, GL_FALSE, BATCH_FLOATS_PER_VERT * 4, pointer(0));
+    glVertexAttribPointer(aTexCoord, 2, GL_FLOAT, GL_FALSE, BATCH_FLOATS_PER_VERT * 4, pointer(8));
+
+    UpdateModelviewProjection;
+    glDrawArrays(GL_TRIANGLES, 0, count);
+
+    batchCount:= 0;
+end;
+
+{ ── Sprite Batch: add one quad with pre-transformed vertices ── }
+procedure BatchQuad(texId: GLuint;
+    x0, y0, u0, v0,
+    x1, y1, u1, v1,
+    x2, y2, u2, v2,
+    x3, y3, u3, v3: GLfloat);
+var off: LongInt;
+begin
+    if (not batchInited) then
+        begin
+        glGenBuffers(1, @batchVBO);
+        batchInited:= true;
+        batchCount:= 0;
+        batchTexId:= 0;
+        end;
+
+    if (texId <> batchTexId) or (batchCount >= BATCH_MAX_QUADS) then
+        begin
+        FlushBatch();
+        batchTexId:= texId;
+        end;
+
+    off:= batchCount * BATCH_VERTS_PER_QUAD * BATCH_FLOATS_PER_VERT;
+    { triangle 1: v0-v1-v2 }
+    batchBuf[off   ]:= x0; batchBuf[off+1]:= y0; batchBuf[off+2]:= u0; batchBuf[off+3]:= v0;
+    batchBuf[off+ 4]:= x1; batchBuf[off+5]:= y1; batchBuf[off+6]:= u1; batchBuf[off+7]:= v1;
+    batchBuf[off+ 8]:= x2; batchBuf[off+9]:= y2; batchBuf[off+10]:= u2; batchBuf[off+11]:= v2;
+    { triangle 2: v0-v2-v3 }
+    batchBuf[off+12]:= x0; batchBuf[off+13]:= y0; batchBuf[off+14]:= u0; batchBuf[off+15]:= v0;
+    batchBuf[off+16]:= x2; batchBuf[off+17]:= y2; batchBuf[off+18]:= u2; batchBuf[off+19]:= v2;
+    batchBuf[off+20]:= x3; batchBuf[off+21]:= y3; batchBuf[off+22]:= u3; batchBuf[off+23]:= v3;
+
+    inc(batchCount);
+end;
+{$ENDIF}
+
 procedure SetTexCoordPointer(p: Pointer; n: Integer); 
 begin
 {$IFDEF GL2}
@@ -959,11 +1041,19 @@ TextureBuffer[3].X:= _l;
 TextureBuffer[3].Y:= _b;
 
 
+{$IFDEF GL2}
+BatchQuad(SourceTexture^.id,
+    X, Y, _l, _t,
+    xw, Y, _r, _t,
+    xw, yh, _r, _b,
+    X, yh, _l, _b);
+{$ELSE}
 glBindTexture(GL_TEXTURE_2D, SourceTexture^.id);
 SetVertexPointer(@VertexBuffer[0], 4);
 SetTexCoordPointer(@TextureBuffer[0], 4);
 
 glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+{$ENDIF}
 
 end;
 
@@ -973,6 +1063,22 @@ begin
 end;
 
 procedure DrawTexture(X, Y: LongInt; Texture: PTexture; Scale: GLfloat);
+{$IFDEF GL2}
+var s: GLfloat;
+    x0, y0, x1, y1: GLfloat;
+begin
+s:= Scale;
+x0:= X + Texture^.vb[0].X * s;
+y0:= Y + Texture^.vb[0].Y * s;
+x1:= X + Texture^.vb[2].X * s;
+y1:= Y + Texture^.vb[2].Y * s;
+BatchQuad(Texture^.id,
+    x0, y0, Texture^.tb[0].X, Texture^.tb[0].Y,
+    x1, y0, Texture^.tb[1].X, Texture^.tb[1].Y,
+    x1, y1, Texture^.tb[2].X, Texture^.tb[2].Y,
+    x0, y1, Texture^.tb[3].X, Texture^.tb[3].Y);
+end;
+{$ELSE}
 begin
 openglPushMatrix;
 openglTranslatef(X, Y, 0);
@@ -992,10 +1098,32 @@ openglPopMatrix;
 
 UpdateModelviewProjection;
 end;
+{$ENDIF}
 
 { this contains tweaks in order to avoid land tile borders in blurry land mode }
 procedure DrawTexture2(X, Y: LongInt; Texture: PTexture; Scale, Overlap: GLfloat);
 var
+{$IFDEF GL2}
+    s: GLfloat;
+    x0, y0, x1, y1: GLfloat;
+    tl, tr, tt, tb: GLfloat;
+begin
+s:= Scale;
+x0:= X + Texture^.vb[0].X * s;
+y0:= Y + Texture^.vb[0].Y * s;
+x1:= X + Texture^.vb[2].X * s;
+y1:= Y + Texture^.vb[2].Y * s;
+tl:= Texture^.tb[0].X + Overlap;
+tr:= Texture^.tb[1].X - Overlap;
+tt:= Texture^.tb[0].Y + Overlap;
+tb:= Texture^.tb[2].Y - Overlap;
+BatchQuad(Texture^.id,
+    x0, y0, tl, tt,
+    x1, y0, tr, tt,
+    x1, y1, tr, tb,
+    x0, y1, tl, tb);
+end;
+{$ELSE}
     TextureBuffer: array [0..3] of TVertex2f;
 begin
 openglPushMatrix;
@@ -1023,6 +1151,7 @@ openglPopMatrix;
 
 UpdateModelviewProjection;
 end;
+{$ENDIF}
 
 procedure DrawTextureF(Texture: PTexture; Scale: GLfloat; X, Y, Frame, Dir, w, h: LongInt);
 begin
@@ -1032,6 +1161,11 @@ end;
 procedure DrawTextureRotatedF(Texture: PTexture; Scale, OffsetX, OffsetY: GLfloat; X, Y, Frame, Dir, w, h: LongInt; Angle: real);
 var ft, fb, fl, fr: GLfloat;
     hw, hh, nx, ny: LongInt;
+{$IFDEF GL2}
+    sa, ca, ox, oy, s: GLfloat;
+    cx0, cy0, cx1, cy1, cx2, cy2, cx3, cy3: GLfloat;
+    rx, ry: GLfloat;
+{$ENDIF}
 begin
 // visibility check only under trivial conditions
 if (Scale <= 1) then
@@ -1040,8 +1174,6 @@ if (Scale <= 1) then
         begin
         if (OffsetX = 0) and (OffsetY = 0) then
             begin
-            // sized doubled because the sprite might occupy up to 1.4 * of it's
-            // original size in each dimension, because it is rotated
             if isDxAreaOffscreen(X - w, 2 * w) <> 0 then
                 exit;
             if isDYAreaOffscreen(Y - h, 2 * h) <> 0 then
@@ -1057,19 +1189,67 @@ if (Scale <= 1) then
         end;
     end;
 
-{
-// do not draw anything outside the visible screen space (first check fixes some sprite drawing, e.g. hedgehogs)
-if (abs(X) > W) and ((abs(X + dir * OffsetX) - W / 2) * 2 > ViewWidth) then
-    exit;
-if (abs(Y) > H) and ((abs(Y + OffsetY - (cScreenHeight / 2)) - W / 2) * 2 > ViewHeight) then
-    exit;
-}
-
-openglPushMatrix;
-
-openglTranslatef(X, Y, 0);
-
 if Dir = 0 then Dir:= 1;
+
+if Dir > 0 then
+    hw:=  w div 2
+else
+    hw:= -w div 2;
+hh:= h div 2;
+
+nx:= Texture^.w div w;
+if nx = 0 then nx:= 1;
+ny:= Texture^.h div h;
+if ny = 0 then ny:= 1;
+
+ft:= (Frame mod ny) * Texture^.ry / ny;
+fb:= ((Frame mod ny) + 1) * Texture^.ry / ny;
+fl:= (Frame div ny) * Texture^.rx / nx;
+fr:= ((Frame div ny) + 1) * Texture^.rx / nx;
+
+{$IFDEF GL2}
+{ CPU-transform: build 4 corners in world space }
+{ Matrix order: T(X,Y) * R(Angle*Dir) * T(offset) * S(scale) * vertex }
+s:= Scale;
+{ step 1: scale local corners }
+cx0:= -hw * s; cy0:= -hh * s;
+cx1:=  hw * s; cy1:= -hh * s;
+cx2:=  hw * s; cy2:=  hh * s;
+cx3:= -hw * s; cy3:=  hh * s;
+
+{ step 2: add offset (not scaled — offset is applied after scale in matrix) }
+ox:= Dir * OffsetX;
+oy:= OffsetY;
+cx0:= cx0 + ox; cy0:= cy0 + oy;
+cx1:= cx1 + ox; cy1:= cy1 + oy;
+cx2:= cx2 + ox; cy2:= cy2 + oy;
+cx3:= cx3 + ox; cy3:= cy3 + oy;
+
+{ step 3: rotate }
+if Angle <> 0 then
+    begin
+    ca:= cos(-Angle * Dir * 0.01745329252);
+    sa:= sin(-Angle * Dir * 0.01745329252);
+    rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
+    rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
+    rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
+    rx:= cx3; ry:= cy3; cx3:= rx*ca - ry*sa; cy3:= rx*sa + ry*ca;
+    end;
+
+{ step 4: translate to world position }
+cx0:= cx0 + X; cy0:= cy0 + Y;
+cx1:= cx1 + X; cy1:= cy1 + Y;
+cx2:= cx2 + X; cy2:= cy2 + Y;
+cx3:= cx3 + X; cy3:= cy3 + Y;
+
+BatchQuad(Texture^.id,
+    cx0, cy0, fl, ft,
+    cx1, cy1, fr, ft,
+    cx2, cy2, fr, fb,
+    cx3, cy3, fl, fb);
+{$ELSE}
+openglPushMatrix;
+openglTranslatef(X, Y, 0);
 
 if Angle <> 0 then
     openglRotatef(Angle, 0, 0, Dir);
@@ -1079,26 +1259,6 @@ if (OffsetX <> 0) or (OffsetY <> 0) then
 
 if Scale <> 1.0 then
     openglScalef(Scale, Scale, 1);
-
-// Any reason for this call? And why only in t direction, not s?
-//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-if Dir > 0 then
-    hw:=  w div 2
-else
-    hw:= -w div 2;
-
-hh:= h div 2;
-
-nx:= Texture^.w div w; // number of horizontal frames
-if nx = 0 then nx:= 1; // one frame is minimum
-ny:= Texture^.h div h; // number of vertical frames
-if ny = 0 then ny:= 1;
-
-ft:= (Frame mod ny) * Texture^.ry / ny;
-fb:= ((Frame mod ny) + 1) * Texture^.ry / ny;
-fl:= (Frame div ny) * Texture^.rx / nx;
-fr:= ((Frame div ny) + 1) * Texture^.rx / nx;
 
 glBindTexture(GL_TEXTURE_2D, Texture^.id);
 
@@ -1124,13 +1284,11 @@ SetVertexPointer(@VertexBuffer[0], 4);
 SetTexCoordPointer(@TextureBuffer[0], 4);
 
 UpdateModelviewProjection;
-
 glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
 openglPopMatrix;
-
 UpdateModelviewProjection;
-
+{$ENDIF}
 end;
 
 procedure DrawSpriteRotated(Sprite: TSprite; X, Y, Dir: LongInt; Angle: real);
@@ -1142,11 +1300,18 @@ begin
 end;
 
 procedure DrawSpriteRotatedF(Sprite: TSprite; X, Y, Frame, Dir: LongInt; Angle: real);
+{$IFDEF GL2}
+var hw, hh: LongInt;
+    ca, sa, rx, ry, mx: GLfloat;
+    cx0, cy0, cx1, cy1, cx2, cy2, cx3, cy3: GLfloat;
+    r: TSDL_Rect;
+    row, col, numFramesFirstCol: LongInt;
+    fl, fr, ft, fb: GLfloat;
+{$ENDIF}
 begin
 
 if Angle <> 0  then
     begin
-    // Check the bounding circle
     if isCircleOffscreen(X, Y, (sqr(SpritesData[Sprite].Width) + sqr(SpritesData[Sprite].Height)) div 4) then
         exit;
     end
@@ -1158,15 +1323,68 @@ else
         exit;
     end;
 
+{$IFDEF GL2}
+hw:= SpritesData[Sprite].Width div 2;
+hh:= SpritesData[Sprite].Height div 2;
 
+{ compute frame UVs }
+if SpritesData[Sprite].imageHeight = 0 then exit;
+numFramesFirstCol:= SpritesData[Sprite].imageHeight div SpritesData[Sprite].Height;
+row:= Frame mod numFramesFirstCol;
+col:= Frame div numFramesFirstCol;
+r.x:= col * SpritesData[Sprite].Width;
+r.w:= SpritesData[Sprite].Width;
+r.y:= row * SpritesData[Sprite].Height;
+r.h:= SpritesData[Sprite].Height;
+fl:= r.x / SpritesData[Sprite].Texture^.w * SpritesData[Sprite].Texture^.rx;
+fr:= (r.x + r.w) / SpritesData[Sprite].Texture^.w * SpritesData[Sprite].Texture^.rx;
+ft:= r.y / SpritesData[Sprite].Texture^.h * SpritesData[Sprite].Texture^.ry;
+fb:= (r.y + r.h) / SpritesData[Sprite].Texture^.h * SpritesData[Sprite].Texture^.ry;
+
+{ CPU transform: T(X,Y) * Scale(Dir,1) * R(Angle) * vertex(-hw..hw, -hh..hh) }
+cx0:= -hw; cy0:= -hh;
+cx1:=  hw; cy1:= -hh;
+cx2:=  hw; cy2:=  hh;
+cx3:= -hw; cy3:=  hh;
+
+if Angle <> 0 then
+    begin
+    ca:= cos(-Angle * 0.01745329252);
+    sa:= sin(-Angle * 0.01745329252);
+    rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
+    rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
+    rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
+    rx:= cx3; ry:= cy3; cx3:= rx*ca - ry*sa; cy3:= rx*sa + ry*ca;
+    end;
+
+{ mirror }
+if Dir < 0 then mx:= -1.0 else mx:= 1.0;
+cx0:= cx0 * mx; cx1:= cx1 * mx; cx2:= cx2 * mx; cx3:= cx3 * mx;
+
+{ if mirrored, swap UVs horizontally }
+if Dir < 0 then
+    begin
+    rx:= fl; fl:= fr; fr:= rx;
+    end;
+
+{ translate }
+cx0:= cx0 + X; cy0:= cy0 + Y;
+cx1:= cx1 + X; cy1:= cy1 + Y;
+cx2:= cx2 + X; cy2:= cy2 + Y;
+cx3:= cx3 + X; cy3:= cy3 + Y;
+
+BatchQuad(SpritesData[Sprite].Texture^.id,
+    cx0, cy0, fl, ft,
+    cx1, cy1, fr, ft,
+    cx2, cy2, fr, fb,
+    cx3, cy3, fl, fb);
+{$ELSE}
 openglPushMatrix;
 openglTranslatef(X, Y, 0);
 
-// mirror
 if Dir < 0 then
     openglScalef(-1.0, 1.0, 1.0);
 
-// apply angle after (conditional) mirroring
 if Angle <> 0  then
     openglRotatef(Angle, 0, 0, 1);
 
@@ -1177,15 +1395,22 @@ DrawSprite(Sprite, -SpritesData[Sprite].Width div 2, -SpritesData[Sprite].Height
 openglPopMatrix;
 
 UpdateModelviewProjection;
-
+{$ENDIF}
 end;
 
 procedure DrawSpriteRotatedFReal(Sprite: TSprite; X, Y: Real; Frame, Dir: LongInt; Angle: real);
+{$IFDEF GL2}
+var hw, hh: LongInt;
+    ca, sa, rx, ry, mx: GLfloat;
+    cx0, cy0, cx1, cy1, cx2, cy2, cx3, cy3: GLfloat;
+    r: TSDL_Rect;
+    row, col, numFramesFirstCol: LongInt;
+    fl, fr, ft, fb: GLfloat;
+{$ENDIF}
 begin
 
     if Angle <> 0  then
     begin
-        // Check the bounding circle
         if isCircleOffscreen(round(X), round(Y), (sqr(SpritesData[Sprite].Width) + sqr(SpritesData[Sprite].Height)) div 4) then
             exit;
     end
@@ -1197,15 +1422,63 @@ begin
             exit;
     end;
 
+{$IFDEF GL2}
+hw:= SpritesData[Sprite].Width div 2;
+hh:= SpritesData[Sprite].Height div 2;
 
+if SpritesData[Sprite].imageHeight = 0 then exit;
+numFramesFirstCol:= SpritesData[Sprite].imageHeight div SpritesData[Sprite].Height;
+row:= Frame mod numFramesFirstCol;
+col:= Frame div numFramesFirstCol;
+r.x:= col * SpritesData[Sprite].Width;
+r.w:= SpritesData[Sprite].Width;
+r.y:= row * SpritesData[Sprite].Height;
+r.h:= SpritesData[Sprite].Height;
+fl:= r.x / SpritesData[Sprite].Texture^.w * SpritesData[Sprite].Texture^.rx;
+fr:= (r.x + r.w) / SpritesData[Sprite].Texture^.w * SpritesData[Sprite].Texture^.rx;
+ft:= r.y / SpritesData[Sprite].Texture^.h * SpritesData[Sprite].Texture^.ry;
+fb:= (r.y + r.h) / SpritesData[Sprite].Texture^.h * SpritesData[Sprite].Texture^.ry;
+
+cx0:= -hw; cy0:= -hh;
+cx1:=  hw; cy1:= -hh;
+cx2:=  hw; cy2:=  hh;
+cx3:= -hw; cy3:=  hh;
+
+if Angle <> 0 then
+    begin
+    ca:= cos(-Angle * 0.01745329252);
+    sa:= sin(-Angle * 0.01745329252);
+    rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
+    rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
+    rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
+    rx:= cx3; ry:= cy3; cx3:= rx*ca - ry*sa; cy3:= rx*sa + ry*ca;
+    end;
+
+if Dir < 0 then mx:= -1.0 else mx:= 1.0;
+cx0:= cx0 * mx; cx1:= cx1 * mx; cx2:= cx2 * mx; cx3:= cx3 * mx;
+
+if Dir < 0 then
+    begin
+    rx:= fl; fl:= fr; fr:= rx;
+    end;
+
+cx0:= cx0 + X; cy0:= cy0 + Y;
+cx1:= cx1 + X; cy1:= cy1 + Y;
+cx2:= cx2 + X; cy2:= cy2 + Y;
+cx3:= cx3 + X; cy3:= cy3 + Y;
+
+BatchQuad(SpritesData[Sprite].Texture^.id,
+    cx0, cy0, fl, ft,
+    cx1, cy1, fr, ft,
+    cx2, cy2, fr, fb,
+    cx3, cy3, fl, fb);
+{$ELSE}
     openglPushMatrix;
     openglTranslatef(X, Y, 0);
 
-// mirror
     if Dir < 0 then
         openglScalef(-1.0, 1.0, 1.0);
 
-// apply angle after (conditional) mirroring
     if Angle <> 0  then
         openglRotatef(Angle, 0, 0, 1);
 
@@ -1216,15 +1489,21 @@ begin
     openglPopMatrix;
 
     UpdateModelviewProjection;
-
+{$ENDIF}
 end;
 
 procedure DrawSpritePivotedF(Sprite: TSprite; X, Y, Frame, Dir, PivotX, PivotY: LongInt; Angle: real);
+{$IFDEF GL2}
+var hw, hh: LongInt;
+    ca, sa, rx, ry, mx: GLfloat;
+    cx0, cy0, cx1, cy1, cx2, cy2, cx3, cy3: GLfloat;
+    r: TSDL_Rect;
+    row, col, numFramesFirstCol: LongInt;
+    fl, fr, ft, fb: GLfloat;
+{$ENDIF}
 begin
 if Angle <> 0  then
     begin
-    // Check the bounding circle 
-    // Assuming the pivot point is inside the sprite's rectangle, the farthest possible point is 3/2 of its diagonal away from the center
     if isCircleOffscreen(X, Y, 9 * (sqr(SpritesData[Sprite].Width) + sqr(SpritesData[Sprite].Height)) div 4) then
         exit;
     end
@@ -1236,14 +1515,74 @@ else
         exit;
     end;
 
+{$IFDEF GL2}
+hw:= SpritesData[Sprite].Width div 2;
+hh:= SpritesData[Sprite].Height div 2;
+
+if SpritesData[Sprite].imageHeight = 0 then exit;
+numFramesFirstCol:= SpritesData[Sprite].imageHeight div SpritesData[Sprite].Height;
+row:= Frame mod numFramesFirstCol;
+col:= Frame div numFramesFirstCol;
+r.x:= col * SpritesData[Sprite].Width;
+r.w:= SpritesData[Sprite].Width;
+r.y:= row * SpritesData[Sprite].Height;
+r.h:= SpritesData[Sprite].Height;
+fl:= r.x / SpritesData[Sprite].Texture^.w * SpritesData[Sprite].Texture^.rx;
+fr:= (r.x + r.w) / SpritesData[Sprite].Texture^.w * SpritesData[Sprite].Texture^.rx;
+ft:= r.y / SpritesData[Sprite].Texture^.h * SpritesData[Sprite].Texture^.ry;
+fb:= (r.y + r.h) / SpritesData[Sprite].Texture^.h * SpritesData[Sprite].Texture^.ry;
+
+{ CPU transform: T(X,Y) * Scale(Dir,1) * T(Pivot) * R(Angle) * T(-Pivot) * vertex(-hw..) }
+{ start with local vertex + offset from pivot }
+cx0:= -hw - PivotX; cy0:= -hh - PivotY;
+cx1:=  hw - PivotX; cy1:= -hh - PivotY;
+cx2:=  hw - PivotX; cy2:=  hh - PivotY;
+cx3:= -hw - PivotX; cy3:=  hh - PivotY;
+
+{ rotate around pivot }
+if Angle <> 0 then
+    begin
+    ca:= cos(-Angle * 0.01745329252);
+    sa:= sin(-Angle * 0.01745329252);
+    rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
+    rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
+    rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
+    rx:= cx3; ry:= cy3; cx3:= rx*ca - ry*sa; cy3:= rx*sa + ry*ca;
+    end;
+
+{ translate back from pivot }
+cx0:= cx0 + PivotX; cy0:= cy0 + PivotY;
+cx1:= cx1 + PivotX; cy1:= cy1 + PivotY;
+cx2:= cx2 + PivotX; cy2:= cy2 + PivotY;
+cx3:= cx3 + PivotX; cy3:= cy3 + PivotY;
+
+{ mirror }
+if Dir < 0 then mx:= -1.0 else mx:= 1.0;
+cx0:= cx0 * mx; cx1:= cx1 * mx; cx2:= cx2 * mx; cx3:= cx3 * mx;
+
+if Dir < 0 then
+    begin
+    rx:= fl; fl:= fr; fr:= rx;
+    end;
+
+{ translate to world position }
+cx0:= cx0 + X; cy0:= cy0 + Y;
+cx1:= cx1 + X; cy1:= cy1 + Y;
+cx2:= cx2 + X; cy2:= cy2 + Y;
+cx3:= cx3 + X; cy3:= cy3 + Y;
+
+BatchQuad(SpritesData[Sprite].Texture^.id,
+    cx0, cy0, fl, ft,
+    cx1, cy1, fr, ft,
+    cx2, cy2, fr, fb,
+    cx3, cy3, fl, fb);
+{$ELSE}
 openglPushMatrix;
 openglTranslatef(X, Y, 0);
 
-// mirror
 if Dir < 0 then
     openglScalef(-1.0, 1.0, 1.0);
 
-// apply rotation around the pivot after (conditional) mirroring
 if Angle <> 0  then
     begin
     openglTranslatef(PivotX, PivotY, 0);
@@ -1258,21 +1597,46 @@ DrawSprite(Sprite, -SpritesData[Sprite].Width div 2, -SpritesData[Sprite].Height
 openglPopMatrix;
 
 UpdateModelviewProjection;
+{$ENDIF}
 end;
 
 procedure DrawTextureRotated(Texture: PTexture; hw, hh, X, Y, Dir: LongInt; Angle: real);
+{$IFDEF GL2}
+var ca, sa, rx, ry: GLfloat;
+    cx0, cy0, cx1, cy1, cx2, cy2, cx3, cy3: GLfloat;
 begin
+if isDxAreaOffscreen(X, 2 * hw) <> 0 then exit;
+if isDyAreaOffscreen(Y, 2 * hh) <> 0 then exit;
 
-if isDxAreaOffscreen(X, 2 * hw) <> 0 then
-    exit;
-if isDyAreaOffscreen(Y, 2 * hh) <> 0 then
-    exit;
+if Dir < 0 then hw:= -hw;
 
-// do not draw anything outside the visible screen space (first check fixes some sprite drawing, e.g. hedgehogs)
-{if (abs(X) > 2 * hw) and ((abs(X) - hw) > cScreenWidth / cScaleFactor) then
-    exit;
-if (abs(Y) > 2 * hh) and ((abs(Y - 0.5 * cScreenHeight) - hh) > cScreenHeight / cScaleFactor) then
-    exit;}
+cx0:= -hw; cy0:= -hh;
+cx1:=  hw; cy1:= -hh;
+cx2:=  hw; cy2:=  hh;
+cx3:= -hw; cy3:=  hh;
+
+if Angle <> 0 then
+    begin
+    if Dir < 0 then
+        begin ca:= cos(Angle * 0.01745329252); sa:= sin(Angle * 0.01745329252); end
+    else
+        begin ca:= cos(-Angle * 0.01745329252); sa:= sin(-Angle * 0.01745329252); end;
+    rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
+    rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
+    rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
+    rx:= cx3; ry:= cy3; cx3:= rx*ca - ry*sa; cy3:= rx*sa + ry*ca;
+    end;
+
+BatchQuad(Texture^.id,
+    cx0 + X, cy0 + Y, Texture^.tb[0].X, Texture^.tb[0].Y,
+    cx1 + X, cy1 + Y, Texture^.tb[1].X, Texture^.tb[1].Y,
+    cx2 + X, cy2 + Y, Texture^.tb[2].X, Texture^.tb[2].Y,
+    cx3 + X, cy3 + Y, Texture^.tb[3].X, Texture^.tb[3].Y);
+end;
+{$ELSE}
+begin
+if isDxAreaOffscreen(X, 2 * hw) <> 0 then exit;
+if isDyAreaOffscreen(Y, 2 * hh) <> 0 then exit;
 
 openglPushMatrix;
 openglTranslatef(X, Y, 0);
@@ -1307,6 +1671,7 @@ openglPopMatrix;
 
 UpdateModelviewProjection;
 end;
+{$ENDIF}
 
 procedure DrawSprite(Sprite: TSprite; X, Y, Frame: LongInt);
 var row, col, numFramesFirstCol: LongInt;
@@ -1387,6 +1752,9 @@ end;
 // r, g, b, a: Color
 procedure DrawLine(X0, Y0, X1, Y1, Width: Single; r, g, b, a: Byte);
 begin
+{$IFDEF GL2}
+    FlushBatch();
+{$ENDIF}
     openglPushMatrix();
     openglTranslatef(WorldDx, WorldDy, 0);
 
@@ -1419,6 +1787,9 @@ var w: LongWord;
     // x variable for the line formula
     x: Single;
 begin
+{$IFDEF GL2}
+    FlushBatch();
+{$ENDIF}
     openglPushMatrix();
     openglTranslatef(WorldDx, WorldDy, 0);
 
@@ -1578,6 +1949,9 @@ procedure DrawCircle(X, Y, Radius, Width: LongInt);
 var
     i: LongInt;
 begin
+{$IFDEF GL2}
+    FlushBatch();
+{$ENDIF}
     i:= Radius + Width;
     if isDxAreaOffscreen(X - i, 2 * i) <> 0 then
         exit;
@@ -1621,14 +1995,18 @@ begin
 end;
 
 procedure DrawHedgehog(X, Y: LongInt; Dir: LongInt; Pos, Step: LongWord; Angle: real);
+var l, r, t, b: real;
+{$IFDEF GL2}
+    ca, sa, rx, ry: GLfloat;
+    cx0, cy0, cx1, cy1, cx2, cy2, cx3, cy3: GLfloat;
+{$ELSE}
 const VertexBuffer: array [0..3] of TVertex2f = (
         (X: -16; Y: -16),
         (X:  16; Y: -16),
         (X:  16; Y:  16),
         (X: -16; Y:  16));
-var l, r, t, b: real;
+{$ENDIF}
 begin
-    // do not draw anything outside the visible screen space (first check fixes some sprite drawing, e.g. hedgehogs)
     if (abs(X) > 32) and ((abs(X) - 16) * 2 > ViewWidth) then
         exit;
     if (abs(Y) > 32) and ((abs(Y - cScreenHeight / 2) - 16) * 2 > ViewHeight) then
@@ -1648,6 +2026,26 @@ begin
         r:= (Step + 1) * 32 / HHTexture^.w
     end;
 
+{$IFDEF GL2}
+    cx0:= -16; cy0:= -16;
+    cx1:=  16; cy1:= -16;
+    cx2:=  16; cy2:=  16;
+    cx3:= -16; cy3:=  16;
+    if Angle <> 0 then
+        begin
+        ca:= cos(-Angle * 0.01745329252);
+        sa:= sin(-Angle * 0.01745329252);
+        rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
+        rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
+        rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
+        rx:= cx3; ry:= cy3; cx3:= rx*ca - ry*sa; cy3:= rx*sa + ry*ca;
+        end;
+    BatchQuad(HHTexture^.id,
+        cx0 + X, cy0 + Y, l, t,
+        cx1 + X, cy1 + Y, r, t,
+        cx2 + X, cy2 + Y, r, b,
+        cx3 + X, cy3 + Y, l, b);
+{$ELSE}
     openglPushMatrix();
     openglTranslatef(X, Y, 0);
     openglRotatef(Angle, 0, 0, 1);
@@ -1673,6 +2071,7 @@ begin
     openglPopMatrix;
 
     UpdateModelviewProjection;
+{$ENDIF}
 end;
 
 procedure DrawScreenWidget(widget: POnScreenWidget);
@@ -1725,6 +2124,7 @@ end;
 procedure BeginWater;
 begin
 {$IFDEF GL2}
+    FlushBatch();
     glUseProgram(shaderWater);
     uCurrentMVPLocation:=uWaterMVPLocation;
     UpdateModelviewProjection;
@@ -2062,6 +2462,9 @@ if (WorldEdge = weSea) then
     TextureBuffer[6].Y:= (frame+1) * realHeight;
     end;
 
+{$IFDEF GL2}
+FlushBatch();
+{$ENDIF}
 glBindTexture(GL_TEXTURE_2D, SpritesData[sprite].Texture^.id);
 
 SetVertexPointer(@VertexBuffer[0], 8);
@@ -2094,6 +2497,10 @@ begin
 
     if nc = LastTint then
         exit;
+
+{$IFDEF GL2}
+    FlushBatch();
+{$ENDIF}
 
     if GrayScale then
         begin
@@ -2176,7 +2583,11 @@ end;
 procedure initModule;
 begin
     LastTint:= cWhiteColor + 1;
-{$IFNDEF GL2}
+{$IFDEF GL2}
+    batchInited:= false;
+    batchCount:= 0;
+    batchTexId:= 0;
+{$ELSE}
     LastColorPointer    := nil;
     LastTexCoordPointer := nil;
     LastVertexPointer   := nil;
@@ -2187,6 +2598,8 @@ procedure freeModule;
 begin
     if cOnlyStats then exit;
 {$IFDEF GL2}
+    if batchInited then
+        glDeleteBuffers(1, @batchVBO);
     glDeleteProgram(shaderMain);
     glDeleteProgram(shaderWater);
     glDeleteBuffers(1, @vBuffer);
