@@ -77,12 +77,12 @@ EM_JS(void, hw_install_error_catcher, (), {
             }
         });
     };
-    // Monitor for long tasks blocking the main thread
+    // Monitor for very long tasks only
     if (window.PerformanceObserver) {
         try {
             new PerformanceObserver(function(list) {
                 list.getEntries().forEach(function(entry) {
-                    if (entry.duration > 50)
+                    if (entry.duration > 500)
                         console.warn('[Engine] LONG TASK: ' + entry.duration.toFixed(0) + 'ms at ' + entry.startTime.toFixed(0));
                 });
             }).observe({entryTypes: ['longtask']});
@@ -239,8 +239,8 @@ static void mainloop_frame(void) {
 
     uio_IPCCheckSock();
     double frameEnd = emscripten_get_now();
-    // Log every frame for first 300, then every 60th or when slow
-    if (ml_frameCount < 300 || ml_frameCount % 60 == 0 || frameDelta > 50) {
+    // Log sparingly: every 300th frame or when very slow
+    if (ml_frameCount % 300 == 0 || frameDelta > 500) {
         emscripten_log(0, "PERF f=%d rafDelta=%.0fms ticks=%d catchup=%.1fms render=%.1fms total=%.1fms",
             ml_frameCount, frameDelta, ticksNeeded, t2-t1, t3-t2, frameEnd-t0);
     }

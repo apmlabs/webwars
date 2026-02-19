@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-18T16:28:00Z
+Last updated: 2026-02-19T13:47:00Z
 
 ### Project Status
-- **Phase**: JSPI Working — Game Renders in Browser
-- **Last Action**: Fixed SuspendError by disabling SDL_EMSCRIPTEN_ASYNCIFY before engine init
-- **Current Blocker**: Performance — game renders but runs slowly (same issue as pre-JSPI)
-- **Target**: Playable frame rate in browser with JSPI
+- **Phase**: Sprite Batch System Working — GPU time down 80-95%
+- **Last Action**: Fixed rendering correctness — converted DrawSpriteRotatedF/DrawSpritePivotedF to CPU transforms
+- **Current Blocker**: Rendering correctness — verifying hedgehog visibility and blinking fix
+- **Target**: Playable frame rate in browser with correct rendering
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -376,6 +376,12 @@ Even with zero `invoke_*` trampolines (`-sSUPPORT_LONGJMP=wasm` + `-fwasm-except
 ### 23. SDL_GL_SwapWindow Calls emscripten_sleep During Init (AddProgress)
 The engine's `AddProgress()` function renders a loading progress bar and calls `SwapBuffers()` → `SDL_GL_SwapWindow()`. SDL2's Emscripten backend checks the `SDL_EMSCRIPTEN_ASYNCIFY` hint — when enabled (default), `SDL_GL_SwapWindow` calls `emscripten_sleep(0)` to yield to the browser. This creates a JS-frame suspend that breaks JSPI. Fix: call `SDL_SetHint("SDL_EMSCRIPTEN_ASYNCIFY", "0")` at the very start of `hwengine_RunEngine_internal()`, before any engine initialization. This must happen before `SDL_Init` and before any `AddProgress` calls. The hint was previously set only in `__wrap_hwengine_MainLoop` (too late — init already called SwapBuffers multiple times by then).
 
+### 24. Sprite Batch + Matrix Stack = Wrong MVP (BatchQuad Must Use World-Space Vertices)
+When batching sprites with `BatchQuad`, vertices are accumulated in a CPU buffer and drawn later in a single `FlushBatch()` call. `FlushBatch` uploads whatever the current modelview-projection matrix is. If a draw function pushes the matrix stack (translate/rotate/scale), calls `DrawSprite` → `BatchQuad` (which only queues vertices in local space), then pops the matrix — the queued vertices will be flushed later with the **camera MVP**, not the pushed matrix. Result: sprites drawn at screen origin instead of world position. Fix: convert all matrix-stack draw functions to CPU transforms (rotate/mirror/translate vertices on CPU, then BatchQuad with world-space coordinates), or add FlushBatch brackets around push/pop sections. CPU transform is preferred — it eliminates flush points and keeps batches larger.
+
+### 25. GL_STREAM_DRAW for ANGLE Per-Frame Uploads
+ANGLE (Chrome's WebGL→D3D11 layer) handles buffer usage hints differently: `GL_STREAM_DRAW` uses a shared global streaming ring buffer (append-only, no GPU stalls, cheap recycling via D3D buffer rename). `GL_STATIC_DRAW` creates a dedicated D3D buffer per GL buffer — if re-uploaded after draw, it invalidates and falls back to streaming with extra overhead. Always use `GL_STREAM_DRAW` for per-frame batch uploads.
+
 ---
 
 ## 🐛 KEY BUG PATTERNS
@@ -393,6 +399,7 @@ The engine's `AddProgress()` function renders a loading progress bar and calls `
 | callMain() in Emscripten | Doesn't exist in output | Use Module.run() instead |
 | noInitialRun flag | Gets stripped by Emscripten optimizer | Use Module.run() approach |
 | Forget to commit | Next session loses all context | Always git commit |
+| Matrix push + BatchQuad without flush | Batch vertices in local space, flushed later with wrong MVP | Convert to CPU transform, or FlushBatch before push and after pop |
 | Send ammo store once globally | Team 2+ hedgehogs get invalid AmmoStore index | Send ammo per-team before each eaddteam |
 | Guess IPC protocol | Subtle ordering bugs | Read EngineInteraction.hs |
 | Use ASYNCIFY for main loop | 120+ stack save/restore per second | emscripten_set_main_loop + --wrap |

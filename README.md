@@ -4,19 +4,21 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 
 ## Status
 
-**Game Renders** - Engine runs and renders in the browser.
+**Game Renders & Runs Fast** - Engine runs in the browser with sprite batching (GPU time 1-9ms).
 
 ### What Works
-- ✅ Engine compiles to WebAssembly (5.2MB)
+- ✅ Engine compiles to WebAssembly (3.97MB with JSPI)
 - ✅ All assets load (187MB data file)
 - ✅ SDL2, OpenGL, shaders initialize
 - ✅ IPC protocol working (bidirectional)
-- ✅ Map loading (Cake map with spawn zones)
+- ✅ Map loading with theme textures (sky, water, clouds, sprites)
 - ✅ Hedgehogs spawn successfully
 - ✅ Game loop runs (360+ ticks)
 - ✅ Win detection and sound playback
 - ✅ Rendering works on canvas
-- 🟡 Missing textures (sky, water, clouds, sprites)
+- ✅ Sprite batch system — GPU time down 80-95% (38-45ms → 1-9ms)
+- ✅ JSPI (no ASYNCIFY overhead on main loop)
+- 🟡 Rendering correctness (hedgehog visibility fix deployed, verifying)
 - ❌ Cleanup crashes on shutdown
 
 ### Live Demo
@@ -70,9 +72,8 @@ cd bin && python3 -m http.server 8081
 
 ## Known Issues
 1. Data file path warning (non-fatal)
-2. Missing textures (sky, water, clouds, theme sprites)
-3. RuntimeError during shutdown
-4. Some theme sprite masks fail to load (flags 44)
+2. RuntimeError during shutdown
+3. Some theme sprite masks fail to load (flags 44)
 
 ## License
 

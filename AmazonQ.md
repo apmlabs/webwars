@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-19T10:19:00Z
+**Last Updated**: 2026-02-19T13:47:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Performance deep-dive — GPU timer queries working, fill-rate test in progress
+**Status**: Sprite batch system working — GPU time down 80-95%, fixing rendering correctness
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -40,7 +40,10 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **GL_UNSAFE_OPTS=1** - skip redundant WebGL validation in Emscripten glue
 - ✅ **GL_POOL_TEMP_BUFFERS=1** - reuse temporary buffers
 - ✅ **Pass counters added** - clears, FBO binds, tex uploads, program switches per frame
-- 🟡 **Current**: Fill-rate test at 0.5x resolution to determine GPU bottleneck type
+- ✅ **Sprite batch system** - BatchQuad/FlushBatch replaces per-sprite GL calls, GPU time 38-45ms → 1-9ms avg
+- ✅ **CPU transforms** - DrawTextureRotatedF, DrawHedgehog, DrawTexture, DrawTexture2, DrawTextureFromRectDir, DrawTextureRotated, DrawSpriteRotatedF, DrawSpriteRotatedFReal, DrawSpritePivotedF all converted to CPU-side vertex transform + BatchQuad
+- ✅ **GL_STREAM_DRAW** - ANGLE streaming ring buffer for per-frame batch uploads
+- 🟡 **Current**: Fixing rendering correctness (blinking, hedgehog visibility)
 
 ### Known Issues
 
@@ -131,6 +134,39 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 21 - February 19, 2026 (11:19-13:47 UTC)
+
+**Sprite batch system implemented and deployed — GPU time down 80-95%. Fixed rendering correctness bugs.**
+
+**Phase 1: GL Call Profiling**
+- Enhanced performance probe with per-frame counters for glBindTexture, glBufferData, glBufferSubData, glUniformMatrix4fv
+- Added MAX_ARRAY_TEXTURE_LAYERS and MAX_TEXTURE_SIZE queries
+- Results: ~463 GL state changes per frame (83 draws, 83 binds, 166 bufferData, 131 uniformMatrix)
+- Each GL call becomes a D3D11 resource operation through ANGLE — root cause of 38-45ms GPU time
+
+**Phase 2: Sprite Batch System (uRender.pas)**
+- Added BatchQuad/FlushBatch system: 1024-quad capacity, interleaved pos+uv VBO, GL_TRIANGLES
+- Converted DrawTextureRotatedF, DrawTexture, DrawTexture2, DrawTextureFromRectDir, DrawTextureRotated, DrawHedgehog to CPU-transform + BatchQuad
+- Added GL_STREAM_DRAW and GL_TRIANGLES constants to pas2cSystem.pas
+- GL_STREAM_DRAW tells ANGLE to use shared streaming ring buffer (optimal for per-frame uploads)
+- Added FlushBatch at all state-change boundaries: Tint, BeginWater, DrawLine, DrawCircle, DrawWaves, FinishRender
+
+**Phase 3: Performance Results**
+- GPU time: 38-45ms → 1-9ms average (80-95% reduction)
+- bufD ≈ draws (was 2× draws before — no more double buffer uploads per sprite)
+- Steady state: gpu=0-9ms avg, calm frames as low as 1ms
+
+**Phase 4: Rendering Correctness Fixes**
+- Found critical bug: DrawSpriteRotatedF/DrawSpriteRotatedFReal used matrix stack + BatchQuad without flushing
+  - Vertices queued in local space, but batch flushed later with camera MVP → sprites drawn at wrong position
+  - This caused hedgehogs to be invisible (drawn at screen origin) and blinking
+- Converted DrawSpriteRotatedF to CPU transform: rotate → mirror → translate → BatchQuad
+- Converted DrawSpriteRotatedFReal to CPU transform (same approach, Real coordinates)
+- Converted DrawSpritePivotedF to CPU transform: offset from pivot → rotate → offset back → mirror → translate → BatchQuad (eliminates 2 flush points per call)
+- Added missing FlushBatch before DrawLineWrapped matrix push
+
+**Key Insight**: Any function that pushes the matrix stack and then calls a function that uses BatchQuad will produce incorrect results — the batch accumulates vertices in local space but flushes later with whatever MVP is current. All such functions must either: (a) be converted to CPU transforms, or (b) have FlushBatch brackets around the push/pop.
 
 ### Session 20 - February 19, 2026 (09:29-10:19 UTC)
 
