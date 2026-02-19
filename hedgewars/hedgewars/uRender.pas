@@ -1228,8 +1228,8 @@ cx3:= cx3 + ox; cy3:= cy3 + oy;
 { step 3: rotate }
 if Angle <> 0 then
     begin
-    ca:= cos(-Angle * Dir * 0.01745329252);
-    sa:= sin(-Angle * Dir * 0.01745329252);
+    ca:= cos(Angle * Dir * 0.01745329252);
+    sa:= sin(Angle * Dir * 0.01745329252);
     rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
     rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
     rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
@@ -1349,8 +1349,8 @@ cx3:= -hw; cy3:=  hh;
 
 if Angle <> 0 then
     begin
-    ca:= cos(-Angle * 0.01745329252);
-    sa:= sin(-Angle * 0.01745329252);
+    ca:= cos(Angle * 0.01745329252);
+    sa:= sin(Angle * 0.01745329252);
     rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
     rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
     rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
@@ -1446,8 +1446,8 @@ cx3:= -hw; cy3:=  hh;
 
 if Angle <> 0 then
     begin
-    ca:= cos(-Angle * 0.01745329252);
-    sa:= sin(-Angle * 0.01745329252);
+    ca:= cos(Angle * 0.01745329252);
+    sa:= sin(Angle * 0.01745329252);
     rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
     rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
     rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
@@ -1542,8 +1542,8 @@ cx3:= -hw - PivotX; cy3:=  hh - PivotY;
 { rotate around pivot }
 if Angle <> 0 then
     begin
-    ca:= cos(-Angle * 0.01745329252);
-    sa:= sin(-Angle * 0.01745329252);
+    ca:= cos(Angle * 0.01745329252);
+    sa:= sin(Angle * 0.01745329252);
     rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
     rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
     rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
@@ -1618,9 +1618,9 @@ cx3:= -hw; cy3:=  hh;
 if Angle <> 0 then
     begin
     if Dir < 0 then
-        begin ca:= cos(Angle * 0.01745329252); sa:= sin(Angle * 0.01745329252); end
+        begin ca:= cos(-Angle * 0.01745329252); sa:= sin(-Angle * 0.01745329252); end
     else
-        begin ca:= cos(-Angle * 0.01745329252); sa:= sin(-Angle * 0.01745329252); end;
+        begin ca:= cos(Angle * 0.01745329252); sa:= sin(Angle * 0.01745329252); end;
     rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
     rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
     rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
@@ -2033,8 +2033,8 @@ begin
     cx3:= -16; cy3:=  16;
     if Angle <> 0 then
         begin
-        ca:= cos(-Angle * 0.01745329252);
-        sa:= sin(-Angle * 0.01745329252);
+        ca:= cos(Angle * 0.01745329252);
+        sa:= sin(Angle * 0.01745329252);
         rx:= cx0; ry:= cy0; cx0:= rx*ca - ry*sa; cy0:= rx*sa + ry*ca;
         rx:= cx1; ry:= cy1; cx1:= rx*ca - ry*sa; cy1:= rx*sa + ry*ca;
         rx:= cx2; ry:= cy2; cx2:= rx*ca - ry*sa; cy2:= rx*sa + ry*ca;
@@ -2525,6 +2525,9 @@ end;
 procedure untint(); 
 begin
     if cWhiteColor = LastTint then exit;
+{$IFDEF GL2}
+    FlushBatch();
+{$ENDIF}
     openglTint($FF, $FF, $FF, $FF);
     LastTint:= cWhiteColor;
 end;
@@ -2532,6 +2535,7 @@ end;
 procedure setTintAdd(enable: boolean); 
 begin
     {$IFDEF GL2}
+        FlushBatch();
         if enable then
             glUniform1i(glGetUniformLocation(shaderMain, pchar('tintAdd')), 1)
         else
