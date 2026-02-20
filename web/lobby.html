@@ -285,7 +285,15 @@ function handleMsg(msg) {
   if (cmd === 'CHAT') { addChat(msg[1], msg[2]); return; }
 
   // Team management
-  if (cmd === 'TEAM_ACCEPTED') { addChat(null, 'Team "' + msg[1] + '" added'); return; }
+  if (cmd === 'TEAM_ACCEPTED') {
+    // Add our own team to the teams array (server confirmed it)
+    var tname = msg[1];
+    if (!teams.find(function(t){return t.name===tname}) && window._webwars_pendingTeam && window._webwars_pendingTeam.name === tname) {
+      teams.push(window._webwars_pendingTeam);
+      window._webwars_pendingTeam = null;
+    }
+    renderTeams(); addChat(null, 'Team "' + tname + '" added'); return;
+  }
   if (cmd === 'ADD_TEAM') {
     // From other player: ADD_TEAM, name, grave, fort, voicepack, flag, owner, diff, hog1name, hog1hat...
     var t = {name:msg[1], grave:msg[2], fort:msg[3], voicepack:msg[4], flag:msg[5], owner:msg[6], diff:msg[7], color:'0', hogs:[], hhnum:4};
@@ -422,8 +430,11 @@ function addTeam() {
   if (teams.find(function(t){return t.name===name})) return;
   var color = String(Math.floor(Math.random() * 9));
   var grave = 'Statue'; var fort = 'Plane'; var voice = 'Default'; var flag = 'hedgewars'; var diff = '0';
+  var hogs = [];
   var args = ['ADD_TEAM', name, color, grave, fort, voice, flag, diff];
-  for (var i = 1; i <= 8; i++) { args.push('Hog ' + i); args.push('NoHat'); }
+  for (var i = 1; i <= 8; i++) { args.push('Hog ' + i); args.push('NoHat'); hogs.push({name:'Hog '+i, hat:'NoHat'}); }
+  // Save pending team so TEAM_ACCEPTED can add it to teams[]
+  window._webwars_pendingTeam = {name:name, grave:grave, fort:fort, voicepack:voice, flag:flag, owner:myNick, diff:diff, color:color, hogs:hogs, hhnum:4};
   send(args);
 }
 
