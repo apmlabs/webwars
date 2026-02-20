@@ -459,12 +459,11 @@ function updateRoomUI() {
 }
 
 function defaultAmmo() {
-  // Standard ammo: 56 weapons, all probabilities/delays/reinforcements
-  var n = 56;
-  var init  = '9'.repeat(n); // all weapons available
-  var prob  = '0'.repeat(n); // no crate probability
-  var delay = '0'.repeat(n); // no delay
-  var reinf = '0'.repeat(n); // no reinforcement
+  var n = 60;
+  var init  = '9'.repeat(n);
+  var prob  = '0'.repeat(n);
+  var delay = '0'.repeat(n);
+  var reinf = '0'.repeat(n);
   return init + prob + delay + reinf;
 }
 
@@ -585,6 +584,7 @@ function launchEngine() {
     featureSize: featureSize, script: script, scheme: schemeParts, ammo: ammoData,
     teams: teams, myNick: myNick
   };
+  console.log('[Lobby] launchEngine config:', JSON.stringify({seed:seed, theme:theme, teamCount:teams.length, teamNames:teams.map(function(t){return t.name}), ammoLen:ammoData.length, schemeLen:schemeParts.length}));
 
   startEngine(gameConfig);
 }
@@ -628,6 +628,7 @@ function startEngine(mpConfig) {
       else el.textContent = text;
     },
     locateFile: function(path) { return path; },
+    onAbort: function(what) { console.error('[Engine] ABORT:', what); document.getElementById('game-status').textContent = 'Engine crashed: ' + what; },
     totalDependencies: 0,
     monitorRunDependencies: function(left) {
       this.totalDependencies = Math.max(this.totalDependencies, left);
@@ -653,14 +654,22 @@ function startEngine(mpConfig) {
   // Dynamically load hwengine.js (which includes pre.js baked in)
   var script = document.createElement('script');
   script.src = 'hwengine.js';
+  script.onerror = function(e) { console.error('[Lobby] FAILED to load hwengine.js', e); };
   script.onload = function() {
+    console.log('[Lobby] hwengine.js loaded, HWEngine exists:', !!window.Module.HWEngine);
     // pre.js has now run and created Module.HWEngine
     // Inject mpConfig if multiplayer
     if (window._webwars_mpConfig && window.Module.HWEngine) {
       window.Module.HWEngine.mpConfig = window._webwars_mpConfig;
-      console.log('[Lobby] MP config injected into engine');
+      console.log('[Lobby] MP config injected:', JSON.stringify({
+        seed: window._webwars_mpConfig.seed,
+        theme: window._webwars_mpConfig.theme,
+        teamCount: (window._webwars_mpConfig.teams||[]).length,
+        teamNames: (window._webwars_mpConfig.teams||[]).map(function(t){return t.name})
+      }));
       // Flush any EM messages that arrived before engine was ready
       if (window._webwars_emQueue) {
+        console.log('[Lobby] Flushing', window._webwars_emQueue.length, 'queued EM messages');
         window._webwars_emQueue.forEach(function(b64) { handleEngineMsg(b64); });
         window._webwars_emQueue = null;
       }
