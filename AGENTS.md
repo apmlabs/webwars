@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-20T17:36:00Z
+Last updated: 2026-02-20T18:40:00Z
 
 ### Project Status
-- **Phase**: Multiplayer Infrastructure — server + gateway running, building web frontend
-- **Last Action**: Compiled HW server, deployed gateway, full WS↔TCP chain tested
-- **Current Blocker**: None
-- **Target**: Web lobby + multiplayer game
+- **Phase**: Multiplayer Testing & Polish — lobby, rooms, teams, game launch all working
+- **Last Action**: Single-page engine architecture, canvas ID fix, auto-add team, room polling
+- **Current Blocker**: Engine renders for host but needs testing after canvas ID fix
+- **Target**: 2-player multiplayer game end-to-end
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -44,9 +44,9 @@ Last updated: 2026-02-20T17:36:00Z
 | A | Browser MVP | ✅ COMPLETE | Game fully playable at 60fps |
 | B | Hedgewars Server | ✅ COMPLETE | Haskell binary on port 46631 (systemd) |
 | B | WebSocket Gateway | ✅ COMPLETE | JSON↔TCP bridge on port 8080 (systemd) |
-| B | Web Frontend | 🟡 IN PROGRESS | HTML/JS lobby, team config, game launch |
-| B | Network Protocol (JS) | NOT STARTED | Reimplement newnetclient.cpp in JS |
-| B | Multiplayer Test | NOT STARTED | 2-player game via WebSocket |
+| B | Web Frontend | ✅ COMPLETE | Lobby, rooms, chat, team config, game launch |
+| B | Network Protocol (JS) | ✅ COMPLETE | ADD_TEAM, CFG, EM relay, CLIENT_FLAGS |
+| B | Multiplayer Test | 🟡 IN PROGRESS | Engine loads for both players, testing rendering |
 | C | Deployment | ✅ COMPLETE | Systemd service running |
 
 ### Current Issues
@@ -386,6 +386,15 @@ ANGLE (Chrome's WebGL→D3D11 layer) handles buffer usage hints differently: `GL
 
 ### 26. desynchronized:true Causes Black Frame Flicker with glClear
 `desynchronized:true` uses single-buffer (front buffer) rendering — the display controller reads directly from the buffer being drawn to. When `glClear` wipes the buffer to black at the start of each frame, the display can scan it out before the scene is drawn, causing a black flash. `preserveDrawingBuffer:true` only prevents the **browser** from clearing between frames — it doesn't help when our own code calls `glClear`. Fix: use `desynchronized:false` (standard double-buffering). The 16ms latency cost is imperceptible for non-twitch games.
+
+### 27. All WebSocket Clients Appear as localhost Through Gateway
+The HW server's JoinsMonitor rate-limits by IP. Since all browser clients connect through the Node.js gateway, they all appear as 127.0.0.1. The default limits (2 per 30s) reject the second player immediately. Fix: relax limits to 5/30s, 10/2min, 20/10min. This allows multiple players + reconnects while still preventing abuse.
+
+### 28. window.open() Blocked in Incognito — Use Dynamic Script Loading
+Popup blockers (especially in incognito) silently block `window.open()`. For multiplayer, the WebSocket connection must stay alive during the game. Solution: load the engine dynamically in the same page via `<script>` injection. Hide lobby DOM, show fullscreen canvas. The WS stays alive (same JS context). Exit game = `location.reload()` (clean reset, WS auto-reconnects).
+
+### 29. SDL2 WASM Hardcodes `#canvas` — Canvas ID Must Match
+SDL2's Emscripten backend calls `emscripten_set_canvas_element_size("#canvas", ...)` with a hardcoded CSS selector. The canvas element MUST have `id="canvas"`. Any other ID (e.g., `game-canvas`) causes SDL to fail silently — the engine runs but renders to nothing. Verify with: `strings hwengine.wasm | grep canvas`.
 
 ---
 
