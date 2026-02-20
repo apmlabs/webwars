@@ -112,7 +112,7 @@ main{flex:1;display:flex;overflow:hidden}
     <span id="game-status">Loading engine...</span>
     <button onclick="exitGame()">✕ Exit</button>
   </div>
-  <canvas id="game-canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+  <canvas id="canvas" class="emscripten" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
 </div>
 
 <header>
@@ -198,6 +198,7 @@ var readySet = {};
 var teams = []; // [{name, owner, color, grave, fort, voicepack, flag, diff, hogs:[{name,hat}], hhnum}]
 var roomCfg = {}; // map params + game params synced from server
 var themes = ['Nature','Cake','Island','Deepspace','Halloween','Cheese','Bath','Bamboo','Blox','EarthRise','Compost','Planes'];
+var roomPoll = null;
 
 // ── Init ──
 (function() {
@@ -219,9 +220,11 @@ function connect() {
   setStatus('Connecting...', '');
 
   ws.onopen = function() { setStatus('Connected', 'ok'); };
-  ws.onclose = function() { setStatus('Disconnected', 'err'); setTimeout(connect, 3000); };
+  ws.onclose = function() { setStatus('Disconnected', 'err'); clearInterval(roomPoll); setTimeout(connect, 3000); };
   ws.onerror = function() { setStatus('Error', 'err'); };
   ws.onmessage = function(e) { handleMsg(JSON.parse(e.data)); };
+  // Poll room list every 3s when in lobby
+  roomPoll = setInterval(function() { if (!inRoom && ws.readyState === 1) send(['LIST']); }, 3000);
 }
 
 function send(arr) {
@@ -381,6 +384,8 @@ function enterRoom(name) {
   document.getElementById('room-view').style.display = 'flex';
   document.getElementById('room-name-display').textContent = name;
   renderPlayers(); renderTeams(); updateRoomUI();
+  // Auto-add team after short delay (wait for server to process join)
+  setTimeout(function() { addTeam(); }, 500);
 }
 
 function leaveRoom() {
@@ -559,7 +564,7 @@ function startEngine(mpConfig) {
   // Show game overlay
   var overlay = document.getElementById('game-overlay');
   overlay.style.display = 'block';
-  var canvas = document.getElementById('game-canvas');
+  var canvas = document.getElementById('canvas');
   canvas.style.width = window.innerWidth + 'px';
   canvas.style.height = window.innerHeight + 'px';
   canvas.focus();
@@ -638,7 +643,7 @@ function exitGame() {
 
 // Resize game canvas on window resize
 window.addEventListener('resize', function() {
-  var c = document.getElementById('game-canvas');
+  var c = document.getElementById('canvas');
   if (c && document.getElementById('game-overlay').style.display === 'block') {
     c.style.width = window.innerWidth + 'px';
     c.style.height = window.innerHeight + 'px';
