@@ -492,7 +492,13 @@ begin
     initEverything(true);
     GameRoutine;
     // clean up all the memory allocated
+{$IFDEF EMSCRIPTEN}
+    // WASM soft-exit: skip teardown to avoid RuntimeError: unreachable.
+    // SDL/GL context destruction crashes in browser. Page reload handles cleanup.
+    WriteLnToConsole('WASM: skipping freeEverything (soft exit)');
+{$ELSE}
     freeEverything(true);
+{$ENDIF}
 end;
 ///////////////////////////////////////////////////////////////////////////////
 // preInitEverything - init variables that are going to be ovewritten by arguments
