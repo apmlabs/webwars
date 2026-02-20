@@ -137,6 +137,30 @@ cd build/wasm && make -j$(nproc)
 
 ## Session History
 
+### Session 24 - February 20, 2026 (15:50-17:36 UTC)
+
+**Deep dive into project scope, then Phase 1-2 of multiplayer: server + gateway deployed.**
+
+**Phase 0: Project Scope Analysis**
+- Audited all 117 Lua scripts (6MB) — all packaged in WASM .data file, ready to load via `escript` IPC
+- Catalogued: 21 multiplayer game styles, 58 missions, 25 campaign missions, 12 library scripts
+- Analyzed Qt frontend (22 pages, ~95K lines C++) — cannot port, must rebuild as web UI
+- Mapped HW server protocol: text-based, newline-delimited TCP, NICK→PROTO→lobby→rooms→EM relay
+- Confirmed engine is deterministic — multiplayer just relays inputs, no server-side game logic
+
+**Phase 1: Hedgewars Server**
+- Compiled hedgewars-server from Haskell source (`cabal build`, GHC 9.4.7)
+- 31MB binary, copied to `bin/hedgewars-server`
+- Created systemd service `hedgewars-server.service` on port 46631
+- Tested: NICK + PROTO handshake → LOBBY:JOINED, ROOMS list
+
+**Phase 2: WebSocket Gateway**
+- Rewrote `gateway/src/index.js` with proper HW protocol framing
+- Browser sends JSON arrays (`["NICK","player"]`) → gateway converts to `NICK\nplayer\n\n`
+- Server responses parsed at `\n\n` boundaries → sent back as JSON arrays
+- Created systemd service `webwars-gateway.service` on port 8080
+- Full round-trip tested: WS connect → NICK → PROTO → LOBBY:JOINED → ROOMS → PING
+
 ### Session 22 - February 19, 2026 (13:57-17:20 UTC)
 
 **Fixed inverted rotation, blinking, and black frame flicker. Game fully playable at 60fps.**
