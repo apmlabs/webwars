@@ -151,6 +151,8 @@ main{flex:1;display:flex;overflow:hidden}
         <div class="config-section">
           <h3>Players</h3>
           <div id="players-list"></div>
+          <h3 style="margin-top:12px">Teams</h3>
+          <div id="teams-list"></div>
           <button class="btn btn-sm" onclick="addTeam()" style="margin-top:8px">+ Add Team</button>
         </div>
       </div>
@@ -175,7 +177,10 @@ var myNick = '';
 var inRoom = false;
 var isChief = false;
 var rooms = [];
-var players = [];
+var players = []; // [{nick, ready, inGame}]
+var readySet = {};
+var teams = []; // [{name, owner, color, grave, fort, voicepack, flag, diff, hogs:[{name,hat}], hhnum}]
+var roomCfg = {}; // map params + game params synced from server
 var themes = ['Nature','Cake','Island','Deepspace','Halloween','Cheese','Bath','Bamboo','Blox','EarthRise','Compost','Planes'];
 
 // ── Init ──
@@ -226,101 +231,81 @@ function doLogin() {
 function handleMsg(msg) {
   var cmd = msg[0];
 
-  if (cmd === 'CONNECTED') {
-    send(['NICK', myNick]);
-    send(['PROTO', '58']);
-    return;
-  }
-
-  if (cmd === 'LOBBY:JOINED') {
-    addChat(null, msg.slice(1).join(', ') + ' joined the lobby');
-    send(['LIST']);
-    return;
-  }
-
-  if (cmd === 'ROOMS') {
-    parseRooms(msg.slice(1));
-    return;
-  }
-
-  if (cmd === 'ROOM' && msg[1] === 'ADD') {
-    // Room added notification: ROOM ADD <fields...>
-    send(['LIST']); // refresh
-    return;
-  }
-
-  if (cmd === 'ROOM' && msg[1] === 'DEL') {
-    send(['LIST']);
-    return;
-  }
+  if (cmd === 'CONNECTED') { send(['NICK', myNick]); send(['PROTO', '58']); return; }
+  if (cmd === 'LOBBY:JOINED') { addChat(null, msg.slice(1).join(', ') + ' joined the lobby'); send(['LIST']); return; }
+  if (cmd === 'ROOMS') { parseRooms(msg.slice(1)); return; }
+  if (cmd === 'ROOM' && (msg[1] === 'ADD' || msg[1] === 'DEL' || msg[1] === 'UPD')) { send(['LIST']); return; }
 
   if (cmd === 'JOINED') {
     msg.slice(1).forEach(function(n) {
-      if (players.indexOf(n) === -1) players.push(n);
+      if (!players.find(function(p){return p.nick===n})) players.push({nick:n, ready:false, inGame:false});
     });
-    renderPlayers();
-    addChat(null, msg.slice(1).join(', ') + ' joined');
-    return;
+    renderPlayers(); addChat(null, msg.slice(1).join(', ') + ' joined'); return;
   }
-
   if (cmd === 'LEFT') {
     var who = msg[1];
-    players = players.filter(function(p) { return p !== who; });
-    renderPlayers();
-    addChat(null, who + ' left');
-    return;
-  }
-
-  if (cmd === 'CHAT') {
-    addChat(msg[1], msg[2]);
-    return;
+    players = players.filter(function(p){return p.nick!==who});
+    teams = teams.filter(function(t){return t.owner!==who});
+    renderPlayers(); renderTeams(); addChat(null, who + ' left'); return;
   }
 
   if (cmd === 'CLIENT_FLAGS' || cmd === 'CF') {
-    var flags = msg[1];
-    // +h = chief, +r = ready
-    if (flags.indexOf('+h') !== -1) {
-      for (var i = 2; i < msg.length; i++) {
-        if (msg[i] === myNick) { isChief = true; updateRoomUI(); }
-      }
-    }
-    if (flags.indexOf('+r') !== -1) {
-      // mark players ready
-    }
+    var flags = msg[1]; var nicks = msg.slice(2);
+    nicks.forEach(function(n) {
+      var p = players.find(function(x){return x.nick===n});
+      if (!p) return;
+      if (flags.indexOf('+h') !== -1) { if (n === myNick) { isChief = true; updateRoomUI(); } }
+      if (flags.indexOf('+r') !== -1) p.ready = true;
+      if (flags.indexOf('-r') !== -1) p.ready = false;
+      if (flags.indexOf('+g') !== -1) p.inGame = true;
+      if (flags.indexOf('-g') !== -1) p.inGame = false;
+    });
+    renderPlayers(); return;
+  }
+
+  if (cmd === 'CHAT') { addChat(msg[1], msg[2]); return; }
+
+  // Team management
+  if (cmd === 'TEAM_ACCEPTED') { addChat(null, 'Team "' + msg[1] + '" added'); return; }
+  if (cmd === 'ADD_TEAM') {
+    // From other player: ADD_TEAM, name, grave, fort, voicepack, flag, owner, diff, hog1name, hog1hat...
+    var t = {name:msg[1], grave:msg[2], fort:msg[3], voicepack:msg[4], flag:msg[5], owner:msg[6], diff:msg[7], color:'0', hogs:[], hhnum:4};
+    for (var i=8; i+1<msg.length; i+=2) t.hogs.push({name:msg[i], hat:msg[i+1]});
+    teams.push(t); renderTeams(); addChat(null, t.owner + ' added team "' + t.name + '"'); return;
+  }
+  if (cmd === 'REMOVE_TEAM') {
+    teams = teams.filter(function(t){return t.name!==msg[1]});
+    renderTeams(); addChat(null, 'Team "' + msg[1] + '" removed'); return;
+  }
+  if (cmd === 'TEAM_COLOR') {
+    var tc = teams.find(function(t){return t.name===msg[1]});
+    if (tc) tc.color = msg[2];
+    renderTeams(); return;
+  }
+  if (cmd === 'HH_NUM') {
+    var th = teams.find(function(t){return t.name===msg[1]});
+    if (th) th.hhnum = parseInt(msg[2]);
+    renderTeams(); return;
+  }
+
+  // Config sync
+  if (cmd === 'CFG') {
+    roomCfg[msg[1]] = msg.slice(2);
+    applyCfgToUI(msg[1], msg.slice(2));
+    addChat(null, 'Config: ' + msg[1] + ' = ' + msg.slice(2).join(' '));
     return;
   }
 
-  if (cmd === 'RUN_GAME') {
-    addChat(null, 'Game starting!');
-    // TODO: launch engine
-    return;
-  }
+  // Game start
+  if (cmd === 'RUN_GAME') { addChat(null, 'Game starting!'); launchEngine(); return; }
+  if (cmd === 'ROUND_FINISHED') { addChat(null, 'Round finished'); return; }
+  if (cmd === 'EM') { handleEngineMsg(msg[1]); return; }
 
-  if (cmd === 'PING') {
-    send(['PONG']);
-    return;
-  }
-
-  if (cmd === 'BYE') {
-    addChat(null, 'Disconnected: ' + (msg[1] || ''));
-    return;
-  }
-
-  if (cmd === 'WARNING') {
-    addChat(null, '⚠️ ' + msg[1]);
-    return;
-  }
-
-  if (cmd === 'ERROR') {
-    addChat(null, '❌ ' + msg[1]);
-    return;
-  }
-
-  if (cmd === 'NICK') return; // echo
-  if (cmd === 'PROTO') return; // echo
-  if (cmd === 'SERVER_MESSAGE') return; // MOTD, ignore
-
-  // Unhandled
+  if (cmd === 'PING') { send(['PONG']); return; }
+  if (cmd === 'BYE') { addChat(null, 'Disconnected: ' + (msg[1]||'')); return; }
+  if (cmd === 'WARNING') { addChat(null, '⚠️ ' + msg[1]); return; }
+  if (cmd === 'ERROR') { addChat(null, '❌ ' + msg[1]); return; }
+  if (cmd === 'NICK' || cmd === 'PROTO' || cmd === 'SERVER_MESSAGE' || cmd === 'NOTICE') return;
   console.log('Unhandled:', msg);
 }
 
@@ -373,19 +358,18 @@ function joinRoom(name) {
 
 function enterRoom(name) {
   inRoom = true;
-  players = [myNick];
+  players = [{nick:myNick, ready:false, inGame:false}];
+  teams = [];
+  roomCfg = {};
   document.getElementById('lobby-view').style.display = 'none';
   document.getElementById('room-view').style.display = 'flex';
   document.getElementById('room-name-display').textContent = name;
-  renderPlayers();
-  updateRoomUI();
+  renderPlayers(); renderTeams(); updateRoomUI();
 }
 
 function leaveRoom() {
   send(['PART']);
-  inRoom = false;
-  isChief = false;
-  players = [];
+  inRoom = false; isChief = false; players = []; teams = []; roomCfg = {};
   document.getElementById('lobby-view').style.display = 'flex';
   document.getElementById('room-view').style.display = 'none';
   send(['LIST']);
@@ -401,18 +385,48 @@ function startGame() {
 
 function addTeam() {
   var name = 'Team ' + myNick;
-  send(['ADD_TEAM', name, '255', '8']);
-  // color, hogcount
+  var color = String(Math.floor(Math.random() * 9));
+  var grave = 'Statue'; var fort = 'Plane'; var voice = 'Default'; var flag = 'hedgewars'; var diff = '0';
+  var args = ['ADD_TEAM', name, color, grave, fort, voice, flag, diff];
+  for (var i = 1; i <= 8; i++) { args.push('Hog ' + i); args.push('NoHat'); }
+  send(args);
 }
 
 function updateRoomUI() {
   document.getElementById('btn-start').style.display = isChief ? '' : 'none';
+  // Disable config controls for non-chief
+  ['cfg-mapgen','cfg-theme','cfg-template','cfg-turntime','cfg-sd','cfg-health'].forEach(function(id) {
+    document.getElementById(id).disabled = !isChief;
+  });
+  // Chief sends initial config
+  if (isChief && !roomCfg.SEED) {
+    var seed = String(Math.random()).slice(2);
+    send(['CFG', 'SEED', seed]);
+    send(['CFG', 'MAPGEN', document.getElementById('cfg-mapgen').value]);
+    send(['CFG', 'THEME', document.getElementById('cfg-theme').value]);
+    send(['CFG', 'TEMPLATE', document.getElementById('cfg-template').value]);
+    send(['CFG', 'FEATURE_SIZE', '12']);
+    send(['CFG', 'AMMO', 'Default', defaultAmmo()]);
+    send(['CFG', 'SCHEME', 'Default', buildSchemeString()]);
+    roomCfg.SEED = [seed];
+  }
+}
+
+function defaultAmmo() {
+  // Standard ammo: 56 weapons, all probabilities/delays/reinforcements
+  var n = 56;
+  var init  = '9'.repeat(n); // all weapons available
+  var prob  = '0'.repeat(n); // no crate probability
+  var delay = '0'.repeat(n); // no delay
+  var reinf = '0'.repeat(n); // no reinforcement
+  return init + prob + delay + reinf;
 }
 
 function renderPlayers() {
   var el = document.getElementById('players-list');
   el.innerHTML = players.map(function(p) {
-    return '<div class="player-item"><span class="ready-dot"></span>' + esc(p) + '</div>';
+    var cls = p.ready ? ' ready' : '';
+    return '<div class="player-item'+cls+'"><span class="ready-dot"></span>' + esc(p.nick) + (p.ready ? ' ✓' : '') + '</div>';
   }).join('');
 }
 
@@ -435,10 +449,108 @@ function sendChat() {
 }
 
 function sendCfg() {
-  // Only chief can configure
   if (!isChief) return;
-  // TODO: send CFG commands to server
+  send(['CFG', 'MAPGEN', document.getElementById('cfg-mapgen').value]);
+  send(['CFG', 'THEME', document.getElementById('cfg-theme').value]);
+  send(['CFG', 'TEMPLATE', document.getElementById('cfg-template').value]);
+  send(['CFG', 'SCHEME', 'Default', buildSchemeString()]);
+  send(['CFG', 'FEATURE_SIZE', document.getElementById('cfg-health').value || '12']);
 }
+
+function buildSchemeString() {
+  // Minimal scheme: gameflags booleans (27) + params (17) + scriptparam
+  // For simplicity, use defaults matching "Default" scheme
+  var tt = document.getElementById('cfg-turntime').value;
+  var sd = document.getElementById('cfg-sd').value;
+  var hp = document.getElementById('cfg-health').value || '100';
+  // 27 boolean flags (all false = default), then params
+  var flags = 'false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,true,false,false,false,false,false,false';
+  var params = [
+    '100',   // damagepct
+    tt,      // turntime (ms)
+    '100',   // (unused)
+    sd,      // sd_turns
+    '5',     // casefreq
+    '3',     // minestime
+    '4',     // minesnum
+    '0',     // minedudpct
+    '2',     // explosives
+    '0',     // airmines
+    '35',    // healthprob
+    '25',    // hcaseamount
+    '47',    // waterrise
+    '5',     // healthdec
+    '100',   // ropepct
+    '100',   // getawaytime
+    '0'      // worldedge
+  ];
+  return flags + ',' + params.join(',') + ',';
+}
+
+function applyCfgToUI(param, vals) {
+  if (isChief) return; // chief already has correct UI
+  if (param === 'MAPGEN') document.getElementById('cfg-mapgen').value = vals[0];
+  if (param === 'THEME') document.getElementById('cfg-theme').value = vals[0];
+  if (param === 'TEMPLATE') document.getElementById('cfg-template').value = vals[0];
+}
+
+function renderTeams() {
+  var el = document.getElementById('teams-list');
+  if (!el) return;
+  var colors = ['#ff0000','#00ff00','#0000ff','#ffff00','#ff00ff','#00ffff','#ff8000','#8000ff','#80ff00'];
+  el.innerHTML = teams.map(function(t) {
+    var c = colors[parseInt(t.color)] || '#fff';
+    var mine = t.owner === myNick;
+    return '<div class="player-item" style="border-left:3px solid '+c+';padding-left:8px">' +
+      '<span style="color:'+c+'">' + esc(t.name) + '</span>' +
+      '<span style="color:#8892b0;font-size:11px;margin-left:8px">' + t.hhnum + ' hogs · ' + esc(t.owner) + '</span>' +
+      (mine ? ' <button class="btn btn-sm btn-danger" onclick="removeTeam(\''+esc(t.name)+'\')">✕</button>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function removeTeam(name) { send(['REMOVE_TEAM', name]); }
+
+function handleEngineMsg(b64) {
+  // Relay to engine iframe if running
+  var f = document.getElementById('game-frame');
+  if (f && f.contentWindow) f.contentWindow.postMessage({type:'em', data:b64}, '*');
+}
+
+function launchEngine() {
+  // Build IPC config from room state and launch engine in iframe
+  var seed = (roomCfg.SEED && roomCfg.SEED[0]) || String(Date.now());
+  var mapgen = (roomCfg.MAPGEN && roomCfg.MAPGEN[0]) || '0';
+  var theme = (roomCfg.THEME && roomCfg.THEME[0]) || 'Nature';
+  var template = (roomCfg.TEMPLATE && roomCfg.TEMPLATE[0]) || '0';
+  var featureSize = (roomCfg.FEATURE_SIZE && roomCfg.FEATURE_SIZE[0]) || '12';
+  var script = (roomCfg.SCRIPT && roomCfg.SCRIPT[0]) || '';
+
+  // Build scheme params from CFG or defaults
+  var schemeData = (roomCfg.SCHEME && roomCfg.SCHEME.length > 1) ? roomCfg.SCHEME[1] : '';
+  var schemeParts = schemeData ? schemeData.split(',') : [];
+
+  // Ammo string
+  var ammoData = (roomCfg.AMMO && roomCfg.AMMO.length > 1) ? roomCfg.AMMO[1] : '';
+
+  // Store config for engine page to pick up
+  var gameConfig = {
+    mode: 'TN', seed: seed, mapgen: mapgen, theme: theme, template: template,
+    featureSize: featureSize, script: script, scheme: schemeParts, ammo: ammoData,
+    teams: teams, myNick: myNick
+  };
+  sessionStorage.setItem('webwars_game', JSON.stringify(gameConfig));
+
+  // Open engine in new tab (it reads config from sessionStorage)
+  window.open('hwengine.html?mp=1', '_blank');
+  addChat(null, 'Engine launched — switch to game tab');
+}
+
+// Listen for engine messages to relay back to server
+window.addEventListener('message', function(e) {
+  if (e.data && e.data.type === 'em_out') send(['EM', e.data.data]);
+  if (e.data && e.data.type === 'round_finished') send(['ROUNDFINISHED', '1']);
+});
 
 // ── Quick Play (local hotseat) ──
 function playLocal() {
