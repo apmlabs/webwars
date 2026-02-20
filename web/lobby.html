@@ -556,11 +556,18 @@ function renderTeams() {
 
 function removeTeam(name) { send(['REMOVE_TEAM', name]); }
 
+var _emStats = {sent:0, recv:0, lastLog:0};
 function handleEngineMsg(b64) {
   // Relay EM from server directly into engine's message queue (same page!)
   if (window.Module && window.Module.HWEngine && window.Module.HWEngine.mpConfig) {
     var raw = atob(b64);
     for (var i = 0; i < raw.length; i++) window.Module.HWEngine.messageQueue.push(raw.charCodeAt(i));
+    _emStats.recv++;
+    var now = Date.now();
+    if (now - _emStats.lastLog > 3000) {
+      console.log('[EM] sent=' + _emStats.sent + ' recv=' + _emStats.recv + ' qLen=' + window.Module.HWEngine.messageQueue.length);
+      _emStats.lastLog = now;
+    }
   } else {
     // Engine not ready yet — queue for later injection
     if (!window._webwars_emQueue) window._webwars_emQueue = [];
@@ -645,6 +652,7 @@ function startEngine(mpConfig) {
   // Hook: intercept engine EM output to relay to server (override writeIPC after pre.js loads)
   window._webwars_emRelay = function(b64) {
     send(['EM', b64]);
+    if (window._emStats) window._emStats.sent++;
   };
   window._webwars_roundFinished = function() {
     send(['ROUNDFINISHED', '1']);
