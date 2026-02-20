@@ -90,6 +90,12 @@ EM_JS(void, hw_install_error_catcher, (), {
     }
 });
 
+// Notify JS that the engine has exited
+EM_JS(void, hw_notify_engine_exit, (), {
+    console.log('[Engine] Game loop exited');
+    if (window._webwars_roundFinished) window._webwars_roundFinished();
+});
+
 static void mainloop_frame(void) {
     TSDL_Event event;
     boolean wheelEvent = false;
@@ -102,6 +108,7 @@ static void mainloop_frame(void) {
     if (ml_isTerminated || !allOK) {
         emscripten_log(0, "PERF LOOP EXIT f=%d terminated=%d allOK=%d", ml_frameCount, (int)ml_isTerminated, (int)allOK);
         emscripten_cancel_main_loop();
+        hw_notify_engine_exit();
         return;
     }
 
