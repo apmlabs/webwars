@@ -251,7 +251,7 @@ function handleMsg(msg) {
   var cmd = msg[0];
 
   if (cmd === 'CONNECTED') { send(['NICK', myNick]); send(['PROTO', '58']); return; }
-  if (cmd === 'LOBBY:JOINED') { addChat(null, msg.slice(1).join(', ') + ' joined the lobby'); send(['LIST']); return; }
+  if (cmd === 'LOBBY:JOINED') { addChat(null, msg.slice(1).join(', ') + ' joined the lobby'); if (!inRoom) send(['LIST']); return; }
   if (cmd === 'ROOMS') { parseRooms(msg.slice(1)); return; }
   if (cmd === 'ROOM' && (msg[1] === 'ADD' || msg[1] === 'DEL' || msg[1] === 'UPD')) { send(['LIST']); return; }
 
@@ -383,6 +383,7 @@ function createRoom() {
 }
 
 function joinRoom(name) {
+  if (inRoom) return;
   send(['JOIN_ROOM', name]);
   enterRoom(name);
 }
@@ -418,6 +419,7 @@ function startGame() {
 
 function addTeam() {
   var name = 'Team ' + myNick;
+  if (teams.find(function(t){return t.name===name})) return;
   var color = String(Math.floor(Math.random() * 9));
   var grave = 'Statue'; var fort = 'Plane'; var voice = 'Default'; var flag = 'hedgewars'; var diff = '0';
   var args = ['ADD_TEAM', name, color, grave, fort, voice, flag, diff];
