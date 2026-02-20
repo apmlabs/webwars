@@ -4,7 +4,7 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 
 ## Status
 
-**Game Renders & Runs Fast** - Engine runs in the browser with sprite batching (GPU time 1-9ms).
+**Multiplayer Working!** Two players can play a full game in the browser via WebSocket.
 
 ### What Works
 - ✅ Engine compiles to WebAssembly (3.97MB with JSPI)
@@ -20,6 +20,9 @@ Browser port of [Hedgewars](https://hedgewars.org/) using WebAssembly. Play loca
 - ✅ JSPI (no ASYNCIFY overhead on main loop)
 - ✅ Correct rotation and rendering — no flicker
 - ✅ Full game plays to completion (allOK=1)
+- ✅ Multiplayer lobby — rooms, chat, team config
+- ✅ Multiplayer gameplay — turns alternate, EM relay synced
+- ✅ Background tab timer — keeps game synced when tab is hidden
 - ❌ Cleanup crashes on shutdown
 
 ### Live Demo

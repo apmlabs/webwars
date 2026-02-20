@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-20T18:40:00Z
+**Last Updated**: 2026-02-20T20:48:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Multiplayer infrastructure complete — lobby, rooms, teams, game launch working
+**Status**: ✅ Multiplayer WORKING — two players can play a full game in the browser
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -46,6 +46,12 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **Rotation fixed** - All CPU transforms now match original openglRotatef sign convention
 - ✅ **No flicker** - desynchronized:false for proper double-buffered compositing
 - ✅ **FlushBatch on all state changes** - Tint, untint, setTintAdd, BeginWater, DrawLine, etc.
+- ✅ **Multiplayer lobby** - WebSocket gateway, rooms, chat, team config, game launch
+- ✅ **Multiplayer gameplay** - Two players can play a full game, turns alternate, EM relay working
+- ✅ **erdriven fix** - Only mark OTHER players' teams as externally driven (was marking all teams)
+- ✅ **TN ordering** - Game type sent before config, matching Qt client order
+- ✅ **IPCCheckSock timing** - Called before/between DoTimer ticks so EM messages are in headcmd queue
+- ✅ **Background tab timer** - setInterval at 10Hz keeps processing EM when tab is hidden
 
 ### Known Issues
 
@@ -136,6 +142,49 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 28 - February 20, 2026 (20:00-20:48 UTC)
+
+**Multiplayer fully playable! Fixed erdriven, IPCCheckSock timing, and background tab sync.**
+
+**Phase 1: erdriven Fix (from session 27)**
+- Root cause confirmed: `erdriven` was sent for ALL teams including local player's own team
+- Engine treated all teams as network-controlled → no team responded to local input
+- Fix: `if (t.owner !== cfg.myNick) this.sendMessage('erdriven')` — only mark OTHER players' teams
+- Also moved `TN` before config to match Qt client ordering
+
+**Phase 2: Deep Multiplayer Flow Analysis**
+- Traced full EM relay path: Engine → writeIPC → base64 → WS → server → WS → handleEngineMsg → messageQueue → IPCCheckSock → headcmd → NetGetNextCmd
+- Analyzed Qt client reference: `game.cpp` ParseMessage default case buffers engine output, `flushNetBuffer()` sends as `EM <base64>` to server
+- Server `checkNetCmd` validates messages, relays to `roomOthersChans`
+- Qt client `FromNet(em)` → `RawSendIPC(msg)` injects raw bytes into engine IPC
+- Confirmed our relay matches Qt client behavior
+
+**Phase 3: IPCCheckSock Timing Fix (Critical)**
+- `IPCCheckSock` was called ONCE per frame, AFTER all DoTimer catch-up ticks
+- `DoTimer` calls `NetGetNextCmd` which reads from `headcmd` queue
+- Incoming EM messages were in JS messageQueue but not yet parsed into `headcmd`
+- Engine saw `headcmd=nil` → `isInLag=true` → game paused waiting for network
+- Fix: call `IPCCheckSock` BEFORE tick loop, BETWEEN catch-up ticks, and BEFORE final render tick
+
+**Phase 4: Background Tab Timer**
+- Browsers throttle `requestAnimationFrame` to ~1fps for background tabs
+- EM messages piled up (qLen growing from 5 → 511), causing 10+ second resync on tab switch
+- Fix: `setInterval` at 10Hz when `document.hidden`, running game logic with `cOnlyStats=true`
+- Exported `mainloop_frame_bg` for JS to call from the background timer
+- When tab becomes visible, interval stops and RAF resumes
+
+**Phase 5: EM Diagnostic Logging**
+- Added `_emStats` counters: sent, recv, qLen logged every 3 seconds
+- Confirmed bidirectional EM flow: both players sending and receiving
+- Gateway logs showed EM messages relayed correctly (keepalives, turn-ends, cursor positions)
+
+**Testing Results:**
+- Two players can play a full multiplayer game in the browser
+- Turns alternate correctly between players
+- Actions are synced (weapon selection, movement, shooting, damage)
+- Health bars and game state update properly
+- Tab switching causes brief resync (background timer should reduce this)
 
 ### Session 25 - February 20, 2026 (17:42-18:40 UTC)
 
