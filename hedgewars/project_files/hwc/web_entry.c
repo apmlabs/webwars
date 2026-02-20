@@ -202,6 +202,10 @@ static void mainloop_frame(void) {
         ustore_InitZoom(ZoomValue);
     }
 
+    // Poll IPC BEFORE game ticks — incoming EM messages must be in headcmd
+    // before NetGetNextCmd runs, otherwise engine sees isInLag=true
+    uio_IPCCheckSock();
+
     LongWord CurrTime = SDL_GetTicks();
     ml_frameCount++;
     if (doDebug) t1 = emscripten_get_now();
@@ -221,6 +225,7 @@ static void mainloop_frame(void) {
     if (ticksNeeded > 1 && ml_frameCount > 32) {
         cOnlyStats = true;
         for (int i = 0; i < ticksNeeded - 1 && !ml_isTerminated; i++) {
+            uio_IPCCheckSock(); // poll between ticks for network messages
             ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)cTimerInterval);
             ml_PrevTime += (LongWord)cTimerInterval;
         }
@@ -229,6 +234,7 @@ static void mainloop_frame(void) {
     t2 = emscripten_get_now();
     // Final tick with rendering enabled
     if (ticksNeeded > 0 && !ml_isTerminated) {
+        uio_IPCCheckSock();
         ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)cTimerInterval);
         ml_PrevTime += (LongWord)cTimerInterval;
     }
@@ -236,8 +242,6 @@ static void mainloop_frame(void) {
     // If still behind, skip ahead
     if (ml_PrevTime + (LongWord)cTimerInterval <= CurrTime)
         ml_PrevTime = CurrTime;
-
-    uio_IPCCheckSock();
     double frameEnd = emscripten_get_now();
     // Log sparingly: every 300th frame or when very slow
     if (ml_frameCount % 300 == 0 || frameDelta > 500) {
