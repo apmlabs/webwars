@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-19T13:47:00Z
+Last updated: 2026-02-20T17:36:00Z
 
 ### Project Status
-- **Phase**: Game Fully Playable — 60fps, correct rendering, no flicker
-- **Last Action**: Fixed rotation sign, FlushBatch in untint/setTintAdd, desynchronized:false
-- **Current Blocker**: None — game plays to completion
-- **Target**: Multiplayer via WebSocket
+- **Phase**: Multiplayer Infrastructure — server + gateway running, building web frontend
+- **Last Action**: Compiled HW server, deployed gateway, full WS↔TCP chain tested
+- **Current Blocker**: None
+- **Target**: Web lobby + multiplayer game
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -41,10 +41,10 @@ Last updated: 2026-02-19T13:47:00Z
 | A | Spawn System | ✅ COMPLETE | Hedgehogs spawn successfully |
 | A | Game Loop | ✅ COMPLETE | Runs 360+ ticks, sends state updates |
 | A | Win Detection | ✅ COMPLETE | Detects winners, plays sounds |
-| A | Browser MVP | 🟡 IN PROGRESS | Fix texture loading, improve perf |
-| B | Hedgewars Server | 🟡 IN PROGRESS | Compile Haskell server binary |
-| B | WebSocket Gateway | NOT STARTED | Bridge WS↔TCP, gateway code exists |
-| B | Web Frontend | NOT STARTED | HTML/JS lobby, team config, game launch |
+| A | Browser MVP | ✅ COMPLETE | Game fully playable at 60fps |
+| B | Hedgewars Server | ✅ COMPLETE | Haskell binary on port 46631 (systemd) |
+| B | WebSocket Gateway | ✅ COMPLETE | JSON↔TCP bridge on port 8080 (systemd) |
+| B | Web Frontend | 🟡 IN PROGRESS | HTML/JS lobby, team config, game launch |
 | B | Network Protocol (JS) | NOT STARTED | Reimplement newnetclient.cpp in JS |
 | B | Multiplayer Test | NOT STARTED | 2-player game via WebSocket |
 | C | Deployment | ✅ COMPLETE | Systemd service running |
@@ -186,8 +186,8 @@ webwars/
 │       ├── hwengine.wasm        # 4.2MB engine
 │       └── hwengine.data        # 187MB assets
 │
-├── gateway/                     # WebSocket gateway (NOT STARTED)
-│   └── src/index.js             # Gateway code ready
+├── gateway/                     # WebSocket gateway (RUNNING - systemd)
+│   └── src/index.js             # JSON↔TCP bridge, HW protocol framing
 ├── web/                         # Browser frontend
 │   ├── index.html               # Landing page
 │   ├── launcher.html            # Game launcher
