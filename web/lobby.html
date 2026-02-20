@@ -80,6 +80,13 @@ main{flex:1;display:flex;overflow:hidden}
 
 /* Login overlay */
 #login-overlay{position:fixed;inset:0;background:rgba(6,8,18,0.9);display:flex;align-items:center;justify-content:center;z-index:100}
+
+/* Game overlay — fullscreen canvas over lobby */
+#game-overlay{display:none;position:fixed;inset:0;z-index:150;background:#000}
+#game-overlay canvas{width:100vw;height:100vh;display:block}
+#game-overlay .game-topbar{position:absolute;top:0;left:0;right:0;height:32px;background:rgba(13,17,32,0.8);display:flex;align-items:center;padding:0 12px;z-index:160;font-size:12px}
+#game-overlay .game-topbar span{color:#8892b0;margin-right:16px}
+#game-overlay .game-topbar button{background:none;border:1px solid #2a3352;color:#8892b0;padding:2px 8px;border-radius:3px;cursor:pointer;font-size:11px;margin-left:auto}
 #login-box{background:#111628;border:1px solid #1e2744;border-radius:12px;padding:32px;text-align:center;min-width:320px}
 #login-box h2{margin-bottom:16px;font-size:20px}
 #login-box input{width:100%;padding:10px 14px;background:#0d1120;border:1px solid #2a3352;border-radius:6px;color:#e0e0e0;font-size:14px;margin-bottom:12px;outline:none;text-align:center}
@@ -97,6 +104,15 @@ main{flex:1;display:flex;overflow:hidden}
     <br>
     <button class="btn btn-primary" onclick="doLogin()" style="width:100%">Join Server</button>
   </div>
+</div>
+
+<!-- Game overlay (hidden, shown when engine loads) -->
+<div id="game-overlay">
+  <div class="game-topbar">
+    <span id="game-status">Loading engine...</span>
+    <button onclick="exitGame()">✕ Exit</button>
+  </div>
+  <canvas id="game-canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
 </div>
 
 <header>
@@ -512,49 +528,126 @@ function renderTeams() {
 function removeTeam(name) { send(['REMOVE_TEAM', name]); }
 
 function handleEngineMsg(b64) {
-  // Relay to engine iframe if running
-  var f = document.getElementById('game-frame');
-  if (f && f.contentWindow) f.contentWindow.postMessage({type:'em', data:b64}, '*');
+  // Relay EM from server directly into engine's message queue (same page!)
+  if (window.Module && window.Module.HWEngine && window.Module.HWEngine.mpConfig) {
+    var raw = atob(b64);
+    for (var i = 0; i < raw.length; i++) window.Module.HWEngine.messageQueue.push(raw.charCodeAt(i));
+  }
 }
 
 function launchEngine() {
-  // Build IPC config from room state and launch engine in iframe
   var seed = (roomCfg.SEED && roomCfg.SEED[0]) || String(Date.now());
   var mapgen = (roomCfg.MAPGEN && roomCfg.MAPGEN[0]) || '0';
   var theme = (roomCfg.THEME && roomCfg.THEME[0]) || 'Nature';
   var template = (roomCfg.TEMPLATE && roomCfg.TEMPLATE[0]) || '0';
   var featureSize = (roomCfg.FEATURE_SIZE && roomCfg.FEATURE_SIZE[0]) || '12';
   var script = (roomCfg.SCRIPT && roomCfg.SCRIPT[0]) || '';
-
-  // Build scheme params from CFG or defaults
   var schemeData = (roomCfg.SCHEME && roomCfg.SCHEME.length > 1) ? roomCfg.SCHEME[1] : '';
   var schemeParts = schemeData ? schemeData.split(',') : [];
-
-  // Ammo string
   var ammoData = (roomCfg.AMMO && roomCfg.AMMO.length > 1) ? roomCfg.AMMO[1] : '';
 
-  // Store config for engine page to pick up
   var gameConfig = {
     mode: 'TN', seed: seed, mapgen: mapgen, theme: theme, template: template,
     featureSize: featureSize, script: script, scheme: schemeParts, ammo: ammoData,
     teams: teams, myNick: myNick
   };
-  sessionStorage.setItem('webwars_game', JSON.stringify(gameConfig));
 
-  // Open engine in new tab (it reads config from sessionStorage)
-  window.open('hwengine.html?mp=1', '_blank');
-  addChat(null, 'Engine launched — switch to game tab');
+  startEngine(gameConfig);
 }
 
-// Listen for engine messages to relay back to server
-window.addEventListener('message', function(e) {
-  if (e.data && e.data.type === 'em_out') send(['EM', e.data.data]);
-  if (e.data && e.data.type === 'round_finished') send(['ROUNDFINISHED', '1']);
+function startEngine(mpConfig) {
+  // Show game overlay
+  var overlay = document.getElementById('game-overlay');
+  overlay.style.display = 'block';
+  var canvas = document.getElementById('game-canvas');
+  canvas.style.width = window.innerWidth + 'px';
+  canvas.style.height = window.innerHeight + 'px';
+  canvas.focus();
+
+  // Create WebGL2 context with optimal attributes
+  var gl = canvas.getContext('webgl2', {
+    alpha:false, antialias:false, depth:false, desynchronized:false,
+    failIfMajorPerformanceCaveat:false, powerPreference:'high-performance',
+    premultipliedAlpha:true, preserveDrawingBuffer:false, stencil:false
+  });
+  if (!gl) { alert('WebGL2 not available'); return; }
+
+  document.getElementById('game-status').textContent = 'Downloading engine...';
+
+  // Set up Module for Emscripten — pre.js will find this
+  window.Module = {
+    canvas: canvas,
+    preinitializedWebGLContext: gl,
+    noInitialRun: false,
+    arguments: ['--prefix', '/Data', '--user-prefix', '/Data', 'test.hwd'],
+    print: function(t) { if(t) console.log('[Engine]', t); },
+    printErr: function(t) {
+      if (!t) return;
+      if (t.indexOf('dependency: fp') !== -1) return;
+      console.error('[Engine Error]', t);
+    },
+    setStatus: function(text) {
+      var el = document.getElementById('game-status');
+      if (!text) { el.textContent = 'Running'; return; }
+      var m = text.match(/\((\d+)\/(\d+)\)/);
+      if (m) el.textContent = 'Downloading... ' + (parseInt(m[1])/1048576|0) + ' / ' + (parseInt(m[2])/1048576|0) + ' MB';
+      else el.textContent = text;
+    },
+    locateFile: function(path) { return path; },
+    totalDependencies: 0,
+    monitorRunDependencies: function(left) {
+      this.totalDependencies = Math.max(this.totalDependencies, left);
+      this.setStatus(left ? 'Loading... ('+(this.totalDependencies-left)+'/'+this.totalDependencies+')' : 'Ready');
+    }
+  };
+
+  // If multiplayer, set mpConfig so pre.js uses startMultiplayerGame instead of startHotseatGame
+  if (mpConfig) {
+    // pre.js checks HWEngine.mpConfig — we set it after script loads since pre.js creates HWEngine
+    window._webwars_mpConfig = mpConfig;
+  }
+
+  // Hook: intercept engine EM output to relay to server (override writeIPC after pre.js loads)
+  window._webwars_emRelay = function(b64) {
+    send(['EM', b64]);
+  };
+  window._webwars_roundFinished = function() {
+    send(['ROUNDFINISHED', '1']);
+    exitGame();
+  };
+
+  // Dynamically load hwengine.js (which includes pre.js baked in)
+  var script = document.createElement('script');
+  script.src = 'hwengine.js';
+  script.onload = function() {
+    // pre.js has now run and created Module.HWEngine
+    // Inject mpConfig if multiplayer
+    if (window._webwars_mpConfig && window.Module.HWEngine) {
+      window.Module.HWEngine.mpConfig = window._webwars_mpConfig;
+      console.log('[Lobby] MP config injected into engine');
+    }
+  };
+  document.body.appendChild(script);
+}
+
+function exitGame() {
+  // Can't cleanly unload Emscripten — reload page to reset
+  // WS will reconnect automatically after reload
+  location.reload();
+}
+
+// Resize game canvas on window resize
+window.addEventListener('resize', function() {
+  var c = document.getElementById('game-canvas');
+  if (c && document.getElementById('game-overlay').style.display === 'block') {
+    c.style.width = window.innerWidth + 'px';
+    c.style.height = window.innerHeight + 'px';
+  }
 });
 
 // ── Quick Play (local hotseat) ──
 function playLocal() {
-  window.location.href = 'hwengine.html';
+  startEngine(null); // null = hotseat mode, pre.js uses startHotseatGame
 }
 
 // ── Util ──
