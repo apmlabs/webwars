@@ -309,9 +309,21 @@ function handleMsg(msg) {
 
   // Config sync
   if (cmd === 'CFG') {
-    roomCfg[msg[1]] = msg.slice(2);
-    applyCfgToUI(msg[1], msg.slice(2));
-    addChat(null, 'Config: ' + msg[1] + ' = ' + msg.slice(2).join(' '));
+    if (msg[1] === 'FULLMAPCONFIG') {
+      // Server sends map params as ordered values: FEATURE_SIZE, MAP, MAPGEN, MAZE_SIZE, SEED, TEMPLATE
+      var v = msg.slice(2);
+      roomCfg['FEATURE_SIZE'] = [v[0] || '12'];
+      roomCfg['MAP'] = [v[1] || '+rnd+'];
+      roomCfg['MAPGEN'] = [v[2] || '0'];
+      roomCfg['MAZE_SIZE'] = [v[3] || '0'];
+      roomCfg['SEED'] = [v[4] || String(Date.now())];
+      roomCfg['TEMPLATE'] = [v[5] || '0'];
+      addChat(null, 'Map config received (seed=' + (v[4]||'?') + ')');
+    } else {
+      roomCfg[msg[1]] = msg.slice(2);
+      applyCfgToUI(msg[1], msg.slice(2));
+      addChat(null, 'Config: ' + msg[1] + ' = ' + msg.slice(2).join(' '));
+    }
     return;
   }
 
@@ -537,6 +549,10 @@ function handleEngineMsg(b64) {
   if (window.Module && window.Module.HWEngine && window.Module.HWEngine.mpConfig) {
     var raw = atob(b64);
     for (var i = 0; i < raw.length; i++) window.Module.HWEngine.messageQueue.push(raw.charCodeAt(i));
+  } else {
+    // Engine not ready yet — queue for later injection
+    if (!window._webwars_emQueue) window._webwars_emQueue = [];
+    window._webwars_emQueue.push(b64);
   }
 }
 
@@ -630,6 +646,11 @@ function startEngine(mpConfig) {
     if (window._webwars_mpConfig && window.Module.HWEngine) {
       window.Module.HWEngine.mpConfig = window._webwars_mpConfig;
       console.log('[Lobby] MP config injected into engine');
+      // Flush any EM messages that arrived before engine was ready
+      if (window._webwars_emQueue) {
+        window._webwars_emQueue.forEach(function(b64) { handleEngineMsg(b64); });
+        window._webwars_emQueue = null;
+      }
     }
   };
   document.body.appendChild(script);
