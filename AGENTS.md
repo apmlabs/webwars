@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-20T20:48:00Z
+Last updated: 2026-02-20T21:23:00Z
 
 ### Project Status
 - **Phase**: Multiplayer WORKING — two players can play a full game in the browser
-- **Last Action**: Background tab timer for EM sync, IPCCheckSock timing fix
+- **Last Action**: WASM soft-exit fix — skip freeEverything to prevent cleanup crash
 - **Current Blocker**: None — multiplayer is playable
-- **Target**: Polish, two-device testing, cleanup crash fix
+- **Target**: Polish, two-device testing, desync detection
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -51,7 +51,7 @@ Last updated: 2026-02-20T20:48:00Z
 
 ### Current Issues
 1. **Texture loading failures** - BlueWater, Clouds, SkyL/R, AmmoMenu, theme sprites (flags 5/21/44) all fail to load
-2. **Cleanup crash** - `RuntimeError: unreachable` during shutdown
+2. **Cleanup crash** - ~~`RuntimeError: unreachable` during shutdown~~ FIXED: WASM soft-exit skips freeEverything
 3. **Main loop timing** - ~~SDL vsync calls before Emscripten main loop exists~~ FIXED: using emscripten_set_main_loop
 4. **Console spam** - ~~5000+ lines from debug mode~~ FIXED: switched to -O2
 5. **Data file path warning** - `dependency: datafile_../../bin/hwengine.data` (non-fatal)
@@ -404,6 +404,9 @@ In the native engine, `DoTimer` and `IPCCheckSock` alternate in a tight loop (~1
 
 ### 32. Background Tabs Throttle RAF — Use setInterval Fallback
 Browsers throttle `requestAnimationFrame` to ~1fps or less for background tabs. In multiplayer, EM messages pile up in the queue (qLen grows), causing 10+ second resync on tab switch. Fix: `document.visibilitychange` listener starts a `setInterval` at 10Hz when hidden, calling a background frame function with `cOnlyStats=true` (game logic only, no rendering). When visible, stop interval and let RAF resume.
+
+### 33. Skip freeEverything in WASM — SDL/GL Teardown Crashes Emscripten
+`freeEverything(true)` calls `SDL_GL_DeleteContext`, `SDL_DestroyWindow`, `SDL_Quit` (twice — once in `uStore.freeModule`, once directly). Emscripten's SDL doesn't support re-init after `SDL_Quit`, and the teardown hits `RuntimeError: unreachable`. Fix: `{$IFDEF EMSCRIPTEN}` skip `freeEverything` entirely. Page reload is the only clean reset in browser. Notify JS via `hw_notify_engine_exit()` so the lobby can trigger reload.
 
 ---
 

@@ -1,6 +1,6 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-20T20:48:00Z
+**Last Updated**: 2026-02-20T21:23:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
 **Status**: ✅ Multiplayer WORKING — two players can play a full game in the browser
 
@@ -52,6 +52,7 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **TN ordering** - Game type sent before config, matching Qt client order
 - ✅ **IPCCheckSock timing** - Called before/between DoTimer ticks so EM messages are in headcmd queue
 - ✅ **Background tab timer** - setInterval at 10Hz keeps processing EM when tab is hidden
+- ✅ **WASM soft-exit** - Skip freeEverything in WASM builds, prevents RuntimeError: unreachable on shutdown
 
 ### Known Issues
 
@@ -63,10 +64,10 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
    - BlueWater, Clouds, SkyL/R, AmmoMenu, theme sprites (flags 5/21/44)
    - Game renders but missing sky, water, clouds, decorations
 
-3. **Cleanup Crash** (Deterministic)
-   - `RuntimeError: unreachable` during shutdown
-   - Happens after "Freeing resources..."
-   - Prevents game restart
+3. **Cleanup Crash** (FIXED — WASM soft-exit)
+   - Was: `RuntimeError: unreachable` during `freeEverything` shutdown
+   - Fix: Skip `freeEverything(true)` in EMSCRIPTEN builds; page reload handles cleanup
+   - Engine loop exit now notifies JS via `hw_notify_engine_exit()`
 
 ### Deployment
 - **Service**: `webwars-server.service` (systemd)
@@ -142,6 +143,21 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 29 - February 20, 2026 (21:02-21:23 UTC)
+
+**WASM soft-exit: eliminated cleanup crash on game end.**
+
+**Analysis**
+- Traced crash path: `Game()` → `freeEverything(true)` → `uStore.freeModule` → `SDL_GL_DeleteContext`/`SDL_DestroyWindow`/`SDL_Quit` → RuntimeError: unreachable
+- Found double-destroy: both `uStore.freeModule` and `freeEverything` call SDL_GL_DeleteContext/SDL_DestroyWindow/SDL_Quit
+- Confirmed Emscripten SDL doesn't support re-init after SDL_Quit — restart requires page reload regardless
+
+**Fix: WASM Soft-Exit**
+- `hwengine.pas`: Skip `freeEverything(true)` in `{$IFDEF EMSCRIPTEN}` builds
+- `web_entry.c`: Added `hw_notify_engine_exit()` — calls `_webwars_roundFinished()` in JS when loop exits
+- Flow: game ends → cancel main loop → notify JS → JS sends ROUNDFINISHED → location.reload()
+- No SDL/GL teardown in WASM — page reload handles cleanup
 
 ### Session 28 - February 20, 2026 (20:00-20:48 UTC)
 
