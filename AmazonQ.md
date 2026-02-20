@@ -1,14 +1,14 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-20T17:15:00Z
+**Last Updated**: 2026-02-20T18:40:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: Game fully playable — 60fps, correct rendering, correct physics, no flicker
+**Status**: Multiplayer infrastructure complete — lobby, rooms, teams, game launch working
 
 ## Project: WebWars (Hedgewars WASM Port)
 
 Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket multiplayer.
 
-## Current Phase: Web Frontend + Multiplayer
+## Current Phase: Multiplayer Testing & Polish
 
 ### What Works
 - ✅ Engine compiled to WebAssembly (5.15MB — reduced from 5.4MB via ASYNCIFY_REMOVE optimization)
@@ -136,6 +136,52 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 25 - February 20, 2026 (17:42-18:40 UTC)
+
+**Multiplayer Phase 3-4: Team config sync, single-page engine architecture, EM relay.**
+
+**Phase 1: Team Config & CFG Sync**
+- Fixed ADD_TEAM protocol: name, color, grave, fort, voicepack, flag, difficulty, 8×(hogname, hoghat)
+- Handle server responses: TEAM_ACCEPTED, TEAM_COLOR, HH_NUM, ADD_TEAM (from others), REMOVE_TEAM
+- CFG sync: chief sends SEED/MAPGEN/THEME/TEMPLATE/AMMO/SCHEME on room create
+- Non-chief receives CFG updates and applies to UI
+- Player ready/inGame state tracking from CLIENT_FLAGS (+r/-r, +g/-g)
+
+**Phase 2: Rate Limiter Fix**
+- All WS clients appear as localhost through gateway — HW server's JoinsMonitor rejected 2nd player
+- Relaxed limits: 5/30s, 10/2min, 20/10min (was 2/3/5)
+- Rebuilt hedgewars-server binary, redeployed
+
+**Phase 3: Multiplayer Engine Integration (pre.js)**
+- Added `startMultiplayerGame()` — reads config from mpConfig, generates IPC matching EngineInteraction.hs
+- Sends TN (network game) instead of TL (local)
+- EM relay: engine game messages base64-encoded and sent to server via direct function calls
+- Incoming EM from server injected directly into engine message queue
+
+**Phase 4: Single-Page Architecture (Critical Design Decision)**
+- Problem: `window.open()` blocked by popup blocker in incognito; navigation kills WS connection
+- Solution: Engine loads dynamically in lobby page via `<script>` injection
+- Lobby DOM hidden, fullscreen canvas shown over it
+- WebSocket stays alive (same JS context) — EM relay is direct function calls
+- Exit game = `location.reload()` (clean reset, WS auto-reconnects)
+
+**Phase 5: Bug Fixes**
+- Canvas ID must be `canvas` — SDL2 WASM has `#canvas` hardcoded via `emscripten_set_canvas_element_size`
+- Auto-add team when entering room (no manual button needed for MVP)
+- Room list polls every 3s for auto-refresh
+
+**Phase 6: Gateway Protocol Logging**
+- Added bidirectional message logging to gateway (WS→HW and HW→WS)
+- Confirmed: RUN_GAME sent to both players, EM messages relayed correctly
+- Identified issues: canvas ID mismatch, popup blocker, timing
+
+**Testing Results:**
+- Lobby, rooms, chat, team sync all working between two browser windows
+- Both players receive RUN_GAME from server
+- Engine loads in-page for host player (one frame rendered)
+- Guest player gets black screen — canvas ID fix should resolve this
+- EM messages flow through server relay correctly
 
 ### Session 24 - February 20, 2026 (15:50-17:36 UTC)
 
@@ -547,5 +593,5 @@ Commits: 8b07650, fabf08a
 ## Success Criteria
 
 **MVP**: ✅ Game loads in browser, hotseat playable, 60fps
-**Current**: Building multiplayer — server, gateway, web frontend
+**Current**: Multiplayer lobby + rooms + teams working, engine loads in-page, testing rendering sync
 **Full**: Multiplayer stable, deployed on this server, public URL
