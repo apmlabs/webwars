@@ -18,13 +18,13 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-20T18:40:00Z
+Last updated: 2026-02-20T20:48:00Z
 
 ### Project Status
-- **Phase**: Multiplayer Testing & Polish — lobby, rooms, teams, game launch all working
-- **Last Action**: Single-page engine architecture, canvas ID fix, auto-add team, room polling
-- **Current Blocker**: Engine renders for host but needs testing after canvas ID fix
-- **Target**: 2-player multiplayer game end-to-end
+- **Phase**: Multiplayer WORKING — two players can play a full game in the browser
+- **Last Action**: Background tab timer for EM sync, IPCCheckSock timing fix
+- **Current Blocker**: None — multiplayer is playable
+- **Target**: Polish, two-device testing, cleanup crash fix
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -46,7 +46,7 @@ Last updated: 2026-02-20T18:40:00Z
 | B | WebSocket Gateway | ✅ COMPLETE | JSON↔TCP bridge on port 8080 (systemd) |
 | B | Web Frontend | ✅ COMPLETE | Lobby, rooms, chat, team config, game launch |
 | B | Network Protocol (JS) | ✅ COMPLETE | ADD_TEAM, CFG, EM relay, CLIENT_FLAGS |
-| B | Multiplayer Test | 🟡 IN PROGRESS | Engine loads for both players, testing rendering |
+| B | Multiplayer Test | ✅ COMPLETE | Two players can play a full game |
 | C | Deployment | ✅ COMPLETE | Systemd service running |
 
 ### Current Issues
@@ -396,6 +396,15 @@ Popup blockers (especially in incognito) silently block `window.open()`. For mul
 ### 29. SDL2 WASM Hardcodes `#canvas` — Canvas ID Must Match
 SDL2's Emscripten backend calls `emscripten_set_canvas_element_size("#canvas", ...)` with a hardcoded CSS selector. The canvas element MUST have `id="canvas"`. Any other ID (e.g., `game-canvas`) causes SDL to fail silently — the engine runs but renders to nothing. Verify with: `strings hwengine.wasm | grep canvas`.
 
+### 30. `erdriven` Is the Single Most Important Multiplayer Flag
+`erdriven` tells the engine a team is controlled by the network (ExtDriven=true). The engine waits for EM messages for that team's turns. If ALL teams have ExtDriven=true, no team responds to local input — the game appears frozen with a connection icon. Only send `erdriven` for OTHER players' teams, never for the local player's own team. Reference: Qt client `team.cpp` only sends `erdriven` when `m_isNetTeam=true`.
+
+### 31. IPCCheckSock Must Run BEFORE DoTimer in WASM
+In the native engine, `DoTimer` and `IPCCheckSock` alternate in a tight loop (~125Hz). In WASM with `emscripten_set_main_loop`, multiple DoTimer catch-up ticks run per frame. `DoTimer` calls `NetGetNextCmd` which reads from `headcmd`. If `IPCCheckSock` only runs AFTER all ticks, incoming EM messages are never parsed into `headcmd` → `isInLag=true` → game pauses. Fix: call `IPCCheckSock` before the tick loop, between catch-up ticks, and before the final render tick.
+
+### 32. Background Tabs Throttle RAF — Use setInterval Fallback
+Browsers throttle `requestAnimationFrame` to ~1fps or less for background tabs. In multiplayer, EM messages pile up in the queue (qLen grows), causing 10+ second resync on tab switch. Fix: `document.visibilitychange` listener starts a `setInterval` at 10Hz when hidden, calling a background frame function with `cOnlyStats=true` (game logic only, no rendering). When visible, stop interval and let RAF resume.
+
 ---
 
 ## 🐛 KEY BUG PATTERNS
@@ -408,6 +417,9 @@ SDL2's Emscripten backend calls `emscripten_set_canvas_element_size("#canvas", .
 | Missing Rust_CARGO_TARGET set | .cargo/config.toml only fixes cargo build, NOT CMake configure-time detection | set(Rust_CARGO_TARGET "wasm32-unknown-emscripten") BEFORE add_subdirectory(corrosion) |
 | Use legacy Platform/Emscripten.cmake | Overrides official toolchain, breaks everything | Rename to .legacy |
 | Forget HWLIBRARY flag | Engine tries TCP sockets in browser | Add -DHWLIBRARY to compile flags |
+| Send erdriven for ALL teams | No team is locally controlled, game freezes | Only send erdriven for OTHER players' teams |
+| IPCCheckSock after DoTimer | EM messages not in headcmd when NetGetNextCmd reads | Call IPCCheckSock before/between DoTimer ticks |
+| No background tab handling | RAF throttled, EM queue grows, 10s+ resync | setInterval fallback with cOnlyStats=true |
 | Pipe build output | User can't see progress | Run commands directly |
 | Incremental build after CMake change | Stale cache causes mysterious failures | Clean build: rm -rf build/wasm/* |
 | callMain() in Emscripten | Doesn't exist in output | Use Module.run() instead |
