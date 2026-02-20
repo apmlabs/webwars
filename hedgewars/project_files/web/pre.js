@@ -46,15 +46,14 @@ var HWEngine = {
             // Engine game messages that need relaying (same set as checkNetCmd legalMessages)
             var relay = 'M#+LlRrUuDdZzAaSjJ,NpPwtgfhbc12345';
             if (relay.indexOf(String.fromCharCode(msgType)) !== -1) {
-                // Base64-encode the raw IPC message and send to opener
                 var raw = new Uint8Array(len);
                 for (var i = 0; i < len; i++) raw[i] = bytes[i];
                 var b64 = btoa(String.fromCharCode.apply(null, raw));
-                if (window.opener) window.opener.postMessage({type:'em_out', data:b64}, '*');
+                // Direct function call — lobby is in the same page
+                if (typeof window._webwars_emRelay === 'function') window._webwars_emRelay(b64);
             }
-            // 'q' = quit/round finished
             if (msgType === 0x71) {
-                if (window.opener) window.opener.postMessage({type:'round_finished'}, '*');
+                if (typeof window._webwars_roundFinished === 'function') window._webwars_roundFinished();
             }
         }
     },
@@ -296,17 +295,13 @@ Module.HWEngine = HWEngine;
 if (typeof window !== 'undefined' && window.location.search.indexOf('mp=1') !== -1) {
     try {
         var cfg = JSON.parse(sessionStorage.getItem('webwars_game'));
-        if (cfg) { HWEngine.mpConfig = cfg; console.log('[HW] Multiplayer mode, config loaded'); }
+        if (cfg) { HWEngine.mpConfig = cfg; console.log('[HW] Multiplayer mode, config loaded from sessionStorage'); }
     } catch(e) { console.error('[HW] Failed to load MP config:', e); }
-
-    // Receive EM messages from lobby tab
-    window.addEventListener('message', function(e) {
-        if (e.data && e.data.type === 'em') {
-            // Decode base64 EM and inject into engine message queue
-            var raw = atob(e.data.data);
-            for (var i = 0; i < raw.length; i++) HWEngine.messageQueue.push(raw.charCodeAt(i));
-        }
-    });
+}
+// Also check for mpConfig injected directly by lobby page (dynamic load)
+if (typeof window !== 'undefined' && window._webwars_mpConfig && !HWEngine.mpConfig) {
+    HWEngine.mpConfig = window._webwars_mpConfig;
+    console.log('[HW] Multiplayer mode, config injected by lobby');
 }
 Module.noInitialRun = false;
 Module.arguments = ['--prefix', '/Data', '--user-prefix', '/Data', 'test.hwd'];
