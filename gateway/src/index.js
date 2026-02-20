@@ -14,64 +14,72 @@ wss.on('connection', (ws, req) => {
   const clientIp = req.socket.remoteAddress;
   console.log(`[${clientIp}] Client connected`);
 
-  // Connect to Hedgewars server
   const tcpClient = net.connect(HW_PORT, HW_HOST, () => {
     console.log(`[${clientIp}] Connected to Hedgewars server`);
   });
 
-  // WebSocket → TCP
+  // Buffer for incomplete TCP messages
+  let tcpBuf = '';
+
+  // WebSocket → TCP: browser sends JSON arrays like ["NICK","player1"]
+  // Convert to HW protocol: "NICK\nplayer1\n\n"
   ws.on('message', (data) => {
     try {
-      tcpClient.write(data);
-    } catch (err) {
-      console.error(`[${clientIp}] Error writing to TCP:`, err.message);
-      ws.close();
-    }
-  });
-
-  // TCP → WebSocket
-  tcpClient.on('data', (data) => {
-    try {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.send(data);
+      const msg = JSON.parse(data);
+      if (Array.isArray(msg)) {
+        tcpClient.write(msg.join('\n') + '\n\n');
       }
     } catch (err) {
-      console.error(`[${clientIp}] Error sending to WebSocket:`, err.message);
-      tcpClient.end();
+      console.error(`[${clientIp}] Bad WS message:`, err.message);
     }
   });
 
-  // Handle disconnections
+  // TCP → WebSocket: HW protocol uses \n\n as message delimiter
+  // Each message is multiple lines. Send as JSON array to browser.
+  tcpClient.on('data', (chunk) => {
+    tcpBuf += chunk.toString();
+    let idx;
+    while ((idx = tcpBuf.indexOf('\n\n')) !== -1) {
+      const raw = tcpBuf.slice(0, idx);
+      tcpBuf = tcpBuf.slice(idx + 2);
+      if (raw.length === 0) continue;
+      const parts = raw.split('\n');
+      try {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify(parts));
+        }
+      } catch (err) {
+        console.error(`[${clientIp}] WS send error:`, err.message);
+      }
+    }
+  });
+
   ws.on('close', () => {
     console.log(`[${clientIp}] WebSocket closed`);
     tcpClient.end();
   });
 
   tcpClient.on('close', () => {
-    console.log(`[${clientIp}] TCP connection closed`);
-    ws.close();
+    console.log(`[${clientIp}] TCP closed`);
+    if (ws.readyState === WebSocket.OPEN) ws.close();
   });
 
-  // Handle errors
   ws.on('error', (err) => {
-    console.error(`[${clientIp}] WebSocket error:`, err.message);
+    console.error(`[${clientIp}] WS error:`, err.message);
     tcpClient.end();
   });
 
   tcpClient.on('error', (err) => {
     console.error(`[${clientIp}] TCP error:`, err.message);
-    ws.close();
+    if (ws.readyState === WebSocket.OPEN) ws.close();
   });
 });
 
 wss.on('error', (err) => {
-  console.error('WebSocket server error:', err);
+  console.error('Gateway error:', err);
 });
 
 process.on('SIGINT', () => {
   console.log('\nShutting down gateway...');
-  wss.close(() => {
-    console.log('Gateway closed');
-    process.exit(0);
-  });
+  wss.close(() => process.exit(0));
 });

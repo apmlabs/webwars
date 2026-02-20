@@ -42,9 +42,11 @@ Last updated: 2026-02-19T13:47:00Z
 | A | Game Loop | ✅ COMPLETE | Runs 360+ ticks, sends state updates |
 | A | Win Detection | ✅ COMPLETE | Detects winners, plays sounds |
 | A | Browser MVP | 🟡 IN PROGRESS | Fix texture loading, improve perf |
-| B | WebSocket Gateway | NOT STARTED | Gateway code ready |
-| B | Server Integration | NOT STARTED | Need hedgewars-server binary |
-| B | Multiplayer Test | NOT STARTED | Depends on server |
+| B | Hedgewars Server | 🟡 IN PROGRESS | Compile Haskell server binary |
+| B | WebSocket Gateway | NOT STARTED | Bridge WS↔TCP, gateway code exists |
+| B | Web Frontend | NOT STARTED | HTML/JS lobby, team config, game launch |
+| B | Network Protocol (JS) | NOT STARTED | Reimplement newnetclient.cpp in JS |
+| B | Multiplayer Test | NOT STARTED | 2-player game via WebSocket |
 | C | Deployment | ✅ COMPLETE | Systemd service running |
 
 ### Current Issues
@@ -421,26 +423,34 @@ ANGLE (Chrome's WebGL→D3D11 layer) handles buffer usage hints differently: `GL
 
 ## 🎯 NEXT STEPS
 
-### Immediate (Texture & Performance)
-1. Debug texture loading failures (flags 5/21/44) — missing sky, water, clouds, sprites
-2. Verify emscripten_set_main_loop performance improvement in browser
-3. Test input controls (keyboard/mouse → engine)
+### Phase 1: Hedgewars Server (Track B — Foundation)
+1. Compile hedgewars-server Haskell binary using cabal (GHC 9.4.7 + cabal 3.8.1 available)
+2. Test server starts and accepts TCP connections on port 46631
+3. Test basic protocol: NICK → PROTO → lobby join
 
-### Short Term (Polish)
-1. Fix cleanup crash (RuntimeError: unreachable)
-2. Fix remaining texture loading (may be SDL_image format or path issue)
-3. Add proper game restart support
+### Phase 2: WebSocket Gateway (Track B — Bridge)
+1. Update gateway/src/index.js — handle newline-delimited protocol framing
+2. Test browser → WS → gateway → TCP → server round-trip
+3. Handle connection lifecycle (disconnect cleanup)
 
-### Medium Term (Multiplayer)
-1. Build WebSocket gateway (gateway/src/index.js)
-2. Compile hedgewars-server for the host
-3. Bridge WebSocket ↔ TCP for server communication
-4. Test 2-player game
+### Phase 3: Web Frontend — Lobby (Track B — UI)
+1. Create web/lobby.html — main menu with Local Play / Online Play
+2. Implement JS network client (WebSocket protocol handler)
+3. Login flow: NICK + PROTO handshake
+4. Room list, create room, join room
+5. Team/scheme/map configuration UI
+6. Game launch: START_GAME → engine IPC generation
 
-### Long Term (Production)
-1. Optimize asset loading (lazy-load music, optional maps)
-2. Reduce initial download (51MB essential vs 187MB full)
-3. Add proper web UI for game configuration
+### Phase 4: Multiplayer Engine Integration
+1. Modify pre.js to accept external IPC config (not just hardcoded hotseat)
+2. Route EM messages: engine → JS → WS → server → WS → other engines
+3. Handle ROUNDFINISHED and game end
+4. Test 2-player game end-to-end
+
+### Phase 5: Polish
+1. Campaign/mission launcher in frontend
+2. Game style (Lua script) selector
+3. Optimize asset loading (lazy-load)
 4. HTTPS + domain name
 
 ---
@@ -461,6 +471,6 @@ ANGLE (Chrome's WebGL→D3D11 layer) handles buffer usage hints differently: `GL
 
 **Remaining:**
 - ✅ Game renders on canvas
-- ⏳ Input controls work
+- ✅ Input controls work
 - ⏳ Game restart without crash
 - ⏳ Multiplayer via WebSocket

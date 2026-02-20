@@ -1,6 +1,6 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-19T17:20:00Z
+**Last Updated**: 2026-02-20T17:15:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
 **Status**: Game fully playable — 60fps, correct rendering, correct physics, no flicker
 
@@ -8,7 +8,7 @@
 
 Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket multiplayer.
 
-## Current Phase: Rendering Works, Optimizing Performance
+## Current Phase: Web Frontend + Multiplayer
 
 ### What Works
 - ✅ Engine compiled to WebAssembly (5.15MB — reduced from 5.4MB via ASYNCIFY_REMOVE optimization)
@@ -522,6 +522,6 @@ Commits: 8b07650, fabf08a
 
 ## Success Criteria
 
-**MVP**: Game loads in browser, hotseat playable, <10s load time
-**Current**: ASYNCIFY corrected, custom HTML restored, awaiting browser verification
+**MVP**: ✅ Game loads in browser, hotseat playable, 60fps
+**Current**: Building multiplayer — server, gateway, web frontend
 **Full**: Multiplayer stable, deployed on this server, public URL
