@@ -183,6 +183,9 @@ var HWEngine = {
         var cfg = this.mpConfig;
         console.log('[HW] Starting multiplayer game...', cfg);
 
+        // Start — TN for network game (must be first, before config)
+        this.sendMessage('TN');
+
         // Map (random gen or named map)
         var mapgen = cfg.mapgen || '0';
         var mapGenTypes = ['+rnd+', '+maze+', '+drawn+', '+perlin+'];
@@ -271,7 +274,8 @@ var HWEngine = {
             // Team color: (1 + colorIndex) * 2113696
             var colorDecimal = (1 + parseInt(t.color || '0')) * 2113696;
             this.sendMessage('eaddteam <hash> ' + colorDecimal + ' ' + t.name);
-            this.sendMessage('erdriven');
+            // Only mark OTHER players' teams as externally driven
+            if (t.owner !== cfg.myNick) this.sendMessage('erdriven');
             this.sendMessage('efort ' + (t.fort || 'Plane'));
 
             // Hedgehogs
@@ -283,8 +287,7 @@ var HWEngine = {
             }
         }
 
-        // Start — TN for network game
-        this.sendMessage('TN');
+        // Pong to start
         this.sendMessage('!');
     }
 };
