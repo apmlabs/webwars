@@ -250,6 +250,55 @@ static void mainloop_frame(void) {
     }
 }
 
+// When tab is hidden, browsers throttle RAF to ~1fps or less.
+// This causes EM messages to pile up and the game to desync.
+// Use setInterval as fallback to keep processing game ticks.
+EM_JS(void, hw_install_background_timer, (), {
+    var bgInterval = null;
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            // Tab hidden — start background processing at ~10Hz (logic only, no render)
+            if (!bgInterval) {
+                bgInterval = setInterval(function() {
+                    try { Module._mainloop_frame_bg(); } catch(e) {}
+                }, 100);
+            }
+        } else {
+            // Tab visible — stop background timer, RAF resumes
+            if (bgInterval) { clearInterval(bgInterval); bgInterval = null; }
+        }
+    });
+});
+
+// Background-mode frame: skip rendering, just process IPC and game logic
+EMSCRIPTEN_KEEPALIVE
+void mainloop_frame_bg(void) {
+    if (ml_isTerminated || !allOK) return;
+
+    uio_IPCCheckSock();
+
+    LongWord CurrTime = SDL_GetTicks();
+    int ticksNeeded = 0;
+    LongWord tmpTime = ml_PrevTime;
+    while (tmpTime + (LongWord)cTimerInterval <= CurrTime) {
+        ticksNeeded++;
+        tmpTime += (LongWord)cTimerInterval;
+    }
+    if (ticksNeeded > 128) ticksNeeded = 128;
+
+    // All ticks without rendering
+    cOnlyStats = true;
+    for (int i = 0; i < ticksNeeded && !ml_isTerminated; i++) {
+        uio_IPCCheckSock();
+        ml_isTerminated = ml_isTerminated || hwengine_DoTimer((LongInt)cTimerInterval);
+        ml_PrevTime += (LongWord)cTimerInterval;
+    }
+    cOnlyStats = false;
+
+    if (ml_PrevTime + (LongWord)cTimerInterval <= CurrTime)
+        ml_PrevTime = CurrTime;
+}
+
 void __wrap_hwengine_MainLoop(void) {
     ml_previousGameState = gsStart;
     ml_isTerminated = false;
@@ -257,6 +306,9 @@ void __wrap_hwengine_MainLoop(void) {
 
     // Catch silent exceptions that kill the RAF loop
     hw_install_error_catcher();
+
+    // Keep processing game ticks when tab is in background
+    hw_install_background_timer();
 
     // fps=0 means use requestAnimationFrame, simulate_infinite_loop=1
     emscripten_set_main_loop(mainloop_frame, 0, 1);

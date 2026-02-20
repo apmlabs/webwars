@@ -147,7 +147,7 @@ if(EMSCRIPTEN)
         -fwasm-exceptions
         -Wl,--wrap=hwengine_MainLoop
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
-        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal")
+        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal,_mainloop_frame_bg")
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
 endif()
 
