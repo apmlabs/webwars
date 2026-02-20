@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WebWars — Lobby</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column}
+a{color:#4fc3f7;text-decoration:none}
+button{cursor:pointer;font-family:inherit}
+
+/* Header */
+header{background:linear-gradient(180deg,#161b2e,#0d1120);padding:12px 24px;border-bottom:1px solid #1e2744;display:flex;align-items:center;gap:16px}
+.logo{font-weight:800;font-size:18px;background:linear-gradient(135deg,#4fc3f7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#conn-status{font-size:12px;padding:3px 10px;border-radius:10px;background:#1a2040;color:#8892b0}
+#conn-status.ok{background:#1b3a1b;color:#66bb6a}
+#conn-status.err{background:#3a1b1b;color:#ef5350}
+.spacer{flex:1}
+#nick-display{font-size:13px;color:#8892b0}
+
+/* Main layout */
+main{flex:1;display:flex;overflow:hidden}
+
+/* Panels */
+.panel{display:flex;flex-direction:column;border-right:1px solid #1e2744}
+.panel-header{padding:10px 16px;background:#111628;border-bottom:1px solid #1e2744;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-body{flex:1;overflow-y:auto;padding:8px}
+
+/* Rooms panel */
+#rooms-panel{width:320px}
+.room-item{padding:10px 12px;border-radius:6px;margin-bottom:4px;cursor:pointer;font-size:13px;transition:background .1s}
+.room-item:hover{background:#1a2040}
+.room-item .room-name{font-weight:600;margin-bottom:2px}
+.room-item .room-info{font-size:11px;color:#8892b0}
+
+/* Center area */
+#center{flex:1;display:flex;flex-direction:column}
+
+/* Room config / game area */
+#room-view{flex:1;display:flex;flex-direction:column;display:none}
+#room-header{padding:12px 16px;background:#111628;border-bottom:1px solid #1e2744;display:flex;align-items:center;gap:12px}
+#room-header h2{font-size:15px;font-weight:600}
+#room-config{flex:1;padding:16px;overflow-y:auto;display:flex;gap:16px;flex-wrap:wrap;align-content:flex-start}
+.config-section{background:#111628;border:1px solid #1e2744;border-radius:8px;padding:14px;min-width:280px;flex:1}
+.config-section h3{font-size:13px;font-weight:600;margin-bottom:10px;color:#4fc3f7}
+.config-row{display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:13px}
+.config-row label{color:#8892b0}
+.config-row select,.config-row input{background:#0d1120;border:1px solid #2a3352;color:#e0e0e0;padding:4px 8px;border-radius:4px;font-size:12px}
+
+/* Welcome / lobby view */
+#lobby-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+#lobby-view h1{font-size:28px;font-weight:800;background:linear-gradient(135deg,#4fc3f7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#lobby-view p{color:#8892b0;font-size:14px;max-width:400px;text-align:center}
+
+/* Chat */
+#chat-panel{width:280px;display:flex;flex-direction:column;border-left:1px solid #1e2744}
+#chat-messages{flex:1;overflow-y:auto;padding:8px;font-size:12px}
+.chat-msg{margin-bottom:4px;word-wrap:break-word}
+.chat-msg .nick{font-weight:600;color:#4fc3f7}
+.chat-msg.sys{color:#8892b0;font-style:italic}
+#chat-input{display:flex;border-top:1px solid #1e2744}
+#chat-input input{flex:1;background:#0d1120;border:none;color:#e0e0e0;padding:10px 12px;font-size:12px;outline:none}
+#chat-input button{background:#1a2040;border:none;color:#4fc3f7;padding:10px 14px;font-size:12px}
+
+/* Buttons */
+.btn{padding:8px 16px;border-radius:6px;border:1px solid #2a3352;background:#1a2040;color:#e0e0e0;font-size:13px;transition:all .15s}
+.btn:hover{border-color:#4fc3f7;color:#4fc3f7}
+.btn-primary{background:linear-gradient(135deg,#1565c0,#0d47a1);border-color:#1976d2;color:#fff}
+.btn-primary:hover{background:linear-gradient(135deg,#1976d2,#1565c0)}
+.btn-success{background:linear-gradient(135deg,#2e7d32,#1b5e20);border-color:#388e3c;color:#fff}
+.btn-success:hover{background:linear-gradient(135deg,#388e3c,#2e7d32)}
+.btn-danger{background:#3a1b1b;border-color:#c62828;color:#ef5350}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+/* Players list in room */
+.player-item{display:flex;align-items:center;gap:8px;padding:6px 8px;font-size:13px;border-radius:4px}
+.player-item.ready{color:#66bb6a}
+.player-item .ready-dot{width:8px;height:8px;border-radius:50%;background:#2a3352}
+.player-item.ready .ready-dot{background:#66bb6a}
+
+/* Login overlay */
+#login-overlay{position:fixed;inset:0;background:rgba(6,8,18,0.9);display:flex;align-items:center;justify-content:center;z-index:100}
+#login-box{background:#111628;border:1px solid #1e2744;border-radius:12px;padding:32px;text-align:center;min-width:320px}
+#login-box h2{margin-bottom:16px;font-size:20px}
+#login-box input{width:100%;padding:10px 14px;background:#0d1120;border:1px solid #2a3352;border-radius:6px;color:#e0e0e0;font-size:14px;margin-bottom:12px;outline:none;text-align:center}
+#login-box input:focus{border-color:#4fc3f7}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-overlay">
+  <div id="login-box">
+    <h2>⚔️ WebWars</h2>
+    <p style="color:#8892b0;font-size:13px;margin-bottom:16px">Enter a nickname to join</p>
+    <input id="nick-input" type="text" placeholder="Nickname" maxlength="40" autofocus>
+    <br>
+    <button class="btn btn-primary" onclick="doLogin()" style="width:100%">Join Server</button>
+  </div>
+</div>
+
+<header>
+  <span class="logo">WEBWARS</span>
+  <span id="conn-status">Disconnected</span>
+  <span class="spacer"></span>
+  <span id="nick-display"></span>
+  <button class="btn btn-sm" onclick="playLocal()">⚡ Quick Play</button>
+</header>
+
+<main>
+  <!-- Rooms list -->
+  <div id="rooms-panel" class="panel">
+    <div class="panel-header">
+      Rooms
+      <span class="spacer"></span>
+      <button class="btn btn-sm btn-primary" onclick="createRoom()">+ New</button>
+    </div>
+    <div class="panel-body" id="rooms-list"></div>
+  </div>
+
+  <!-- Center -->
+  <div id="center">
+    <!-- Lobby welcome (shown when not in a room) -->
+    <div id="lobby-view">
+      <h1>WebWars</h1>
+      <p>Hedgewars in your browser. Create or join a room to play multiplayer, or hit Quick Play for a local hotseat game.</p>
+    </div>
+
+    <!-- Room view (shown when in a room) -->
+    <div id="room-view">
+      <div id="room-header">
+        <button class="btn btn-sm btn-danger" onclick="leaveRoom()">← Leave</button>
+        <h2 id="room-name-display"></h2>
+        <span class="spacer"></span>
+        <button class="btn btn-sm" id="btn-ready" onclick="toggleReady()">Ready</button>
+        <button class="btn btn-sm btn-success" id="btn-start" onclick="startGame()" style="display:none">Start Game</button>
+      </div>
+      <div id="room-config">
+        <div class="config-section">
+          <h3>Map</h3>
+          <div class="config-row"><label>Type</label><select id="cfg-mapgen" onchange="sendCfg()"><option value="0">Random</option><option value="1">Maze</option><option value="2">Drawn</option><option value="3">Perlin</option></select></div>
+          <div class="config-row"><label>Theme</label><select id="cfg-theme" onchange="sendCfg()"></select></div>
+          <div class="config-row"><label>Template</label><select id="cfg-template" onchange="sendCfg()"><option value="0">Small</option><option value="1">Medium</option><option value="2">Large</option><option value="3">Cavern</option><option value="4">Wacky</option></select></div>
+        </div>
+        <div class="config-section">
+          <h3>Scheme</h3>
+          <div class="config-row"><label>Turn Time</label><select id="cfg-turntime" onchange="sendCfg()"><option value="15000">15s</option><option value="30000">30s</option><option value="45000" selected>45s</option><option value="60000">60s</option><option value="90000">90s</option></select></div>
+          <div class="config-row"><label>Sudden Death</label><select id="cfg-sd" onchange="sendCfg()"><option value="10">10 turns</option><option value="15" selected>15 turns</option><option value="25">25 turns</option><option value="50">50 turns</option></select></div>
+          <div class="config-row"><label>Health</label><input id="cfg-health" type="number" value="100" min="1" max="999" style="width:60px" onchange="sendCfg()"></div>
+        </div>
+        <div class="config-section">
+          <h3>Players</h3>
+          <div id="players-list"></div>
+          <button class="btn btn-sm" onclick="addTeam()" style="margin-top:8px">+ Add Team</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat -->
+  <div id="chat-panel" class="panel">
+    <div class="panel-header">Chat</div>
+    <div id="chat-messages"></div>
+    <div id="chat-input">
+      <input id="chat-text" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button onclick="sendChat()">Send</button>
+    </div>
+  </div>
+</main>
+
+<script>
+// ── State ──
+var ws = null;
+var myNick = '';
+var inRoom = false;
+var isChief = false;
+var rooms = [];
+var players = [];
+var themes = ['Nature','Cake','Island','Deepspace','Halloween','Cheese','Bath','Bamboo','Blox','EarthRise','Compost','Planes'];
+
+// ── Init ──
+(function() {
+  var sel = document.getElementById('cfg-theme');
+  themes.forEach(function(t) {
+    var o = document.createElement('option');
+    o.value = t; o.textContent = t;
+    sel.appendChild(o);
+  });
+  document.getElementById('nick-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') doLogin();
+  });
+})();
+
+// ── Connection ──
+function connect() {
+  var host = location.hostname || 'localhost';
+  ws = new WebSocket('ws://' + host + ':8080');
+  setStatus('Connecting...', '');
+
+  ws.onopen = function() { setStatus('Connected', 'ok'); };
+  ws.onclose = function() { setStatus('Disconnected', 'err'); setTimeout(connect, 3000); };
+  ws.onerror = function() { setStatus('Error', 'err'); };
+  ws.onmessage = function(e) { handleMsg(JSON.parse(e.data)); };
+}
+
+function send(arr) {
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify(arr));
+}
+
+function setStatus(text, cls) {
+  var el = document.getElementById('conn-status');
+  el.textContent = text;
+  el.className = cls || '';
+}
+
+// ── Login ──
+function doLogin() {
+  myNick = document.getElementById('nick-input').value.trim();
+  if (!myNick) return;
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('nick-display').textContent = myNick;
+  connect();
+}
+
+// ── Protocol handler ──
+function handleMsg(msg) {
+  var cmd = msg[0];
+
+  if (cmd === 'CONNECTED') {
+    send(['NICK', myNick]);
+    send(['PROTO', '58']);
+    return;
+  }
+
+  if (cmd === 'LOBBY:JOINED') {
+    addChat(null, msg.slice(1).join(', ') + ' joined the lobby');
+    send(['LIST']);
+    return;
+  }
+
+  if (cmd === 'ROOMS') {
+    parseRooms(msg.slice(1));
+    return;
+  }
+
+  if (cmd === 'ROOM' && msg[1] === 'ADD') {
+    // Room added notification: ROOM ADD <fields...>
+    send(['LIST']); // refresh
+    return;
+  }
+
+  if (cmd === 'ROOM' && msg[1] === 'DEL') {
+    send(['LIST']);
+    return;
+  }
+
+  if (cmd === 'JOINED') {
+    msg.slice(1).forEach(function(n) {
+      if (players.indexOf(n) === -1) players.push(n);
+    });
+    renderPlayers();
+    addChat(null, msg.slice(1).join(', ') + ' joined');
+    return;
+  }
+
+  if (cmd === 'LEFT') {
+    var who = msg[1];
+    players = players.filter(function(p) { return p !== who; });
+    renderPlayers();
+    addChat(null, who + ' left');
+    return;
+  }
+
+  if (cmd === 'CHAT') {
+    addChat(msg[1], msg[2]);
+    return;
+  }
+
+  if (cmd === 'CLIENT_FLAGS' || cmd === 'CF') {
+    var flags = msg[1];
+    // +h = chief, +r = ready
+    if (flags.indexOf('+h') !== -1) {
+      for (var i = 2; i < msg.length; i++) {
+        if (msg[i] === myNick) { isChief = true; updateRoomUI(); }
+      }
+    }
+    if (flags.indexOf('+r') !== -1) {
+      // mark players ready
+    }
+    return;
+  }
+
+  if (cmd === 'RUN_GAME') {
+    addChat(null, 'Game starting!');
+    // TODO: launch engine
+    return;
+  }
+
+  if (cmd === 'PING') {
+    send(['PONG']);
+    return;
+  }
+
+  if (cmd === 'BYE') {
+    addChat(null, 'Disconnected: ' + (msg[1] || ''));
+    return;
+  }
+
+  if (cmd === 'WARNING') {
+    addChat(null, '⚠️ ' + msg[1]);
+    return;
+  }
+
+  if (cmd === 'ERROR') {
+    addChat(null, '❌ ' + msg[1]);
+    return;
+  }
+
+  if (cmd === 'NICK') return; // echo
+  if (cmd === 'PROTO') return; // echo
+  if (cmd === 'SERVER_MESSAGE') return; // MOTD, ignore
+
+  // Unhandled
+  console.log('Unhandled:', msg);
+}
+
+// ── Rooms ──
+function parseRooms(data) {
+  // Proto 48+: 9 fields per room: flags, name, playerCount, teamCount, owner, map, script, scheme, weapons
+  rooms = [];
+  for (var i = 0; i + 8 < data.length; i += 9) {
+    rooms.push({
+      flags: data[i],
+      name: data[i+1],
+      players: parseInt(data[i+2]) || 0,
+      teams: parseInt(data[i+3]) || 0,
+      owner: data[i+4],
+      map: data[i+5],
+      script: data[i+6],
+      scheme: data[i+7],
+      weapons: data[i+8]
+    });
+  }
+  renderRooms();
+}
+
+function renderRooms() {
+  var el = document.getElementById('rooms-list');
+  if (rooms.length === 0) {
+    el.innerHTML = '<div style="padding:16px;text-align:center;color:#8892b0;font-size:13px">No rooms. Create one!</div>';
+    return;
+  }
+  el.innerHTML = rooms.map(function(r) {
+    return '<div class="room-item" onclick="joinRoom(\'' + esc(r.name) + '\')">' +
+      '<div class="room-name">' + esc(r.name) + '</div>' +
+      '<div class="room-info">' + r.players + ' players · ' + esc(r.owner) + ' · ' + esc(r.map) + '</div>' +
+      '</div>';
+  }).join('');
+}
+
+// ── Room actions ──
+function createRoom() {
+  var name = prompt('Room name:');
+  if (!name) return;
+  send(['CREATE_ROOM', name]);
+  enterRoom(name);
+}
+
+function joinRoom(name) {
+  send(['JOIN_ROOM', name]);
+  enterRoom(name);
+}
+
+function enterRoom(name) {
+  inRoom = true;
+  players = [myNick];
+  document.getElementById('lobby-view').style.display = 'none';
+  document.getElementById('room-view').style.display = 'flex';
+  document.getElementById('room-name-display').textContent = name;
+  renderPlayers();
+  updateRoomUI();
+}
+
+function leaveRoom() {
+  send(['PART']);
+  inRoom = false;
+  isChief = false;
+  players = [];
+  document.getElementById('lobby-view').style.display = 'flex';
+  document.getElementById('room-view').style.display = 'none';
+  send(['LIST']);
+}
+
+function toggleReady() {
+  send(['TOGGLE_READY']);
+}
+
+function startGame() {
+  send(['START_GAME']);
+}
+
+function addTeam() {
+  var name = 'Team ' + myNick;
+  send(['ADD_TEAM', name, '255', '8']);
+  // color, hogcount
+}
+
+function updateRoomUI() {
+  document.getElementById('btn-start').style.display = isChief ? '' : 'none';
+}
+
+function renderPlayers() {
+  var el = document.getElementById('players-list');
+  el.innerHTML = players.map(function(p) {
+    return '<div class="player-item"><span class="ready-dot"></span>' + esc(p) + '</div>';
+  }).join('');
+}
+
+// ── Chat ──
+function addChat(nick, text) {
+  var el = document.getElementById('chat-messages');
+  var div = document.createElement('div');
+  div.className = 'chat-msg' + (nick ? '' : ' sys');
+  div.innerHTML = nick ? '<span class="nick">' + esc(nick) + ':</span> ' + esc(text) : esc(text);
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function sendChat() {
+  var input = document.getElementById('chat-text');
+  var text = input.value.trim();
+  if (!text) return;
+  send(['CHAT', text]);
+  input.value = '';
+}
+
+function sendCfg() {
+  // Only chief can configure
+  if (!isChief) return;
+  // TODO: send CFG commands to server
+}
+
+// ── Quick Play (local hotseat) ──
+function playLocal() {
+  window.location.href = 'hwengine.html';
+}
+
+// ── Util ──
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>
