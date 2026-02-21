@@ -1,8 +1,8 @@
 # WebWars — Hedgewars in Your Browser
 
-Play [Hedgewars](https://hedgewars.org/) directly in your browser. No downloads, no installs — just open a link and play.
+A browser port of [**Hedgewars**](https://hedgewars.org/), the free turn-based artillery game. No downloads, no installs — just open a link and play.
 
-The full game engine is compiled to WebAssembly. Multiplayer works via WebSocket through the official Hedgewars server protocol.
+This project is built on top of the [Hedgewars source code](https://github.com/hedgewars/hw) (GPL v2), created by Andrey Korotaev (unc0rr) and the Hedgewars community. We compile their Pascal engine to WebAssembly so it runs natively in the browser. All game assets, Lua scripts, maps, and sounds are theirs — we just made it playable on the web. Huge thanks to the Hedgewars team for building such a great game and releasing it as free software.
 
 **🎮 Play now: [webwars.link](https://webwars.link)**
 
