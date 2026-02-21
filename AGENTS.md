@@ -21,10 +21,10 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 Last updated: 2026-02-20T21:23:00Z
 
 ### Project Status
-- **Phase**: Multiplayer WORKING — two players can play a full game in the browser
-- **Last Action**: WASM soft-exit fix — skip freeEverything to prevent cleanup crash
-- **Current Blocker**: None — multiplayer is playable
-- **Target**: Polish, two-device testing, desync detection
+- **Phase**: Multiplayer WORKING — production deployed at webwars.link
+- **Last Action**: Production server deployed (t3a.micro us-east-2, HTTPS, nginx, Route 53)
+- **Current Blocker**: None
+- **Target**: Two-device testing, desync detection, game config UI
 
 ### Implementation Tracks
 | Track | Component | Status | Next Action |
@@ -47,7 +47,7 @@ Last updated: 2026-02-20T21:23:00Z
 | B | Web Frontend | ✅ COMPLETE | Lobby, rooms, chat, team config, game launch |
 | B | Network Protocol (JS) | ✅ COMPLETE | ADD_TEAM, CFG, EM relay, CLIENT_FLAGS |
 | B | Multiplayer Test | ✅ COMPLETE | Two players can play a full game |
-| C | Deployment | ✅ COMPLETE | Systemd service running |
+| C | Deployment | ✅ COMPLETE | Production at webwars.link (HTTPS) |
 
 ### Current Issues
 1. **Texture loading failures** - BlueWater, Clouds, SkyL/R, AmmoMenu, theme sprites (flags 5/21/44) all fail to load
@@ -269,19 +269,15 @@ cd build/wasm && make -j$(nproc)
 
 ### Deployment
 
-**Production**: `webwars.link` — see `INFRA.md` (gitignored) for server details, SSH keys, and AWS resource IDs.
+**Production**: `webwars.link` (HTTPS) — see `INFRA.md` (gitignored) for all server details, SSH keys, and AWS resource IDs.
 
-**Dev**: `54.80.204.92` (us-east-1, t3a.medium) — this machine, builds + testing.
+**Dev**: See `INFRA.md` for IP and instance details.
 
 ```bash
 # Dev service management
 sudo systemctl status webwars-server
 sudo systemctl restart webwars-server
 sudo journalctl -u webwars-server -f
-
-# Dev URLs
-http://54.80.204.92:8081/hwengine.html
-http://54.80.204.92:8081/lobby.html
 ```
 
 ### Emscripten Flags (in hwc/CMakeLists.txt)

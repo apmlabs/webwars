@@ -1,8 +1,8 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-20T21:23:00Z
+**Last Updated**: 2026-02-21T14:40:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
-**Status**: ✅ Multiplayer WORKING — two players can play a full game in the browser
+**Status**: ✅ Multiplayer WORKING — production deployed at webwars.link
 
 ## Project: WebWars (Hedgewars WASM Port)
 
@@ -70,8 +70,8 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
    - Engine loop exit now notifies JS via `hw_notify_engine_exit()`
 
 ### Deployment
-- **Service**: `webwars-server.service` (systemd)
-- **URL**: http://54.80.204.92:8081/hwengine.html
+- **Production**: `webwars.link` (HTTPS, nginx, Let's Encrypt)
+- **Dev**: See `INFRA.md` (gitignored) for all server IPs, SSH keys, and AWS resource IDs
 - **Commands**:
   - Status: `sudo systemctl status webwars-server`
   - Logs: `sudo journalctl -u webwars-server -f`
@@ -143,6 +143,40 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 30 - February 21, 2026 (12:57-14:40 UTC)
+
+**Production deployment: webwars.link live with HTTPS.**
+
+**Phase 1: Domain Registration**
+- Registered `webwars.link` via Route 53 ($5/year)
+- Hosted zone auto-created, A records pointing to Elastic IP
+
+**Phase 2: Production Server**
+- Launched t3a.micro in us-east-2 (1GB RAM, 10GB gp3)
+- Elastic IP allocated and associated
+- SSH key created and saved locally (not in git)
+
+**Phase 3: Deployment**
+- Built statically-linked hedgewars-server (GLIBC mismatch fix)
+- Deployed WASM build output, gateway, server binary via rsync/scp
+- Created systemd services for hedgewars-server and webwars-gateway
+- Installed Node.js 20, nginx, certbot
+
+**Phase 4: HTTPS + nginx**
+- nginx reverse proxy: static files + WebSocket at /ws
+- Let's Encrypt certificate for webwars.link + www.webwars.link
+- HTTP auto-redirects to HTTPS
+- Fixed MIME types (missing `include mime.types` caused HTML downloads)
+
+**Phase 5: Lobby WS URL Detection**
+- lobby.html auto-detects: dev uses `:8080` directly, prod uses `/ws` through nginx
+
+**Phase 6: Doc Cleanup**
+- Deleted 7 stale MD files (SCAFFOLDING_COMPLETE, MODIFICATIONS, STATUS_REPORT, BUILD_SUCCESS, QUICKSTART, FRONTEND_ROADMAP, HEDGEWARS_UPSTREAM)
+- Rewrote README.md for humans
+- Created INFRA.md (gitignored) with all server details, SSH keys, AWS resource IDs
+- Moved all infra details out of AGENTS.md and AmazonQ.md into INFRA.md
 
 ### Session 29 - February 20, 2026 (21:02-21:23 UTC)
 
