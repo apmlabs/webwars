@@ -41,3 +41,7 @@ hedgewars/rust/lib-hwengine-future/target/
 # Hedgewars server build artifacts (reproducible via cabal build)
 hedgewars/gameServer/dist-newstyle/
 bin/hedgewars-server
+
+# Infrastructure secrets — never commit
+INFRA.md
+*.pem
