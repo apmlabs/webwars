@@ -60,6 +60,11 @@ Last updated: 2026-02-20T21:23:00Z
 
 ## 🏗️ ARCHITECTURE
 
+### Upstream Source
+- **Repo**: https://github.com/hedgewars/hw.git
+- **Base Commit**: `1bbc396d3` — "Fix erroneous initialization of net game scheme"
+- **Fork Strategy**: Full source tree with WASM patches applied directly
+
 ### Compilation Pipeline
 ```
 Pascal Source (.pas)
