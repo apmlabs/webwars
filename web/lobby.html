@@ -216,7 +216,9 @@ var roomPoll = null;
 // ── Connection ──
 function connect() {
   var host = location.hostname || 'localhost';
-  ws = new WebSocket('ws://' + host + ':8080');
+  var proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  var wsUrl = location.port === '8081' ? 'ws://' + host + ':8080' : proto + '//' + host + '/ws';
+  ws = new WebSocket(wsUrl);
   setStatus('Connecting...', '');
 
   ws.onopen = function() { setStatus('Connected', 'ok'); };
