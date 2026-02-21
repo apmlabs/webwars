@@ -6,14 +6,14 @@ The full game engine is compiled to WebAssembly. Multiplayer works via WebSocket
 
 ## Play Now
 
-**Multiplayer lobby**: http://54.80.204.92:8081/lobby.html
+**Multiplayer lobby**: https://webwars.link/lobby.html
 
 1. Open the link in two browser tabs (or two different browsers/devices)
 2. Enter a nickname and click Connect
 3. One player creates a room, the other joins it
 4. Both players add a team, then the room chief starts the game
 
-**Solo (hotseat)**: http://54.80.204.92:8081/hwengine.html — two teams on one keyboard, taking turns.
+**Solo (hotseat)**: https://webwars.link/hwengine.html — two teams on one keyboard, taking turns.
 
 ## How It Works
 
