@@ -45,3 +45,7 @@ bin/hedgewars-server
 # Infrastructure secrets — never commit
 INFRA.md
 *.pem
+
+# Internal dev context
+AGENTS.md
+AmazonQ.md
