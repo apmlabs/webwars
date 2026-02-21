@@ -18,11 +18,11 @@ Compilation path: Pascal → pas2c → C → Emscripten → WebAssembly
 ---
 
 ## Current Status
-Last updated: 2026-02-20T21:23:00Z
+Last updated: 2026-02-21T15:33:00Z
 
 ### Project Status
 - **Phase**: Multiplayer WORKING — production deployed at webwars.link
-- **Last Action**: Production server deployed (t3a.micro us-east-2, HTTPS, nginx, Route 53)
+- **Last Action**: Quick play at root, gameplay hints, asset caching, auto-restart
 - **Current Blocker**: None
 - **Target**: Two-device testing, desync detection, game config UI
 
