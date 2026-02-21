@@ -11,7 +11,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-sy
 #game-wrap{position:relative;width:100vw;height:100vh;display:flex;flex-direction:column}
 #top-bar{height:36px;background:linear-gradient(180deg,#161b2e,#0d1120);display:flex;align-items:center;padding:0 16px;border-bottom:1px solid #1e2744;z-index:20;flex-shrink:0}
 #canvas-wrap{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
-canvas{display:block;background:#000}
+canvas{display:block;background:#000;visibility:hidden}
 
 /* ── Top Bar ── */
 #top-bar .logo{font-weight:800;font-size:15px;letter-spacing:1px;background:linear-gradient(135deg,#4fc3f7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
@@ -27,7 +27,7 @@ progress::-webkit-progress-value{background:linear-gradient(90deg,#4fc3f7,#66bb6
 .bar-btn.accent{border-color:#4fc3f7;color:#4fc3f7}
 
 /* ── Click-to-play prompt ── */
-#click-prompt{display:none;position:absolute;inset:0;background:rgba(6,8,18,0.75);z-index:30;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)}
+#click-prompt{display:none;position:absolute;inset:0;background:rgba(6,8,18,0.92);z-index:30;flex-direction:column;align-items:center;justify-content:center;cursor:pointer}
 #click-prompt .icon{font-size:56px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(79,195,247,0.4))}
 #click-prompt .label{font-size:20px;font-weight:600;letter-spacing:0.5px}
 #click-prompt .sub{font-size:13px;color:#5a6480;margin-top:8px}
@@ -207,7 +207,7 @@ var Module={
     this.totalDependencies=Math.max(this.totalDependencies,left);
     this.setStatus(left?'Loading... ('+(this.totalDependencies-left)+'/'+this.totalDependencies+')':'Ready');
   },
-  postRun:[function(){document.getElementById('click-prompt').style.display='flex'}]
+  postRun:[function(){document.getElementById('canvas').style.visibility='visible';document.getElementById('click-prompt').style.display='flex'}]
 };
 Module.setStatus('Downloading...');
 window.onerror=function(e){Module.setStatus('Error — see console');spinnerEl.style.display='none'};
