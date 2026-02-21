@@ -1,0 +1,4 @@
+# Language detection — mark game data as vendored so GitHub shows the actual project languages
+hedgewars/share/** linguist-vendored
+hedgewars/QTfrontend/** linguist-vendored
+hedgewars/tools/** linguist-vendored
