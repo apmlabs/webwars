@@ -268,14 +268,20 @@ cd build/wasm && make -j$(nproc)
 ```
 
 ### Deployment
+
+**Production**: `webwars.link` — see `INFRA.md` (gitignored) for server details, SSH keys, and AWS resource IDs.
+
+**Dev**: `54.80.204.92` (us-east-1, t3a.medium) — this machine, builds + testing.
+
 ```bash
-# Service management
+# Dev service management
 sudo systemctl status webwars-server
 sudo systemctl restart webwars-server
 sudo journalctl -u webwars-server -f
 
-# URL
+# Dev URLs
 http://54.80.204.92:8081/hwengine.html
+http://54.80.204.92:8081/lobby.html
 ```
 
 ### Emscripten Flags (in hwc/CMakeLists.txt)
