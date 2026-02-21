@@ -1,6 +1,6 @@
 # Amazon Q - WebWars Context
 
-**Last Updated**: 2026-02-21T14:40:00Z
+**Last Updated**: 2026-02-21T15:33:00Z
 **Working Directory**: `/home/ubuntu/mcpprojects/webwars/`
 **Status**: ✅ Multiplayer WORKING — production deployed at webwars.link
 
@@ -53,6 +53,11 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **IPCCheckSock timing** - Called before/between DoTimer ticks so EM messages are in headcmd queue
 - ✅ **Background tab timer** - setInterval at 10Hz keeps processing EM when tab is hidden
 - ✅ **WASM soft-exit** - Skip freeEverything in WASM builds, prevents RuntimeError: unreachable on shutdown
+- ✅ **Quick play at root** - webwars.link/ serves hotseat game directly, lobby at /lobby.html
+- ✅ **Gameplay hints** - Top bar shows "Right-click to pick a weapon · Space to fire · Arrow keys to move"
+- ✅ **How-to-play in lobby** - Welcome area explains multiplayer flow and controls
+- ✅ **Asset caching** - nginx Cache-Control: 7 days for .data/.wasm, 1h for .js, no-cache for .html
+- ✅ **Auto-restart** - Quick play auto-reloads on game end (assets from disk cache, near-instant)
 
 ### Known Issues
 
@@ -143,6 +148,31 @@ cd build/wasm && make -j$(nproc)
 - `scripts/build-wasm.sh` - Complete config
 
 ## Session History
+
+### Session 31 - February 21, 2026 (14:50-15:33 UTC)
+
+**Quick play at root, gameplay hints, asset caching, auto-restart.**
+
+**Phase 1: Page Restructure**
+- Replaced stale `index.html` (old "in development" placeholder) with quick play page
+- `webwars.link/` now serves hotseat game directly (same engine UI as hwengine.html)
+- `webwars.link/lobby.html` stays as multiplayer lobby
+- Changed nginx `index` directive from `lobby.html` to `index.html`
+
+**Phase 2: Gameplay Hints**
+- Added hint text to top bar on both index.html and hwengine.html: "Right-click to pick a weapon · Space to fire · Arrow keys to move"
+- Added "🌐 Multiplayer" link button in quick play top bar
+- Added "How to Play" box in lobby welcome area explaining multiplayer flow and controls
+- Removed backdrop-filter blur from click-prompt overlay (was causing blue flash from engine init frames)
+
+**Phase 3: Asset Caching**
+- nginx Cache-Control headers: `.data`/`.wasm` → 7 days (public, immutable), `.js` → 1 hour, `.html` → no-cache
+- After first visit, 187MB .data file loads from disk cache — reloads are near-instant
+
+**Phase 4: Auto-Restart**
+- Quick play page sets `_webwars_roundFinished` callback
+- When engine exits: shows "Game Over — Reloading..." overlay, reloads after 1.5s
+- With cache headers, the reload is instant (no re-download)
 
 ### Session 30 - February 21, 2026 (12:57-14:40 UTC)
 
