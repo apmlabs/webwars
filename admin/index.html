@@ -188,8 +188,18 @@ async function refresh() {
         ds.map(s => ({...s, label: new Date(s.timestamp*1000).toLocaleTimeString()})), 'ws_connections', 'ws');
     }
     if (history.hourly.length) {
-      renderChart(document.getElementById('chart-hourly'),
-        history.hourly.map(h => ({...h, label: new Date(h.hour*1000).toLocaleDateString()})), 'visitors');
+      const hourlyEl = document.getElementById('chart-hourly');
+      const hourly = history.hourly.map(h => ({...h, label: new Date(h.hour*1000).toLocaleString([], {weekday:'short',hour:'numeric'})}));
+      renderChart(hourlyEl, hourly, 'visitors');
+      // Add day ticks
+      let lastDay = '';
+      const ticks = hourly.map(h => {
+        const d = new Date(h.hour*1000);
+        const day = d.toLocaleDateString([], {weekday:'short'});
+        if (day !== lastDay && d.getHours() < 2) { lastDay = day; return day; }
+        return '';
+      });
+      hourlyEl.innerHTML += `<div style="display:flex;width:100%;font-size:9px;color:#8b949e;margin-top:2px">${ticks.map(t => `<span style="flex:1;text-align:center">${t}</span>`).join('')}</div>`;
     }
 
     // Visitor log (humans only by default)
