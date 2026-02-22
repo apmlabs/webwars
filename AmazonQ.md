@@ -85,6 +85,7 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 ### Deployment
 - **Production**: `webwars.link` (HTTPS, nginx, Let's Encrypt)
 - **Dev**: See `INFRA.md` (gitignored) for all server IPs, SSH keys, and AWS resource IDs
+- **Agent docs repo**: `github.com/apmlabs/webwars-agent` (private) — sync with `cd /home/ubuntu/mcpprojects/webwars-agent && ./sync.sh`
 - **Commands**:
   - Status: `sudo systemctl status webwars-server`
   - Logs: `sudo journalctl -u webwars-server -f`
