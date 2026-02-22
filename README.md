@@ -100,15 +100,11 @@ A key design decision: the game engine loads dynamically into the lobby page via
 
 ### Engine Modifications
 
-I patched the Pascal engine source in several places to make it work in a browser:
+**Pascal changes** — I patched the engine source (`uIO.pas`, `hwengine.pas`, `uStore.pas`, `uSound.pas`, `uRender.pas`) to work in a browser environment. The IPC layer (`uIO.pas`) was rewired to read/write through C shim functions instead of SDL_net sockets. The shutdown path (`hwengine.pas`) skips SDL teardown entirely in WASM builds — `SDL_Quit` and `SDL_GL_DeleteContext` crash Emscripten, so page reload is the only clean reset. Init paths that called `SDL_Delay` were changed to busy-poll instead, since IPC messages are already queued in JavaScript before the engine starts.
 
-- **IPC bridge** (`ipc_browser.c`): Replaces SDL_net TCP sockets with a C shim that routes through `EM_JS` calls to a JavaScript message queue. The engine's `IPCCheckSock` reads from JS, and `SendIPCRaw` writes to JS — same interface, completely different transport.
+**C shims** — Two new C files bridge the engine to the browser. `ipc_browser.c` replaces SDL_net with `EM_JS` calls to a JavaScript message queue — the engine's `IPCCheckSock` reads from JS, `SendIPCRaw` writes to JS, same interface, completely different transport. `web_entry.c` intercepts the engine's blocking `hwengine_MainLoop` (via the `--wrap` linker flag) and replaces it with `emscripten_set_main_loop` (requestAnimationFrame). A multi-tick catch-up system uses the engine's `cOnlyStats` flag to run game logic at real-time speed while only rendering the final tick per frame.
 
-- **Main loop** (`web_entry.c`): The engine's `hwengine_MainLoop` is a blocking `while` loop — fatal in a browser. I intercept it with the `--wrap` linker flag and replace it with `emscripten_set_main_loop` (requestAnimationFrame). A multi-tick catch-up system uses the engine's `cOnlyStats` flag to run game logic at real-time speed while only rendering the final tick per frame.
-
-- **WASM soft-exit** (`hwengine.pas`): SDL teardown (`SDL_Quit`, `SDL_GL_DeleteContext`) crashes Emscripten with `RuntimeError: unreachable`. I skip `freeEverything` in WASM builds entirely — page reload is the only clean reset in a browser.
-
-- **JSPI migration**: Switched from ASYNCIFY (which instruments every function, ~50% overhead) to JavaScript Promise Integration (`-sJSPI`), cutting the WASM binary from 5.15MB to 3.97MB. This required eliminating all JS-frame suspends — `SDL_Delay` in init paths replaced with busy-polling, `SDL_EMSCRIPTEN_ASYNCIFY` hint disabled before engine init.
+**JSPI** — The engine uses JavaScript Promise Integration (`-sJSPI`) to handle points where WASM needs to yield to the browser (e.g., waiting for IPC during init). JSPI suspends and resumes the WASM call stack without instrumenting every function, keeping the binary small (3.97MB).
 
 ### Rendering Optimization
 
