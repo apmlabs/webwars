@@ -97,6 +97,9 @@ CLOUD_ISP_PATTERNS = ('amazon','aws','google llc','google cloud','microsoft','di
     'applied computational','acuit','recordedfuture','netcup','cyber data',
     'pavlov media','stark industries','datacamp','zscaler')
 
+HIDDEN_IPS = {'90.174.10.182'}  # dev
+_HIDDEN_SQL = ','.join(f"'{ip}'" for ip in HIDDEN_IPS)
+
 def is_cloud_ip(isp):
     if not isp: return True  # unknown ISP = suspicious
     return any(p in isp.lower() for p in CLOUD_ISP_PATTERNS)
@@ -194,16 +197,16 @@ def api_live():
     conn = get_db()
     now = int(time.time())
     snap = conn.execute('SELECT * FROM snapshots ORDER BY timestamp DESC LIMIT 1').fetchone()
-    total_sessions = conn.execute('SELECT COUNT(*) FROM visitors').fetchone()[0]
+    total_sessions = conn.execute(f'SELECT COUNT(*) FROM visitors WHERE ip NOT IN ({_HIDDEN_SQL})').fetchone()[0]
 
     # Human = not from cloud ISP
-    all_visitors = conn.execute('SELECT DISTINCT ip, isp FROM visitors WHERE isp IS NOT NULL').fetchall()
+    all_visitors = conn.execute(f'SELECT DISTINCT ip, isp FROM visitors WHERE isp IS NOT NULL AND ip NOT IN ({_HIDDEN_SQL})').fetchall()
     humans = sum(1 for v in all_visitors if not is_cloud_ip(v['isp']))
-    played = conn.execute("SELECT COUNT(DISTINCT ip) FROM visitors WHERE page LIKE '%%.data'").fetchone()[0]
-    active_5m = conn.execute('SELECT COUNT(DISTINCT ip) FROM visitors WHERE timestamp > ?', (now - 300,)).fetchone()[0]
+    played = conn.execute(f"SELECT COUNT(DISTINCT ip) FROM visitors WHERE page LIKE '%%.data' AND ip NOT IN ({_HIDDEN_SQL})").fetchone()[0]
+    active_5m = conn.execute(f'SELECT COUNT(DISTINCT ip) FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL})', (now - 300,)).fetchone()[0]
 
-    pages = conn.execute('''
-        SELECT page, isp, COUNT(*) as c FROM visitors WHERE timestamp > ? GROUP BY page, isp ORDER BY c DESC
+    pages = conn.execute(f'''
+        SELECT page, isp, COUNT(*) as c FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL}) GROUP BY page, isp ORDER BY c DESC
     ''', (now - 7 * 86400,)).fetchall()
 
     # Aggregate per page with human/bot split
@@ -233,10 +236,10 @@ def api_map():
     """All geolocated visitors for the map."""
     conn = get_db()
     now = int(time.time())
-    rows = conn.execute('''
+    rows = conn.execute(f'''
         SELECT ip, lat, lon, city, country, isp, MAX(timestamp) as last_seen, COUNT(*) as visits,
                GROUP_CONCAT(DISTINCT page) as pages
-        FROM visitors WHERE lat IS NOT NULL
+        FROM visitors WHERE lat IS NOT NULL AND ip NOT IN ({_HIDDEN_SQL})
         GROUP BY ip ORDER BY last_seen DESC LIMIT 500
     ''').fetchall()
     conn.close()
@@ -261,9 +264,9 @@ def api_history():
     ''', (now - 86400,)).fetchall()
 
     # Hourly visitor counts for last 7 days
-    hourly = conn.execute('''
+    hourly = conn.execute(f'''
         SELECT (timestamp / 3600) * 3600 as hour, COUNT(DISTINCT ip) as visitors, COUNT(*) as pageviews
-        FROM visitors WHERE timestamp > ? GROUP BY hour ORDER BY hour
+        FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL}) GROUP BY hour ORDER BY hour
     ''', (now - 7 * 86400,)).fetchall()
 
     conn.close()
@@ -276,9 +279,9 @@ def api_history():
 def api_visitors():
     """Recent visitor log."""
     conn = get_db()
-    rows = conn.execute('''
+    rows = conn.execute(f'''
         SELECT ip, page, city, country, isp, timestamp, user_agent
-        FROM visitors ORDER BY timestamp DESC LIMIT 100
+        FROM visitors WHERE ip NOT IN ({_HIDDEN_SQL}) ORDER BY timestamp DESC LIMIT 100
     ''').fetchall()
     conn.close()
     return jsonify([{**dict(r), 'cloud': is_cloud_ip(r['isp'])} for r in rows])
