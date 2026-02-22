@@ -46,6 +46,11 @@ bin/hedgewars-server
 INFRA.md
 *.pem
 
+# Admin panel runtime data
+admin/*.db
+admin/nginx-dev.conf
+
 # Internal dev context
 AGENTS.md
 AmazonQ.md
+admin/__pycache__/

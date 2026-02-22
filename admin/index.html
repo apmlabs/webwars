@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebWars Admin</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d1117;color:#e6edf3}
+#header{background:#161b22;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #30363d}
+#header h1{font-size:1.3em;color:#58a6ff}
+#header h1 span{color:#8b949e;font-weight:normal;font-size:0.7em}
+#stats{display:flex;gap:16px;flex-wrap:wrap}
+.stat{text-align:center;min-width:70px}
+.stat-value{font-size:1.6em;font-weight:bold}
+.stat-label{font-size:0.7em;color:#8b949e;text-transform:uppercase}
+.green{color:#3fb950}.blue{color:#58a6ff}.orange{color:#d29922}.purple{color:#bc8cff}
+#main{display:grid;grid-template-columns:1fr 360px;grid-template-rows:1fr auto;height:calc(100vh - 56px)}
+#map{min-height:400px}
+#sidebar{background:#161b22;border-left:1px solid #30363d;overflow-y:auto;display:flex;flex-direction:column}
+.panel{padding:14px;border-bottom:1px solid #30363d}
+.panel h3{font-size:0.85em;color:#8b949e;text-transform:uppercase;margin-bottom:8px;letter-spacing:0.5px}
+#pages-breakdown div{display:flex;justify-content:space-between;padding:3px 0;font-size:0.85em}
+#pages-breakdown .bar{height:4px;background:#21262d;border-radius:2px;margin-top:2px}
+#pages-breakdown .bar-fill{height:100%;background:#58a6ff;border-radius:2px}
+#visitor-log{max-height:300px;overflow-y:auto}
+.log-entry{padding:6px 0;border-bottom:1px solid #21262d;font-size:0.8em}
+.log-entry .ip{color:#58a6ff;font-family:monospace}
+.log-entry .page{color:#3fb950}
+.log-entry .loc{color:#8b949e}
+.log-entry .time{color:#8b949e;float:right}
+#bottom{grid-column:1/-1;background:#161b22;border-top:1px solid #30363d;padding:10px 20px}
+.chart-row{display:flex;gap:20px}
+.chart-box{flex:1}
+.chart-box h4{font-size:0.75em;color:#8b949e;margin-bottom:4px;text-transform:uppercase}
+.chart{height:60px;display:flex;align-items:flex-end;gap:1px}
+.chart .bar{flex:1;min-width:2px;background:#58a6ff;border-radius:1px 1px 0 0;position:relative}
+.chart .bar.ws{background:#3fb950}.chart .bar.hw{background:#d29922}
+.chart .bar:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#30363d;color:#e6edf3;padding:2px 6px;border-radius:3px;font-size:10px;white-space:nowrap;z-index:10}
+@media(max-width:900px){#main{grid-template-columns:1fr;grid-template-rows:50vh auto auto}#sidebar{border-left:none;border-top:1px solid #30363d}}
+</style>
+</head>
+<body>
+<div id="header">
+  <h1>🎮 WebWars Admin <span>· webwars.link</span></h1>
+  <div id="stats">
+    <div class="stat"><div class="stat-value green" id="s-ws">-</div><div class="stat-label">WS Players</div></div>
+    <div class="stat"><div class="stat-value blue" id="s-active">-</div><div class="stat-label">Active 5m</div></div>
+    <div class="stat"><div class="stat-value orange" id="s-played">-</div><div class="stat-label">Played</div></div>
+    <div class="stat"><div class="stat-value purple" id="s-humans">-</div><div class="stat-label">Humans</div></div>
+    <div class="stat"><div class="stat-value blue" id="s-sessions">-</div><div class="stat-label">Requests</div></div>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8em;color:#8b949e"><input type="checkbox" id="show-bots" style="cursor:pointer">Show bots</label>
+  </div>
+</div>
+<div id="main">
+  <div id="map"></div>
+  <div id="sidebar">
+    <div class="panel">
+      <h3>Pages (7 days)</h3>
+      <div id="pages-breakdown"></div>
+    </div>
+    <div class="panel">
+      <h3>Recent Visitors</h3>
+      <div id="visitor-log"></div>
+    </div>
+  </div>
+  <div id="bottom">
+    <div class="chart-row">
+      <div class="chart-box"><h4>Active Visitors (24h)</h4><div class="chart" id="chart-visitors"></div></div>
+      <div class="chart-box"><h4>WS Connections (24h)</h4><div class="chart" id="chart-ws"></div></div>
+      <div class="chart-box"><h4>Hourly Visitors (7d)</h4><div class="chart" id="chart-hourly"></div></div>
+    </div>
+  </div>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map = L.map('map').setView([30, 0], 2);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '© OpenStreetMap © CARTO', maxZoom: 18
+}).addTo(map);
+
+const markers = L.layerGroup().addTo(map);
+let lastMapData = [], lastVisitors = [];
+const showBotsEl = document.getElementById('show-bots');
+showBotsEl.addEventListener('change', () => { renderMap(lastMapData); renderLog(lastVisitors); });
+
+function renderMap(data) {
+  lastMapData = data;
+  const showBots = showBotsEl.checked;
+  markers.clearLayers();
+  data.forEach(v => {
+    if (v.cloud && !showBots) return;
+    const color = v.cloud ? '#484f58' : v.active ? '#3fb950' : v.played ? '#58a6ff' : '#8b949e';
+    const radius = v.cloud ? 3 : v.active ? 8 : v.played ? 6 : 4;
+    const status = v.cloud ? '☁️ Cloud/Bot' : v.active ? '🟢 Active now' : v.played ? '🎮 Played' : '👁 Visited';
+    const m = L.circleMarker([v.lat, v.lon], {radius, color, fillColor: color, fillOpacity: v.cloud ? 0.3 : 0.8, weight: 1});
+    m.bindPopup(`<b>${v.ip}</b><br>${v.city}, ${v.country}<br>${v.isp}<br>Pages: ${(v.pages||'').split(',').map(p=>pageNames[p]||p).join(', ')}<br>Visits: ${v.visits}<br>${status}<br>Last: ${ago(v.last_seen)}`);
+    markers.addLayer(m);
+  });
+}
+
+function renderLog(data) {
+  lastVisitors = data;
+  const vl = document.getElementById('visitor-log');
+  const filtered = data.filter(v => !v.cloud || showBotsEl.checked);
+  vl.innerHTML = filtered.slice(0, 50).map(v =>
+    `<div class="log-entry">
+      <span class="ip">${v.ip}</span>
+      <span class="page">${pageNames[v.page]||v.page}</span>
+      <span class="time">${ago(v.timestamp)}</span>
+      <br><span class="loc">${[v.city,v.country].filter(Boolean).join(', ')||'Unknown'} · ${v.isp||''}</span>
+    </div>`
+  ).join('') || '<div style="color:#8b949e;font-size:0.85em">No human visitors yet</div>';
+}
+const pageNames = {'/': 'Quick Play', '/lobby.html': 'Lobby', '/hwengine.html': 'Engine'};
+const pageColors = {'/': '#3fb950', '/lobby.html': '#58a6ff', '/hwengine.html': '#d29922'};
+
+function ago(ts) {
+  const s = Math.floor(Date.now()/1000 - ts);
+  if (s < 60) return s + 's ago';
+  if (s < 3600) return Math.floor(s/60) + 'm ago';
+  if (s < 86400) return Math.floor(s/3600) + 'h ago';
+  return Math.floor(s/86400) + 'd ago';
+}
+
+function renderChart(el, data, key, cls) {
+  const max = Math.max(...data.map(d => d[key]), 1);
+  el.innerHTML = data.map(d => {
+    const h = Math.max(1, (d[key] / max) * 60);
+    const tip = (d.label || '') + ': ' + d[key];
+    return `<div class="bar ${cls||''}" style="height:${h}px" data-tip="${tip}"></div>`;
+  }).join('');
+}
+
+async function refresh() {
+  try {
+    const [live, mapData, history, visitors] = await Promise.all([
+      fetch('api/live').then(r=>r.json()),
+      fetch('api/map').then(r=>r.json()),
+      fetch('api/history').then(r=>r.json()),
+      fetch('api/visitors').then(r=>r.json())
+    ]);
+
+    // Stats
+    document.getElementById('s-ws').textContent = live.ws_connections;
+    document.getElementById('s-active').textContent = live.active_5m;
+    document.getElementById('s-played').textContent = live.played;
+    document.getElementById('s-humans').textContent = live.humans;
+    document.getElementById('s-sessions').textContent = live.total_sessions;
+
+    // Pages breakdown
+    const pb = document.getElementById('pages-breakdown');
+    const maxP = Math.max(...Object.values(live.pages), 1);
+    pb.innerHTML = Object.entries(live.pages).map(([p, c]) =>
+      `<div><span style="color:${pageColors[p]||'#e6edf3'}">${pageNames[p]||p}</span><span>${c}</span></div>
+       <div class="bar"><div class="bar-fill" style="width:${c/maxP*100}%;background:${pageColors[p]||'#58a6ff'}"></div></div>`
+    ).join('');
+
+    // Map
+    renderMap(mapData);
+
+    // Charts
+    const snaps = history.snapshots;
+    if (snaps.length) {
+      // Downsample to ~120 bars
+      const step = Math.max(1, Math.floor(snaps.length / 120));
+      const ds = snaps.filter((_, i) => i % step === 0);
+      renderChart(document.getElementById('chart-visitors'),
+        ds.map(s => ({...s, label: new Date(s.timestamp*1000).toLocaleTimeString()})), 'active_visitors');
+      renderChart(document.getElementById('chart-ws'),
+        ds.map(s => ({...s, label: new Date(s.timestamp*1000).toLocaleTimeString()})), 'ws_connections', 'ws');
+    }
+    if (history.hourly.length) {
+      renderChart(document.getElementById('chart-hourly'),
+        history.hourly.map(h => ({...h, label: new Date(h.hour*1000).toLocaleDateString()})), 'visitors');
+    }
+
+    // Visitor log (humans only by default)
+    renderLog(visitors);
+  } catch(e) { console.error('Refresh failed:', e); }
+}
+
+refresh();
+setInterval(refresh, 15000);
+</script>
+</body>
+</html>
