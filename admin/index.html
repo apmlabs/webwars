@@ -69,7 +69,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div id="bottom">
     <div class="chart-row">
       <div class="chart-box"><h4>Active Visitors (24h)</h4><div class="chart" id="chart-visitors"></div></div>
-      <div class="chart-box"><h4>Online Players (24h)</h4><div class="chart" id="chart-ws"></div></div>
+      <div class="chart-box"><h4>Hourly Pageviews (7d)</h4><div class="chart" id="chart-pv"></div></div>
       <div class="chart-box"><h4>Hourly Visitors (7d)</h4><div class="chart" id="chart-hourly"></div></div>
     </div>
   </div>
@@ -184,12 +184,11 @@ async function refresh() {
       const ds = snaps.filter((_, i) => i % step === 0);
       renderChart(document.getElementById('chart-visitors'),
         ds.map(s => ({...s, label: new Date(s.timestamp*1000).toLocaleTimeString()})), 'active_visitors');
-      renderChart(document.getElementById('chart-ws'),
-        ds.map(s => ({...s, label: new Date(s.timestamp*1000).toLocaleTimeString()})), 'ws_connections', 'ws');
     }
     if (history.hourly.length) {
-      const hourlyEl = document.getElementById('chart-hourly');
       const hourly = history.hourly.map(h => ({...h, label: new Date(h.hour*1000).toLocaleString([], {weekday:'short',hour:'numeric'})}));
+      renderChart(document.getElementById('chart-pv'), hourly, 'pageviews', 'ws');
+      const hourlyEl = document.getElementById('chart-hourly');
       renderChart(hourlyEl, hourly, 'visitors');
       // Add day ticks
       let lastDay = '';
