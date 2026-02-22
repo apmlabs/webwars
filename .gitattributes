@@ -1,4 +1,12 @@
-# Language detection — mark game data as vendored so GitHub shows the actual project languages
-hedgewars/share/** linguist-vendored
-hedgewars/QTfrontend/** linguist-vendored
-hedgewars/tools/** linguist-vendored
+# Language detection — mark upstream Hedgewars code as vendored
+# so GitHub shows only the code we actually wrote for the browser port.
+
+# Entire upstream tree is vendored
+hedgewars/** linguist-vendored
+
+# Un-vendor our new files (browser integration layer)
+hedgewars/project_files/hwc/ipc_browser.c linguist-vendored=false
+hedgewars/project_files/hwc/web_entry.c linguist-vendored=false
+hedgewars/project_files/hwc/rtl/gl_emscripten_compat.h linguist-vendored=false
+hedgewars/project_files/web/pre.js linguist-vendored=false
+hedgewars/project_files/web/post.js linguist-vendored=false
