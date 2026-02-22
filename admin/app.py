@@ -216,12 +216,16 @@ def api_live():
     for r in pages:
         p = r['page']
         if p not in page_stats:
-            page_stats[p] = {'total': 0, 'human': 0, 'player': 0}
+            page_stats[p] = {'total': 0, 'human': 0, 'player': 0, 'human_player': 0}
         page_stats[p]['total'] += r['c']
-        if not is_cloud_ip(r['isp']):
+        human = not is_cloud_ip(r['isp'])
+        player = r['ip'] in player_ips
+        if human:
             page_stats[p]['human'] += r['c']
-        if r['ip'] in player_ips:
+        if player:
             page_stats[p]['player'] += r['c']
+        if human and player:
+            page_stats[p]['human_player'] += r['c']
 
     conn.close()
     return jsonify({

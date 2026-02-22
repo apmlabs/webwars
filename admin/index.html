@@ -127,7 +127,7 @@ function renderPages(pages) {
   lastPages = pages;
   const showBots = showBotsEl.checked;
   const playersOnly = playersOnlyEl.checked;
-  const key = playersOnly ? 'player' : showBots ? 'total' : 'human';
+  const key = playersOnly ? (showBots ? 'player' : 'human_player') : showBots ? 'total' : 'human';
   const entries = Object.entries(pages).map(([p, s]) => [p, s[key] || 0]).filter(([,c]) => c > 0).sort((a,b) => b[1] - a[1]);
   const maxP = Math.max(...entries.map(([,c]) => c), 1);
   const pb = document.getElementById('pages-breakdown');
