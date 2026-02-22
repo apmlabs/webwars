@@ -203,8 +203,18 @@ def api_live():
     active_5m = conn.execute('SELECT COUNT(DISTINCT ip) FROM visitors WHERE timestamp > ?', (now - 300,)).fetchone()[0]
 
     pages = conn.execute('''
-        SELECT page, COUNT(*) as c FROM visitors WHERE timestamp > ? GROUP BY page ORDER BY c DESC
+        SELECT page, isp, COUNT(*) as c FROM visitors WHERE timestamp > ? GROUP BY page, isp ORDER BY c DESC
     ''', (now - 7 * 86400,)).fetchall()
+
+    # Aggregate per page with human/bot split
+    page_stats = {}
+    for r in pages:
+        p = r['page']
+        if p not in page_stats:
+            page_stats[p] = {'total': 0, 'human': 0}
+        page_stats[p]['total'] += r['c']
+        if not is_cloud_ip(r['isp']):
+            page_stats[p]['human'] += r['c']
 
     conn.close()
     return jsonify({
@@ -214,7 +224,7 @@ def api_live():
         'humans': humans,
         'played': played,
         'total_sessions': total_sessions,
-        'pages': {r['page']: r['c'] for r in pages},
+        'pages': page_stats,
         'timestamp': snap['timestamp'] if snap else now
     })
 

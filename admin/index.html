@@ -81,9 +81,9 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 }).addTo(map);
 
 const markers = L.layerGroup().addTo(map);
-let lastMapData = [], lastVisitors = [];
+let lastMapData = [], lastVisitors = [], lastPages = {};
 const showBotsEl = document.getElementById('show-bots');
-showBotsEl.addEventListener('change', () => { renderMap(lastMapData); renderLog(lastVisitors); });
+showBotsEl.addEventListener('change', () => { renderMap(lastMapData); renderLog(lastVisitors); renderPages(lastPages); });
 
 function renderMap(data) {
   lastMapData = data;
@@ -115,6 +115,18 @@ function renderLog(data) {
 }
 const pageNames = {'/': 'Quick Play', '/lobby.html': 'Lobby', '/hwengine.html': 'Engine'};
 const pageColors = {'/': '#3fb950', '/lobby.html': '#58a6ff', '/hwengine.html': '#d29922'};
+
+function renderPages(pages) {
+  lastPages = pages;
+  const showBots = showBotsEl.checked;
+  const entries = Object.entries(pages).map(([p, s]) => [p, showBots ? s.total : s.human]).filter(([,c]) => c > 0).sort((a,b) => b[1] - a[1]);
+  const maxP = Math.max(...entries.map(([,c]) => c), 1);
+  const pb = document.getElementById('pages-breakdown');
+  pb.innerHTML = entries.map(([p, c]) =>
+    `<div><span style="color:${pageColors[p]||'#e6edf3'}">${pageNames[p]||p}</span><span>${c}</span></div>
+     <div class="bar"><div class="bar-fill" style="width:${c/maxP*100}%;background:${pageColors[p]||'#58a6ff'}"></div></div>`
+  ).join('');
+}
 
 function ago(ts) {
   const s = Math.floor(Date.now()/1000 - ts);
@@ -150,12 +162,7 @@ async function refresh() {
     document.getElementById('s-sessions').textContent = live.total_sessions;
 
     // Pages breakdown
-    const pb = document.getElementById('pages-breakdown');
-    const maxP = Math.max(...Object.values(live.pages), 1);
-    pb.innerHTML = Object.entries(live.pages).map(([p, c]) =>
-      `<div><span style="color:${pageColors[p]||'#e6edf3'}">${pageNames[p]||p}</span><span>${c}</span></div>
-       <div class="bar"><div class="bar-fill" style="width:${c/maxP*100}%;background:${pageColors[p]||'#58a6ff'}"></div></div>`
-    ).join('');
+    renderPages(live.pages);
 
     // Map
     renderMap(mapData);
