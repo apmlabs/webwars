@@ -205,19 +205,23 @@ def api_live():
     played = conn.execute(f"SELECT COUNT(DISTINCT ip) FROM visitors WHERE page LIKE '%%.data' AND ip NOT IN ({_HIDDEN_SQL})").fetchone()[0]
     active_5m = conn.execute(f'SELECT COUNT(DISTINCT ip) FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL})', (now - 300,)).fetchone()[0]
 
+    player_ips = {r[0] for r in conn.execute("SELECT DISTINCT ip FROM visitors WHERE page LIKE '%.data'").fetchall()}
+
     pages = conn.execute(f'''
-        SELECT page, isp, COUNT(*) as c FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL}) GROUP BY page, isp ORDER BY c DESC
+        SELECT ip, page, isp, COUNT(*) as c FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL}) GROUP BY ip, page, isp ORDER BY c DESC
     ''', (now - 7 * 86400,)).fetchall()
 
-    # Aggregate per page with human/bot split
+    # Aggregate per page with human/bot/player splits
     page_stats = {}
     for r in pages:
         p = r['page']
         if p not in page_stats:
-            page_stats[p] = {'total': 0, 'human': 0}
+            page_stats[p] = {'total': 0, 'human': 0, 'player': 0}
         page_stats[p]['total'] += r['c']
         if not is_cloud_ip(r['isp']):
             page_stats[p]['human'] += r['c']
+        if r['ip'] in player_ips:
+            page_stats[p]['player'] += r['c']
 
     conn.close()
     return jsonify({
