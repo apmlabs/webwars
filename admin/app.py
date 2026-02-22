@@ -169,10 +169,13 @@ def poll_prod():
         conn.execute('UPDATE visitors SET lat=?, lon=?, city=?, country=?, isp=? WHERE ip=? AND lat IS NULL',
                      (geo['lat'], geo['lon'], geo['city'], geo['country'], geo['isp'], ip))
 
-    # 3. Count active WS and HW connections
-    ws_out = ssh_cmd('ss -tnp state established | grep -c ":8080" 2>/dev/null || true')
+    # 3. Count active WS connections via gateway /status endpoint, HW via ss
+    gw_out = ssh_cmd('curl -s http://127.0.0.1:8080/status 2>/dev/null')
+    try:
+        ws_conns = json.loads(gw_out).get('clients', 0)
+    except:
+        ws_conns = 0
     hw_out = ssh_cmd('ss -tnp state established | grep -c ":46631" 2>/dev/null || true')
-    ws_conns = int(ws_out.strip().split('\n')[-1]) if ws_out.strip() else 0
     hw_conns = int(hw_out.strip().split('\n')[-1]) if hw_out.strip() else 0
 
     # Active visitors = unique IPs in last 5 min

@@ -5,7 +5,17 @@ const WS_PORT = process.env.WS_PORT || 8080;
 const HW_HOST = process.env.HW_HOST || 'localhost';
 const HW_PORT = process.env.HW_PORT || 46631;
 
-const wss = new WebSocket.Server({ port: WS_PORT });
+const http = require('http');
+const server = http.createServer((req, res) => {
+  if (req.url === '/status') {
+    res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+    res.end(JSON.stringify({clients: wss.clients.size}));
+  } else {
+    res.writeHead(404); res.end();
+  }
+});
+const wss = new WebSocket.Server({ server });
+server.listen(WS_PORT);
 
 console.log(`WebWars Gateway listening on ws://localhost:${WS_PORT}`);
 console.log(`Forwarding to Hedgewars server at ${HW_HOST}:${HW_PORT}`);
