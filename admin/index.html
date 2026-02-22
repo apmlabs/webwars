@@ -69,7 +69,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div id="bottom">
     <div class="chart-row">
       <div class="chart-box"><h4>Active Visitors (24h)</h4><div class="chart" id="chart-visitors"></div></div>
-      <div class="chart-box"><h4>Hourly Pageviews (7d)</h4><div class="chart" id="chart-pv"></div></div>
       <div class="chart-box"><h4>Hourly Visitors (7d)</h4><div class="chart" id="chart-hourly"></div></div>
     </div>
   </div>
@@ -187,7 +186,6 @@ async function refresh() {
     }
     if (history.hourly.length) {
       const hourly = history.hourly.map(h => ({...h, label: new Date(h.hour*1000).toLocaleString([], {weekday:'short',hour:'numeric'})}));
-      renderChart(document.getElementById('chart-pv'), hourly, 'pageviews', 'ws');
       const hourlyEl = document.getElementById('chart-hourly');
       renderChart(hourlyEl, hourly, 'visitors');
       // Add day ticks
