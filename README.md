@@ -37,6 +37,7 @@ Browser (WASM engine) ←WebSocket→ Gateway (Node.js) ←TCP→ Hedgewars Serv
 | Game assets | Preloaded .data (187MB) | Graphics, sounds, fonts, maps, Lua scripts |
 | WS gateway | Node.js | Bridges browser WebSocket to HW server TCP |
 | Game server | Haskell | Official Hedgewars server (rooms, relay, protocol) |
+| Admin panel | Flask + Leaflet | Live traffic map, visitor geo, bot detection |
 
 ## Building from Source
 
@@ -83,6 +84,7 @@ webwars/
 │   └── gameServer/             # Haskell multiplayer server
 ├── gateway/src/index.js        # WebSocket ↔ TCP bridge
 ├── web/                        # Browser frontend (lobby, quick play)
+├── admin/                      # Admin panel (Flask + Leaflet dashboard)
 └── scripts/                    # Build scripts
 ```
 
@@ -119,6 +121,30 @@ We added a sprite batch system in `uRender.pas`: a 1024-quad buffer that accumul
 Hedgewars multiplayer is deterministic — the server doesn't run game logic, it just relays player inputs. Each engine sends its actions as IPC messages, which get base64-encoded and sent as `EM` commands through the server to other players. The receiving engine injects them into its message queue and replays them identically.
 
 The tricky parts: `IPCCheckSock` must run before and between `DoTimer` catch-up ticks (not just after), or incoming messages aren't parsed into the command queue in time and the engine enters lag mode. Background tabs throttle `requestAnimationFrame` to ~1fps, so we fall back to `setInterval` at 10Hz with rendering disabled to keep game logic in sync.
+
+### WebSocket Gateway
+
+The Hedgewars server speaks a text-based TCP protocol (newline-delimited messages, double-newline between commands). Browsers can't open raw TCP sockets, so we wrote a Node.js gateway that bridges WebSocket to TCP. The browser sends JSON arrays (`["NICK","player1"]`), the gateway converts them to the HW wire format (`NICK\nplayer1\n\n`), and vice versa. Each browser connection gets its own TCP connection to the server.
+
+### Admin Panel
+
+A Flask + Leaflet dashboard (`admin/`) for monitoring production traffic. It polls the prod server every 30 seconds via SSH — parses nginx access logs, counts active WebSocket and game connections, and geolocates visitor IPs using ip-api.com.
+
+Features:
+- Live world map with color-coded markers (active players, past visitors, bots)
+- Multi-layer bot detection: user-agent patterns, probe path filtering, fake UA detection, cloud ISP blocklist
+- Visitor log with city/country/ISP, filterable by bot status
+- 24-hour connection history charts
+
+On day one we discovered that ~99% of "unique visitors" were actually bots, scanners, and cloud-hosted probes (LeakIX, Censys, Onyphe, etc.). The only reliable signal for real players is the 187MB `.data` file download — bots never fetch it.
+
+To run the admin panel:
+```bash
+cd admin
+cp .env.example .env   # fill in your server IPs and SSH key path
+pip3 install flask requests apscheduler
+python3 app.py          # runs on port 5052
+```
 
 ### Other Details
 
