@@ -2,9 +2,9 @@
 
 A browser port of [**Hedgewars**](https://hedgewars.org/), the free turn-based artillery game. No downloads, no installs — just open a link and play.
 
-This project is built on top of [Hedgewars](https://github.com/hedgewars/hw) (GPL v2), created by Andrey Korotaev (unC0Rr) and the Hedgewars community. The game engine is written in Free Pascal — a language with no native WebAssembly target. What makes this port possible is [**pas2c**](https://github.com/hedgewars/hw/tree/master/tools/pas2c), a Pascal-to-C transpiler written by unC0Rr specifically for the Hedgewars project. pas2c converts the entire engine (~40K lines of Pascal) into C, which we then compile to WebAssembly through Emscripten. Without pas2c, this project simply wouldn't exist.
+This project is built on top of [Hedgewars](https://github.com/hedgewars/hw) (GPL v2), created by Andrey Korotaev (unC0Rr) and the Hedgewars community. The game engine is written in Free Pascal — a language with no native WebAssembly target. What makes this port possible is [**pas2c**](https://github.com/hedgewars/hw/tree/master/tools/pas2c), a Pascal-to-C transpiler written by unC0Rr specifically for the Hedgewars project. pas2c converts the entire engine (~40K lines of Pascal) into C, which I then compile to WebAssembly through Emscripten. Without pas2c, this project simply wouldn't exist.
 
-The game server is also theirs — a Haskell binary that handles lobby, rooms, and multiplayer relay. All game assets (graphics, sounds, fonts, maps, 117 Lua scripts) are from the Hedgewars project. We wrote the browser integration layer, the WebSocket gateway, and the web frontend — but the game itself is entirely their work. Huge thanks to unC0Rr and the Hedgewars team for building such a great game and releasing it as free software.
+The game server is also theirs — a Haskell binary that handles lobby, rooms, and multiplayer relay. All game assets (graphics, sounds, fonts, maps, 117 Lua scripts) are from the Hedgewars project. I wrote the browser integration layer, the WebSocket gateway, and the web frontend — but the game itself is entirely their work. Huge thanks to unC0Rr and the Hedgewars team for building such a great game and releasing it as free software.
 
 **🎮 Play now: [webwars.link](https://webwars.link)**
 
@@ -19,7 +19,7 @@ The game server is also theirs — a Haskell binary that handles lobby, rooms, a
 
 ## How It Works
 
-Hedgewars is written in Pascal. We compile it to WebAssembly using this pipeline:
+Hedgewars is written in Pascal. I compile it to WebAssembly using this pipeline:
 
 ```
 Pascal → pas2c (Pascal-to-C) → C → Emscripten → WebAssembly
@@ -88,25 +88,25 @@ webwars/
 └── scripts/                    # Build scripts
 ```
 
-## What We Built
+## What I Built
 
-This isn't just "compile and ship." Hedgewars was designed as a desktop app with a Qt/C++ frontend (~95K lines), TCP socket IPC, and OpenGL rendering. None of that works in a browser. Here's what we had to build or rewrite:
+This isn't just "compile and ship." Hedgewars was designed as a desktop app with a Qt/C++ frontend (~95K lines), TCP socket IPC, and OpenGL rendering. None of that works in a browser. Here's what I had to build or rewrite:
 
 ### Web Frontend (replaces Qt desktop client)
 
-The original Hedgewars client is a full Qt desktop application that handles the lobby, room management, team configuration, and game launch. We replaced all of it with a single-page web app (~730 lines). The lobby connects to the real Hedgewars server through our WebSocket gateway, implementing the same text-based protocol the Qt client speaks.
+The original Hedgewars client is a full Qt desktop application that handles the lobby, room management, team configuration, and game launch. I replaced all of it with a single-page web app (~730 lines). The lobby connects to the real Hedgewars server through my WebSocket gateway, implementing the same text-based protocol the Qt client speaks.
 
 A key design decision: the game engine loads dynamically into the lobby page via `<script>` injection rather than opening a new window. This keeps the WebSocket connection alive during gameplay — engine messages (EM) relay directly through function calls in the same JS context. `window.open()` is blocked by popup blockers in incognito mode, and navigating away would kill the connection.
 
 ### Engine Modifications
 
-We patched the Pascal engine source in several places to make it work in a browser:
+I patched the Pascal engine source in several places to make it work in a browser:
 
 - **IPC bridge** (`ipc_browser.c`): Replaces SDL_net TCP sockets with a C shim that routes through `EM_JS` calls to a JavaScript message queue. The engine's `IPCCheckSock` reads from JS, and `SendIPCRaw` writes to JS — same interface, completely different transport.
 
-- **Main loop** (`web_entry.c`): The engine's `hwengine_MainLoop` is a blocking `while` loop — fatal in a browser. We intercept it with the `--wrap` linker flag and replace it with `emscripten_set_main_loop` (requestAnimationFrame). A multi-tick catch-up system uses the engine's `cOnlyStats` flag to run game logic at real-time speed while only rendering the final tick per frame.
+- **Main loop** (`web_entry.c`): The engine's `hwengine_MainLoop` is a blocking `while` loop — fatal in a browser. I intercept it with the `--wrap` linker flag and replace it with `emscripten_set_main_loop` (requestAnimationFrame). A multi-tick catch-up system uses the engine's `cOnlyStats` flag to run game logic at real-time speed while only rendering the final tick per frame.
 
-- **WASM soft-exit** (`hwengine.pas`): SDL teardown (`SDL_Quit`, `SDL_GL_DeleteContext`) crashes Emscripten with `RuntimeError: unreachable`. We skip `freeEverything` in WASM builds entirely — page reload is the only clean reset in a browser.
+- **WASM soft-exit** (`hwengine.pas`): SDL teardown (`SDL_Quit`, `SDL_GL_DeleteContext`) crashes Emscripten with `RuntimeError: unreachable`. I skip `freeEverything` in WASM builds entirely — page reload is the only clean reset in a browser.
 
 - **JSPI migration**: Switched from ASYNCIFY (which instruments every function, ~50% overhead) to JavaScript Promise Integration (`-sJSPI`), cutting the WASM binary from 5.15MB to 3.97MB. This required eliminating all JS-frame suspends — `SDL_Delay` in init paths replaced with busy-polling, `SDL_EMSCRIPTEN_ASYNCIFY` hint disabled before engine init.
 
@@ -114,17 +114,17 @@ We patched the Pascal engine source in several places to make it work in a brows
 
 The engine's original renderer made one `glDrawArrays` call per sprite — ~200+ draw calls per frame. Through Chrome's ANGLE layer (WebGL → D3D11), each GL call becomes a D3D resource operation. This pushed GPU frame time to 40-55ms (well over the 16ms budget for 60fps).
 
-We added a sprite batch system in `uRender.pas`: a 1024-quad buffer that accumulates vertices and flushes in a single draw call per texture. All sprite functions (`DrawTextureRotatedF`, `DrawHedgehog`, `DrawSpriteRotatedF`, etc.) were converted from matrix-stack transforms to CPU-side vertex math feeding into `BatchQuad`. GPU frame time dropped from 40-55ms to 1-9ms.
+I added a sprite batch system in `uRender.pas`: a 1024-quad buffer that accumulates vertices and flushes in a single draw call per texture. All sprite functions (`DrawTextureRotatedF`, `DrawHedgehog`, `DrawSpriteRotatedF`, etc.) were converted from matrix-stack transforms to CPU-side vertex math feeding into `BatchQuad`. GPU frame time dropped from 40-55ms to 1-9ms.
 
 ### Multiplayer Sync
 
 Hedgewars multiplayer is deterministic — the server doesn't run game logic, it just relays player inputs. Each engine sends its actions as IPC messages, which get base64-encoded and sent as `EM` commands through the server to other players. The receiving engine injects them into its message queue and replays them identically.
 
-The tricky parts: `IPCCheckSock` must run before and between `DoTimer` catch-up ticks (not just after), or incoming messages aren't parsed into the command queue in time and the engine enters lag mode. Background tabs throttle `requestAnimationFrame` to ~1fps, so we fall back to `setInterval` at 10Hz with rendering disabled to keep game logic in sync.
+The tricky parts: `IPCCheckSock` must run before and between `DoTimer` catch-up ticks (not just after), or incoming messages aren't parsed into the command queue in time and the engine enters lag mode. Background tabs throttle `requestAnimationFrame` to ~1fps, so I fall back to `setInterval` at 10Hz with rendering disabled to keep game logic in sync.
 
 ### WebSocket Gateway
 
-The Hedgewars server speaks a text-based TCP protocol (newline-delimited messages, double-newline between commands). Browsers can't open raw TCP sockets, so we wrote a Node.js gateway that bridges WebSocket to TCP. The browser sends JSON arrays (`["NICK","player1"]`), the gateway converts them to the HW wire format (`NICK\nplayer1\n\n`), and vice versa. Each browser connection gets its own TCP connection to the server.
+The Hedgewars server speaks a text-based TCP protocol (newline-delimited messages, double-newline between commands). Browsers can't open raw TCP sockets, so I wrote a Node.js gateway that bridges WebSocket to TCP. The browser sends JSON arrays (`["NICK","player1"]`), the gateway converts them to the HW wire format (`NICK\nplayer1\n\n`), and vice versa. Each browser connection gets its own TCP connection to the server.
 
 ### Admin Panel
 
@@ -136,7 +136,7 @@ Features:
 - Visitor log with city/country/ISP, filterable by bot status
 - 24-hour connection history charts
 
-On day one we discovered that ~99% of "unique visitors" were actually bots, scanners, and cloud-hosted probes (LeakIX, Censys, Onyphe, etc.). The only reliable signal for real players is the 187MB `.data` file download — bots never fetch it.
+On day one I discovered that ~99% of "unique visitors" were actually bots, scanners, and cloud-hosted probes (LeakIX, Censys, Onyphe, etc.). The only reliable signal for real players is the 187MB `.data` file download — bots never fetch it.
 
 To run the admin panel:
 ```bash
