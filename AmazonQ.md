@@ -50,12 +50,12 @@ Browser port of Hedgewars using pas2c → Emscripten pipeline with WebSocket mul
 - ✅ **Multiplayer gameplay** - Two players can play a full game, turns alternate, EM relay working
 - ✅ **Admin panel** - Flask + Leaflet dashboard monitoring prod traffic, bot detection, geo map
 - ✅ **Dev server secured** - nginx reverse proxy, HTTPS + basic auth, all direct ports closed
-- ✅ **README expanded** - pas2c credit, "What We Built" technical section, Qt replacement documented
+- ✅ **README expanded** - pas2c credit, "What I Built" technical section, Qt replacement documented, first person singular
 - ✅ **Admin panel published** - Infra details extracted to .env (gitignored), code on GitHub
 - ✅ **Admin panel filters** - "Show bots" and "Players only" filters for map, log, pages breakdown
 - ✅ **Admin systemd service** - webwars-admin.service, proper restarts via systemctl
 - ✅ **Dev IP hidden** - HIDDEN_IPS set excludes dev IP from all dashboard views
-- ✅ **GitHub language stats fixed** - linguist-vendored on upstream tree, un-vendored our new files
+- ✅ **GitHub language stats fixed** - linguist-vendored on upstream tree, un-vendored new files
 - ✅ **erdriven fix** - Only mark OTHER players' teams as externally driven (was marking all teams)
 - ✅ **TN ordering** - Game type sent before config, matching Qt client order
 - ✅ **IPCCheckSock timing** - Called before/between DoTimer ticks so EM messages are in headcmd queue

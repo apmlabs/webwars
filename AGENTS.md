@@ -456,35 +456,12 @@ Browsers throttle `requestAnimationFrame` to ~1fps or less for background tabs. 
 
 ## 🎯 NEXT STEPS
 
-### Phase 1: Hedgewars Server (Track B — Foundation)
-1. Compile hedgewars-server Haskell binary using cabal (GHC 9.4.7 + cabal 3.8.1 available)
-2. Test server starts and accepts TCP connections on port 46631
-3. Test basic protocol: NICK → PROTO → lobby join
-
-### Phase 2: WebSocket Gateway (Track B — Bridge)
-1. Update gateway/src/index.js — handle newline-delimited protocol framing
-2. Test browser → WS → gateway → TCP → server round-trip
-3. Handle connection lifecycle (disconnect cleanup)
-
-### Phase 3: Web Frontend — Lobby (Track B — UI)
-1. Create web/lobby.html — main menu with Local Play / Online Play
-2. Implement JS network client (WebSocket protocol handler)
-3. Login flow: NICK + PROTO handshake
-4. Room list, create room, join room
-5. Team/scheme/map configuration UI
-6. Game launch: START_GAME → engine IPC generation
-
-### Phase 4: Multiplayer Engine Integration
-1. Modify pre.js to accept external IPC config (not just hardcoded hotseat)
-2. Route EM messages: engine → JS → WS → server → WS → other engines
-3. Handle ROUNDFINISHED and game end
-4. Test 2-player game end-to-end
-
-### Phase 5: Polish
-1. Campaign/mission launcher in frontend
-2. Game style (Lua script) selector
-3. Optimize asset loading (lazy-load)
-4. HTTPS + domain name
+### Polish & Growth
+1. Two-device multiplayer testing (desync detection)
+2. Game config UI (map/scheme/ammo selection in lobby)
+3. Campaign/mission launcher in frontend
+4. Game style (Lua script) selector
+5. Optimize asset loading (lazy-load or split .data file)
 
 ---
 
@@ -503,7 +480,6 @@ Browsers throttle `requestAnimationFrame` to ~1fps or less for background tabs. 
 - ✅ Build system reliable
 
 **Remaining:**
-- ✅ Game renders on canvas
-- ✅ Input controls work
-- ⏳ Game restart without crash
-- ⏳ Multiplayer via WebSocket
+- ⏳ Campaign/mission launcher
+- ⏳ Game config UI (map/scheme selection)
+- ⏳ Multiplayer desync detection
