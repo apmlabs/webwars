@@ -279,12 +279,13 @@ def api_history():
 def api_visitors():
     """Recent visitor log."""
     conn = get_db()
+    player_ips = {r[0] for r in conn.execute("SELECT DISTINCT ip FROM visitors WHERE page LIKE '%.data'").fetchall()}
     rows = conn.execute(f'''
         SELECT ip, page, city, country, isp, timestamp, user_agent
         FROM visitors WHERE ip NOT IN ({_HIDDEN_SQL}) ORDER BY timestamp DESC LIMIT 100
     ''').fetchall()
     conn.close()
-    return jsonify([{**dict(r), 'cloud': is_cloud_ip(r['isp'])} for r in rows])
+    return jsonify([{**dict(r), 'cloud': is_cloud_ip(r['isp']), 'played': r['ip'] in player_ips} for r in rows])
 
 if __name__ == '__main__':
     init_db()

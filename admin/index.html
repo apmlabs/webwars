@@ -51,6 +51,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="stat"><div class="stat-value purple" id="s-humans">-</div><div class="stat-label">Humans</div></div>
     <div class="stat"><div class="stat-value blue" id="s-sessions">-</div><div class="stat-label">Requests</div></div>
     <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8em;color:#8b949e"><input type="checkbox" id="show-bots" style="cursor:pointer">Show bots</label>
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.8em;color:#3fb950"><input type="checkbox" id="players-only" checked style="cursor:pointer">Players only</label>
   </div>
 </div>
 <div id="main">
@@ -83,14 +84,19 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 const markers = L.layerGroup().addTo(map);
 let lastMapData = [], lastVisitors = [], lastPages = {};
 const showBotsEl = document.getElementById('show-bots');
-showBotsEl.addEventListener('change', () => { renderMap(lastMapData); renderLog(lastVisitors); renderPages(lastPages); });
+const playersOnlyEl = document.getElementById('players-only');
+const rerender = () => { renderMap(lastMapData); renderLog(lastVisitors); renderPages(lastPages); };
+showBotsEl.addEventListener('change', rerender);
+playersOnlyEl.addEventListener('change', rerender);
 
 function renderMap(data) {
   lastMapData = data;
   const showBots = showBotsEl.checked;
+  const playersOnly = playersOnlyEl.checked;
   markers.clearLayers();
   data.forEach(v => {
     if (v.cloud && !showBots) return;
+    if (playersOnly && !v.played) return;
     const color = v.cloud ? '#484f58' : v.active ? '#3fb950' : v.played ? '#58a6ff' : '#8b949e';
     const radius = v.cloud ? 3 : v.active ? 8 : v.played ? 6 : 4;
     const status = v.cloud ? '☁️ Cloud/Bot' : v.active ? '🟢 Active now' : v.played ? '🎮 Played' : '👁 Visited';
@@ -103,7 +109,8 @@ function renderMap(data) {
 function renderLog(data) {
   lastVisitors = data;
   const vl = document.getElementById('visitor-log');
-  const filtered = data.filter(v => !v.cloud || showBotsEl.checked);
+  const playersOnly = playersOnlyEl.checked;
+  const filtered = data.filter(v => (!v.cloud || showBotsEl.checked) && (!playersOnly || v.played));
   vl.innerHTML = filtered.slice(0, 50).map(v =>
     `<div class="log-entry">
       <span class="ip">${v.ip}</span>
