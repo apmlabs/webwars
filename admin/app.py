@@ -206,9 +206,15 @@ def api_live():
     all_visitors = conn.execute(f'SELECT DISTINCT ip, isp FROM visitors WHERE isp IS NOT NULL AND ip NOT IN ({_HIDDEN_SQL})').fetchall()
     humans = sum(1 for v in all_visitors if not is_cloud_ip(v['isp']))
     played = conn.execute(f"SELECT COUNT(DISTINCT ip) FROM visitors WHERE page LIKE '%%.data' AND ip NOT IN ({_HIDDEN_SQL})").fetchone()[0]
-    active_5m = conn.execute(f'SELECT COUNT(DISTINCT ip) FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL})', (now - 300,)).fetchone()[0]
-
     player_ips = {r[0] for r in conn.execute("SELECT DISTINCT ip FROM visitors WHERE page LIKE '%.data'").fetchall()}
+    active_5m = conn.execute(f'SELECT DISTINCT ip, isp FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL})', (now - 300,)).fetchall()
+    active = {'total': len(active_5m), 'human': 0, 'player': 0, 'human_player': 0}
+    for r in active_5m:
+        h = not is_cloud_ip(r['isp'])
+        p = r['ip'] in player_ips
+        if h: active['human'] += 1
+        if p: active['player'] += 1
+        if h and p: active['human_player'] += 1
 
     pages = conn.execute(f'''
         SELECT ip, page, isp, COUNT(*) as c FROM visitors WHERE timestamp > ? AND ip NOT IN ({_HIDDEN_SQL}) GROUP BY ip, page, isp ORDER BY c DESC
@@ -234,7 +240,7 @@ def api_live():
     return jsonify({
         'ws_connections': snap['ws_connections'] if snap else 0,
         'hw_connections': snap['hw_connections'] if snap else 0,
-        'active_5m': active_5m,
+        'active_5m': active,
         'humans': humans,
         'played': played,
         'total_sessions': total_sessions,

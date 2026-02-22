@@ -81,12 +81,21 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 }).addTo(map);
 
 const markers = L.layerGroup().addTo(map);
-let lastMapData = [], lastVisitors = [], lastPages = {};
+let lastMapData = [], lastVisitors = [], lastPages = {}, lastLive = {};
 const showBotsEl = document.getElementById('show-bots');
 const playersOnlyEl = document.getElementById('players-only');
-const rerender = () => { renderMap(lastMapData); renderLog(lastVisitors); renderPages(lastPages); };
+const rerender = () => { renderStats(); renderMap(lastMapData); renderLog(lastVisitors); renderPages(lastPages); };
 showBotsEl.addEventListener('change', rerender);
 playersOnlyEl.addEventListener('change', rerender);
+
+function activeKey() {
+  const p = playersOnlyEl.checked, b = showBotsEl.checked;
+  return p ? (b ? 'player' : 'human_player') : b ? 'total' : 'human';
+}
+function renderStats() {
+  const a = lastLive.active_5m || {};
+  document.getElementById('s-active').textContent = a[activeKey()] || 0;
+}
 
 function renderMap(data) {
   lastMapData = data;
@@ -163,8 +172,9 @@ async function refresh() {
     ]);
 
     // Stats
+    lastLive = live;
     document.getElementById('s-ws').textContent = live.ws_connections;
-    document.getElementById('s-active').textContent = live.active_5m;
+    renderStats();
     document.getElementById('s-played').textContent = live.played;
     document.getElementById('s-humans').textContent = live.humans;
     document.getElementById('s-sessions').textContent = live.total_sessions;
