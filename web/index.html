@@ -12,7 +12,8 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-sy
 #canvas-wrap{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#000}
 canvas{display:block;background:#000;visibility:hidden}
 
-#top-bar .logo{font-weight:800;font-size:15px;letter-spacing:1px;background:linear-gradient(135deg,#4fc3f7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#top-bar .logo{font-weight:900;font-size:17px;letter-spacing:2px;background:linear-gradient(135deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#9b59b6);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shine 3s linear infinite;text-shadow:none}
+@keyframes shine{to{background-position:200% center}}
 #top-bar .sep{width:1px;height:18px;background:#2a3352;margin:0 14px}
 #status-text{font-size:12px;color:#8892b0}
 .hint-text{font-size:11px;color:#5a6480;margin-left:12px}
@@ -61,6 +62,7 @@ kbd{display:inline-block;background:#141830;border:1px solid #232a48;border-radi
     <span class="hint-text">Right-click to pick a weapon · Space to fire · Arrow keys to move</span>
     <span class="spacer"></span>
     <a class="bar-btn" href="lobby.html">🌐 Multiplayer</a>
+    <a class="bar-btn" href="https://github.com/apmlabs/webwars" target="_blank">⭐ GitHub</a>
     <button class="bar-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
     <button class="bar-btn accent" onclick="toggleControls()">Controls</button>
   </div>
