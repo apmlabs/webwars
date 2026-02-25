@@ -26,5 +26,4 @@ astring ulocale_FormatA_5(astring fmt,astring arg1,astring arg2,astring arg3,ast
 astring ulocale_FormatA_4(astring fmt,astring arg1,astring arg2,astring arg3);
 astring ulocale_FormatA_3(astring fmt,astring arg1,astring arg2);
 astring ulocale_FormatA_2(astring fmt,astring arg1);
-void ulocale_LoadLocaleWrapper(PChar path,PChar userpath,PChar filename);
 

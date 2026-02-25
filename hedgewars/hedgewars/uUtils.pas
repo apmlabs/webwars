@@ -611,8 +611,10 @@ begin
 CheckCJKFont:= font;
 
 {$IFNDEF MOBILE}
+{$IFNDEF EMSCRIPTEN}
 // remove chinese fonts for now
 if (font >= CJKfnt16) or (length(s) = 0) then
+{$ENDIF}
 {$ENDIF}
     exit;
 

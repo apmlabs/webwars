@@ -1596,7 +1596,6 @@ void usound_StopSoundChan_2(LongInt chn,LongInt fadems)
 void usound_PlayMusic()
 {
     string255 s;
-    return;
     if((_strcompare(MusicFN, __str3)) || !isMusicEnabled)
     {
         return;
@@ -1610,7 +1609,7 @@ void usound_PlayMusic()
         s = _strconcat(__str11, MusicFN);
     }
     uconsole_WriteToConsole(_strappend(_strconcat(msgLoading, s), 0x20));
-    Mus = Mix_LoadMUS_RW(uphysfslayer_rwopsOpenRead(s));
+    Mus = Mix_LoadMUS_RW(uphysfslayer_rwopsOpenRead(s), 1);
     udebug_SDLCheck(Mus != NULL, __str12, false);
     if(Mus != NULL)
     {
@@ -1638,7 +1637,7 @@ void usound_PlayMusic()
         if(_strncompare(s, __str3))
         {
             uconsole_WriteLnToConsole(_strappend(_strconcat(msgLoading, s), 0x20));
-            Mus = Mix_LoadMUS_RW(uphysfslayer_rwopsOpenRead(s));
+            Mus = Mix_LoadMUS_RW(uphysfslayer_rwopsOpenRead(s), 1);
             udebug_SDLCheck(Mus != NULL, __str12, false);
             if(Mus != NULL)
             {
@@ -1757,7 +1756,7 @@ void usound_PauseMusic()
     }
     if(Mus != NULL)
     {
-        Mix_PauseMusic(Mus);
+        Mix_PauseMusic();
     }
 };
 void usound_ResumeMusic()
@@ -1768,7 +1767,7 @@ void usound_ResumeMusic()
     }
     if(Mus != NULL)
     {
-        Mix_ResumeMusic(Mus);
+        Mix_ResumeMusic();
     }
 };
 void usound_ChangeMusic(string255 musicname)

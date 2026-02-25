@@ -697,8 +697,15 @@ void uworld_DrawWorld(LongInt Lag)
     }
     if(cStereoMode == smNone)
     {
-        urender_RenderClear();
+        urender_RenderClear_0();
         uworld_DrawWorldStereo(Lag, rmDefault);
+    }
+    else
+    {
+        urender_RenderClear_1(rmLeftEye);
+        uworld_DrawWorldStereo(Lag, rmLeftEye);
+        urender_RenderClear_1(rmRightEye);
+        uworld_DrawWorldStereo(0, rmRightEye);
     }
     urender_FinishRender();
 };

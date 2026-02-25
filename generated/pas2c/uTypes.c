@@ -881,18 +881,6 @@ string255 __attribute__((overloadable)) fpcrtl_GetEnumName(int dummy, const THWF
     case fntChat:
         return fpcrtl_make_string("fntChat");
         break;
-    case CJKfnt16:
-        return fpcrtl_make_string("CJKfnt16");
-        break;
-    case CJKfntBig:
-        return fpcrtl_make_string("CJKfntBig");
-        break;
-    case CJKfntSmall:
-        return fpcrtl_make_string("CJKfntSmall");
-        break;
-    case CJKfntChat:
-        return fpcrtl_make_string("CJKfntChat");
-        break;
     default: assert(0);
         return fpcrtl_make_string("nonsense");
     }

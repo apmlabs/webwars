@@ -208,14 +208,9 @@ void uchat_AdjustToUIScale()
     if(Fontz[fntChat].Height != fntSize)
     {
         Fontz[fntChat].Height = fntSize;
-        Fontz[CJKfntChat].Height = fntSize;
         if(Fontz[fntChat].Handle != NULL)
         {
             ustore_LoadFont(fntChat);
-        }
-        if(Fontz[CJKfntChat].Handle != NULL)
-        {
-            ustore_LoadFont(CJKfntChat);
         }
     }
     fntSizePx = fpcrtl_round(cFontPxToPtRatio * fntSize);

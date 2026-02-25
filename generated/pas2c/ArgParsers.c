@@ -1,23 +1,23 @@
 #include "fpcrtl.h"
 
 #include "ArgParsers.h"
-LongInt operatingsystem_parameter_argc = 0;
-pointer operatingsystem_parameter_argv = NULL;
-pointer operatingsystem_parameter_envp = NULL;
 #include "uVariables.h"
 #include "uTypes.h"
 #include "uUtils.h"
 #include "uSound.h"
 #include "uConsts.h"
-static const string255 __str62 = STRINIT("Please use --help to see possible arguments and their usage.");
-static const string255 __str61 = STRINIT("\".");
-static const string255 __str60 = STRINIT("Attempting to play demo file \"");
-static const string255 __str59 = STRINIT("You must specify a demo file.");
-static const string255 __str58 = STRINIT("The \"--internal\" option should not be manually used!");
-static const string255 __str57 = STRINIT(".");
-static const string255 __str56 = STRINIT("--internal");
-static const string255 __str55 = STRINIT("\" is not a valid option.");
-static const string255 __str54 = STRINIT("Lua test file specified: ");
+static const string255 __str65 = STRINIT("Please use --help to see possible arguments and their usage.");
+static const string255 __str64 = STRINIT("\".");
+static const string255 __str63 = STRINIT("Attempting to play demo file \"");
+static const string255 __str62 = STRINIT("You must specify a demo file.");
+static const string255 __str61 = STRINIT("The \"--internal\" option should not be manually used!");
+static const string255 __str60 = STRINIT(".");
+static const string255 __str59 = STRINIT("--internal");
+static const string255 __str58 = STRINIT("\" is not a valid option.");
+static const string255 __str57 = STRINIT("Lua test file specified: ");
+static const string255 __str56 = STRINIT("\"!");
+static const string255 __str55 = STRINIT(" expects a string, you passed \"");
+static const string255 __str54 = STRINIT("ERROR: ");
 static const string255 __str53 = STRINIT("--");
 static const string255 __str52 = STRINIT("ERROR: use of --port is not allowed!");
 static const string255 __str51 = STRINIT("  --lua-test <path to script>: Run a Lua test script");
@@ -74,20 +74,6 @@ static const string255 __str1 = STRINIT("      /\\\\\\\\\\\\\\\\\\\\\\\\        
 static const string255 __str0 = STRINIT("                                                                ");
 static boolean isInternal;
 static boolean helpCommandUsed;
-typedef PChar PCharArray[(255 + 1)];
-typedef PCharArray * PPCharArray;
-LongInt argparsers_ParamCount()
-{
-    LongInt paramcount_result;
-    paramcount_result = operatingsystem_parameter_argc - 1;
-    return paramcount_result;
-};
-string255 argparsers_ParamStr(LongInt i)
-{
-    string255 paramstr_result;
-    paramstr_result = fpcrtl_StrPas((*((PPCharArray)operatingsystem_parameter_argv))[i]);
-    return paramstr_result;
-};
 void argparsers_GciEasterEgg()
 {
     fpcrtl_writeLn(stdout, __str0);
@@ -199,8 +185,22 @@ string255 argparsers_parseNick(string255 nick)
 void argparsers_setStereoMode(LongInt tmp)
 {
     GrayScale = false;
-    UNUSED (tmp);
-    cStereoMode = smNone;
+    if((tmp > 6) && (tmp < 13))
+    {
+        GrayScale = true;
+        cStereoMode = ((TStereoMode)uutils_Max(0, uutils_Min((8), tmp - 6)));
+    }
+    else
+    {
+        if(tmp <= 6)
+        {
+            cStereoMode = ((TStereoMode)uutils_Max(0, uutils_Min((8), tmp)));
+        }
+        else
+        {
+            cStereoMode = ((TStereoMode)uutils_Max(0, uutils_Min((8), tmp - 6)));
+        }
+    }
 };
 void argparsers_startVideoRecording(LongInt (*paramIndex))
 {
@@ -221,6 +221,10 @@ string255 argparsers_getstringParameter(string255 str,LongInt (*paramIndex),bool
     string255 getstringparameter_result;
     ++(*paramIndex);
     (*wrongParameter) = (_strcompare(str, __str13)) || (_strcompare(fpcrtl_copy(str, 1, 2), __str53));
+    if((*wrongParameter))
+    {
+        fpcrtl_writeLn(stderr, _strconcat(_strconcat(_strconcat(_strconcat(__str54, fpcrtl_ParamStr((*paramIndex) - 1)), __str55), str), __str56));
+    }
     getstringparameter_result = str;
     return getstringparameter_result;
 };
@@ -336,7 +340,7 @@ boolean argparsers_parseParameter(string255 cmd,string255 arg,LongInt (*paramInd
              break;
      case 20:argparsers_setZoom(arg, &((*paramIndex)), &(parseparameter_result));
              break;
-     case 21:isInternal = true;
+     case 21:;
              break;
      case 22:argparsers_setIpcPort(argparsers_getLongIntParameter(arg, &((*paramIndex)), &(parseparameter_result)), &(parseparameter_result));
              break;
@@ -364,7 +368,7 @@ boolean argparsers_parseParameter(string255 cmd,string255 arg,LongInt (*paramInd
                  cTestLua = true;
                  usound_SetSound(false);
                  cScriptName = argparsers_getstringParameter(arg, &((*paramIndex)), &(parseparameter_result));
-                 fpcrtl_writeLn(stdout, _strconcat(__str54, cScriptName));
+                 fpcrtl_writeLn(stdout, _strconcat(__str57, cScriptName));
              }
              break;
      case 34:cHolidaySilliness = false;
@@ -382,7 +386,7 @@ boolean argparsers_parseParameter(string255 cmd,string255 arg,LongInt (*paramInd
                   }
                   else
                   {
-                      fpcrtl_writeLn(stderr, _strconcat(_strprepend(0x22, cmd), __str55));
+                      fpcrtl_writeLn(stderr, _strconcat(_strprepend(0x22, cmd), __str58));
                       parseparameter_result = true;
                   }
               }}
@@ -395,8 +399,8 @@ void argparsers_parseCommandLine()
     LongInt index;
     LongInt nextIndex;
     boolean wrongParameter;
-    paramIndex = 0;
-    paramTotal = argparsers_ParamCount();
+    paramIndex = 1;
+    paramTotal = fpcrtl_ParamCount();
     wrongParameter = false;
     while(paramIndex <= paramTotal)
     {
@@ -409,7 +413,7 @@ void argparsers_parseCommandLine()
         {
             nextIndex = index + 1;
         }
-        wrongParameter = argparsers_parseParameter(argparsers_ParamStr(index), argparsers_ParamStr(nextIndex), &(paramIndex));
+        wrongParameter = argparsers_parseParameter(fpcrtl_ParamStr(index), fpcrtl_ParamStr(nextIndex), &(paramIndex));
         ++paramIndex;
     }
     if(wrongParameter == true)
@@ -419,34 +423,34 @@ void argparsers_parseCommandLine()
 };
 void argparsers_GetParams()
 {
-    isInternal = _strcompare(argparsers_ParamStr(1), __str56);
+    isInternal = _strcompare(fpcrtl_ParamStr(1), __str59);
     helpCommandUsed = false;
-    UserPathPrefix = fpcrtl_str2astr(__str57);
+    UserPathPrefix = fpcrtl_str2astr(__str60);
     PathPrefix = fpcrtl_str2astr(cDefaultPathPrefix);
     recordFileName = __str13;
     argparsers_parseCommandLine();
-    if(isInternal && (argparsers_ParamCount() <= 1))
+    if(isInternal && (fpcrtl_ParamCount() <= 1))
     {
-        fpcrtl_writeLn(stderr, __str58);
+        fpcrtl_writeLn(stderr, __str61);
         GameType = gmtBadSyntax;
     }
     if(!helpCommandUsed)
     {
         if((!cTestLua && !isInternal) && (_strcompare(recordFileName, __str13)))
         {
-            fpcrtl_writeLn(stderr, __str59);
+            fpcrtl_writeLn(stderr, __str62);
             GameType = gmtBadSyntax;
         }
         else
         {
             if(_strncompare(recordFileName, __str13))
             {
-                fpcrtl_writeLn(stdout, _strconcat(_strconcat(__str60, recordFileName), __str61));
+                fpcrtl_writeLn(stdout, _strconcat(_strconcat(__str63, recordFileName), __str64));
             }
         }
     }
     if(GameType == gmtBadSyntax)
     {
-        fpcrtl_writeLn(stderr, __str62);
+        fpcrtl_writeLn(stderr, __str65);
     }
 };

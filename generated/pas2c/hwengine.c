@@ -1,6 +1,44 @@
 #include "fpcrtl.h"
-
-#include "hwengine.h"
+#include "SDLh.h"
+#include "uMisc.h"
+#include "uConsole.h"
+#include "uGame.h"
+#include "uConsts.h"
+#include "uLand.h"
+#include "uAmmos.h"
+#include "uVisualGears.h"
+#include "uGears.h"
+#include "uStore.h"
+#include "uWorld.h"
+#include "uInputHandler.h"
+#include "uSound.h"
+#include "uScript.h"
+#include "uTeams.h"
+#include "uStats.h"
+#include "uIO.h"
+#include "uLocale.h"
+#include "uChat.h"
+#include "uAI.h"
+#include "uAIMisc.h"
+#include "uAILandMarks.h"
+#include "uLandTexture.h"
+#include "uCollisions.h"
+#include "SysUtils.h"
+#include "uTypes.h"
+#include "uVariables.h"
+#include "uCommands.h"
+#include "uUtils.h"
+#include "uCaptions.h"
+#include "uDebug.h"
+#include "uCommandHandlers.h"
+#include "uLandPainted.h"
+#include "uPhysFSLayer.h"
+#include "uCursor.h"
+#include "uRandom.h"
+#include "ArgParsers.h"
+#include "uVisualGearsHandlers.h"
+#include "uTextures.h"
+#include "uRender.h"
 static const string255 __str44 = STRINIT("Preview sent, disconnect");
 static const string255 __str43 = STRINIT("Sending preview...");
 static const string255 __str42 = STRINIT("Freeing resources...");
@@ -46,7 +84,10 @@ static const string255 __str3 = STRINIT("/Screenshots/mapdump_");
 static const string255 __str2 = STRINIT("onGameStart");
 static const string255 __str1 = STRINIT("sendlanddigest");
 static const string255 __str0 = STRINIT("Underwater");
-boolean hwengine_DoTimer(LongInt Lag)
+void preInitEverything_0();
+void initEverything_1(boolean complete);
+void freeEverything_1(boolean complete);
+boolean DoTimer(LongInt Lag)
 {
     boolean dotimer_result;
     string255 s;
@@ -160,7 +201,7 @@ boolean hwengine_DoTimer(LongInt Lag)
     }
     return dotimer_result;
 };
-void hwengine_MainLoop()
+void MainLoop()
 {
     TSDL_Event event;
     LongWord PrevTime;
@@ -307,7 +348,7 @@ void hwengine_MainLoop()
         CurrTime = SDL_GetTicks();
         if((PrevTime + ((LongWord)cTimerInterval)) <= CurrTime)
         {
-            isTerminated = isTerminated || hwengine_DoTimer(((int64_t) (CurrTime)) - ((int64_t) (PrevTime)));
+            isTerminated = isTerminated || DoTimer(((int64_t) (CurrTime)) - ((int64_t) (PrevTime)));
             PrevTime = CurrTime;
         }
         else
@@ -317,7 +358,7 @@ void hwengine_MainLoop()
         uio_IPCCheckSock();
     }
 };
-void hwengine_GameRoutine()
+void GameRoutine()
 {
     string255 s;
     LongInt i;
@@ -328,7 +369,7 @@ void hwengine_GameRoutine()
     {i = 0;
      LongInt i__end__ = fpcrtl_ParamCount();
      if (i <= i__end__) do {
-                               uutils_AddFileLog(_strconcat(_strconcat(uutils_IntToStr(i), __str20), argparsers_ParamStr(i)));
+                               uutils_AddFileLog(_strconcat(_strconcat(uutils_IntToStr(i), __str20), fpcrtl_ParamStr(i)));
                            } while(i++ != i__end__);}
     uconsole_WriteToConsole(__str21);
     if(!cOnlyStats)
@@ -439,22 +480,22 @@ void hwengine_GameRoutine()
     {
         return;
     }
-    hwengine_MainLoop();
+    MainLoop();
 };
-void hwengine_Game()
+void Game()
 {
-    hwengine_initEverything(true);
-    hwengine_GameRoutine();
+    initEverything_1(true);
+    GameRoutine();
     uconsole_WriteLnToConsole(__str41);
 };
-void hwengine_preInitEverything()
+void preInitEverything_0()
 {
     allOK = true;
     fpcrtl_randomize();
     uvariables_preInitModule();
     usound_preInitModule();
 };
-void hwengine_initEverything(boolean complete)
+void initEverything_1(boolean complete)
 {
     PathPrefix = _strappendA(PathPrefix, 0x0);
     UserPathPrefix = _strappendA(UserPathPrefix, 0x0);
@@ -493,7 +534,7 @@ void hwengine_initEverything(boolean complete)
         uworld_initModule();
     }
 };
-void hwengine_freeEverything(boolean complete)
+void freeEverything_1(boolean complete)
 {
     if(complete)
     {
@@ -531,10 +572,10 @@ void hwengine_freeEverything(boolean complete)
     uphysfslayer_freeModule();
     uscript_freeModule();
 };
-void hwengine_GenLandPreview()
+void GenLandPreview()
 {
     TPreviewAlpha Preview;
-    hwengine_initEverything(false);
+    initEverything_1(false);
     uio_InitIPC();
     if(allOK)
     {
@@ -550,36 +591,37 @@ void hwengine_GenLandPreview()
         uio_SendIPCRaw(&(MaxHedgehogs), sizeof(Byte));
         uconsole_WriteLnToConsole(__str44);
     }
-    hwengine_freeEverything(false);
+    freeEverything_1(false);
 };
-LongInt hwengine_RunEngine(LongInt argc,PPChar argv)
+int main(Integer argc,PPChar argv)
 {
-    LongInt runengine_result;
-    operatingsystem_parameter_argc = argc;
-    operatingsystem_parameter_argv = argv;
-    fpcrtl_init(argc, argv);
-    hwengine_preInitEverything();
-    argparsers_GetParams();
-    if(GameType == gmtLandPreview)
+    int main_result;
+    main_result = 0;
     {
-        hwengine_GenLandPreview();
-    }
-    else
-    {
-        if((GameType != gmtBadSyntax) && (GameType != gmtSyntaxHelp))
+        fpcrtl_init(argc, argv);
+        preInitEverything_0();
+        argparsers_GetParams();
+        if(GameType == gmtLandPreview)
         {
-            hwengine_Game();
+            GenLandPreview();
         }
+        else
+        {
+            if((GameType != gmtBadSyntax) && (GameType != gmtSyntaxHelp))
+            {
+                Game();
+            }
+        }
+        if(GameType == gmtBadSyntax)
+        {
+            return HaltUsageError;
+        }
+        if(cTestLua)
+        {
+            uconsole_WriteLnToConsole(errmsgLuaTestTerm);
+            return HaltTestUnexpected;
+        }
+        return HaltNoError;
     }
-    if(GameType == gmtBadSyntax)
-    {
-        return HaltUsageError;
-    }
-    if(cTestLua)
-    {
-        uconsole_WriteLnToConsole(errmsgLuaTestTerm);
-        return HaltTestUnexpected;
-    }
-    return HaltNoError;
-    return runengine_result;
-};
+    return main_result;
+}

@@ -851,12 +851,6 @@ end;
 procedure PlayMusic;
 var s: shortstring;
 begin
-    {$IFDEF EMSCRIPTEN}
-    // TODO: Mix_LoadMUS_RW/Mix_PauseMusic/Mix_ResumeMusic have signature
-    // mismatches between Pascal bindings and Emscripten SDL2_mixer.
-    // Fix SDLh.pas bindings before re-enabling.
-    exit;
-    {$ENDIF}
     if (MusicFN = '') or (not isMusicEnabled) then
         exit;
     if SuddenDeath and (SDMusicFN <> '') then
@@ -865,7 +859,7 @@ begin
     WriteToConsole(msgLoading + s + ' ');
 
     // Load normal music
-    Mus:= Mix_LoadMUS_RW(rwopsOpenRead(s));
+    Mus:= Mix_LoadMUS_RW(rwopsOpenRead(s), 1);
     SDLCheck(Mus <> nil, 'Mix_LoadMUS_RW', false);
     if Mus <> nil then
         WriteLnToConsole(msgOK);
@@ -887,7 +881,7 @@ begin
        if (s <> '') then
            begin
            WriteLnToConsole(msgLoading + s + ' ');
-           Mus:= Mix_LoadMUS_RW(rwopsOpenRead(s));
+           Mus:= Mix_LoadMUS_RW(rwopsOpenRead(s), 1);
            SDLCheck(Mus <> nil, 'Mix_LoadMUS_RW', false);
            if Mus <> nil then
                WriteLnToConsole(msgOK)
@@ -991,7 +985,7 @@ begin
         exit;
 
     if Mus <> nil then
-        Mix_PauseMusic(Mus);
+        Mix_PauseMusic;
 end;
 
 procedure ResumeMusic;
@@ -1000,7 +994,7 @@ begin
         exit;
 
     if Mus <> nil then
-        Mix_ResumeMusic(Mus);
+        Mix_ResumeMusic;
 end;
 
 procedure ChangeMusic(musicname: shortstring);

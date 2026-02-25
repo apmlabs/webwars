@@ -116,7 +116,7 @@ if(BUILD_ENGINE_JS)
     set(HW_DATA_DIR "${CMAKE_SOURCE_DIR}/share/hedgewars/Data")
     set(HW_DEMO_FILE "${CMAKE_SOURCE_DIR}/test.hwd")
     
-    add_flag_append(CMAKE_C_FLAGS "-sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=268435456 -sGL_UNSAFE_OPTS=1 -sGL_POOL_TEMP_BUFFERS=1 -sLZ4=1 --preload-file ${HW_DATA_DIR}@/Data --preload-file ${HW_DEMO_FILE}@/test.hwd --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
+    add_flag_append(CMAKE_C_FLAGS "-sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=268435456 -sGL_UNSAFE_OPTS=1 -sGL_POOL_TEMP_BUFFERS=1 -sLZ4=1 -sFORCE_FILESYSTEM=1 --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
 endif()
 
 #compile the c files
@@ -124,7 +124,7 @@ add_definitions(-DPAS2C)
 add_definitions(-DHWLIBRARY)
 add_definitions(-Werror=incompatible-pointer-types)
 
-add_executable(hwengine WIN32 ${engine_sources} ${CMAKE_CURRENT_SOURCE_DIR}/web_entry.c ${CMAKE_CURRENT_SOURCE_DIR}/ipc_browser.c)
+add_executable(hwengine WIN32 ${engine_sources} ${CMAKE_CURRENT_SOURCE_DIR}/web_entry.c ${CMAKE_CURRENT_SOURCE_DIR}/ipc_browser.c ${CMAKE_CURRENT_SOURCE_DIR}/physfs_probe.c)
 
 if(EMSCRIPTEN)
     target_compile_options(hwengine PRIVATE -sUSE_SDL=2 -sUSE_SDL_MIXER=2 -sUSE_SDL_IMAGE=2 -sSDL2_IMAGE_FORMATS=["png"] -sUSE_SDL_TTF=2)
@@ -147,7 +147,7 @@ if(EMSCRIPTEN)
         -fwasm-exceptions
         -Wl,--wrap=hwengine_MainLoop
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
-        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal,_mainloop_frame_bg")
+        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal,_mainloop_frame_bg,_usound_PlayMusic,_physfs_probe_open")
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
 endif()
 

@@ -372,7 +372,7 @@ const
             Height: 12;
             style: TTF_STYLE_NORMAL;
             Name: 'DejaVuSans-Bold.ttf')
-            {$IFNDEF MOBILE}, // remove chinese fonts for now
+            {$IFNDEF MOBILE}{$IFNDEF EMSCRIPTEN}, // remove chinese fonts for now
             (Handle: nil;
             Height: 12;
             style: TTF_STYLE_NORMAL;
@@ -389,7 +389,7 @@ const
             Height: 12;
             style: TTF_STYLE_NORMAL;
             Name: 'wqy-zenhei.ttc')
-            {$ENDIF}
+            {$ENDIF}{$ENDIF}
             );
 
 var

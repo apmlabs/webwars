@@ -274,30 +274,6 @@ FontzInit_tt FontzInit = {{
                               .Height = 12,
                               .style = TTF_STYLE_NORMAL,
                               .Name = STRINIT("DejaVuSans-Bold.ttf")
-                          },
-                          {
-                              .Handle = NULL,
-                              .Height = 12,
-                              .style = TTF_STYLE_NORMAL,
-                              .Name = STRINIT("wqy-zenhei.ttc")
-                          },
-                          {
-                              .Handle = NULL,
-                              .Height = 24,
-                              .style = TTF_STYLE_NORMAL,
-                              .Name = STRINIT("wqy-zenhei.ttc")
-                          },
-                          {
-                              .Handle = NULL,
-                              .Height = 10,
-                              .style = TTF_STYLE_NORMAL,
-                              .Name = STRINIT("wqy-zenhei.ttc")
-                          },
-                          {
-                              .Handle = NULL,
-                              .Height = 12,
-                              .style = TTF_STYLE_NORMAL,
-                              .Name = STRINIT("wqy-zenhei.ttc")
                           }};
 SpritesData_tt SpritesData;
 SpritesDataInit_tt SpritesDataInit = {{
@@ -5883,7 +5859,7 @@ void uvariables_initModule()
     fpcrtl_Move(SpritesDataInit, SpritesData, sizeof(SpritesData));
     fpcrtl_Move(AmmozInit, Ammoz, sizeof(Ammoz));
     {fi = 0;
-     THWFont fi__end__ = 7;
+     THWFont fi__end__ = 3;
      if (fi <= fi__end__) do {
                                  Fontz[fi].Height = fpcrtl_round(HDPIScaleFactor * FontzInit[fi].Height);
                              } while(fi++ != fi__end__);}

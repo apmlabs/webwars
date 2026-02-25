@@ -1237,7 +1237,7 @@ procedure Mix_FreeChunk(chunk: PMixChunk); cdecl; external SDL_MixerLibName;
 procedure Mix_FreeMusic(music: PMixMusic); cdecl; external SDL_MixerLibName;
 
 function  Mix_LoadWAV_RW(src: PSDL_RWops; freesrc: LongInt): PMixChunk; cdecl; external SDL_MixerLibName;
-function  Mix_LoadMUS_RW(src: PSDL_RWops): PMixMusic; cdecl; external SDL_MixerLibName;
+function  Mix_LoadMUS_RW(src: PSDL_RWops; freesrc: LongInt): PMixMusic; cdecl; external SDL_MixerLibName;
 
 function  Mix_Playing(channel: LongInt): LongInt; cdecl; external SDL_MixerLibName;
 function  Mix_PlayingMusic: LongInt; cdecl; external SDL_MixerLibName;
@@ -1245,9 +1245,9 @@ function  Mix_FadeInMusic(music: PMixMusic; loops: LongInt; ms: LongInt): LongIn
 
 function  Mix_PlayChannelTimed(channel: LongInt; chunk: PMixChunk; loops: LongInt; ticks: LongInt): LongInt; cdecl; external SDL_MixerLibName;
 function  Mix_PlayMusic(music: PMixMusic; loops: LongInt): LongInt; cdecl; external SDL_MixerLibName;
-function  Mix_PausedMusic(music: PMixMusic): LongInt; cdecl; external SDL_MixerLibName;
-function  Mix_PauseMusic(music: PMixMusic): LongInt; cdecl; external SDL_MixerLibName;
-function  Mix_ResumeMusic(music: PMixMusic): LongInt; cdecl; external SDL_MixerLibName;
+function  Mix_PausedMusic: LongInt; cdecl; external SDL_MixerLibName;
+procedure Mix_PauseMusic; cdecl; external SDL_MixerLibName;
+procedure Mix_ResumeMusic; cdecl; external SDL_MixerLibName;
 function  Mix_HaltChannel(channel: LongInt): LongInt; cdecl; external SDL_MixerLibName;
 function  Mix_HaltMusic: LongInt; cdecl; external SDL_MixerLibName;
 

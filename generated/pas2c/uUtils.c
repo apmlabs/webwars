@@ -6,18 +6,7 @@
 #include "uVariables.h"
 #include "uPhysFSLayer.h"
 #include "uDebug.h"
-static const string255 __str10 = STRINIT(" ticks. TurnTimeLeft = ");
-static const string255 __str9 = STRINIT("halt at ");
-static const string255 __str8 = STRINIT("[WARNING] Could not open log file for writing. Log will be written to stdout!");
-static const string255 __str7 = STRINIT(".log");
-static const string255 __str6 = STRINIT("/Logs/");
-static const string255 __str5 = STRINIT("/Logs");
-static const string255 __str4 = STRINIT("preview_pas2c");
-static const string255 __str3 = STRINIT("game_pas2c");
-static const string255 __str2 = STRINIT("rec");
-static const string255 __str1 = STRINIT(": ");
 static const string255 __str0 = STRINIT("");
-static PFSFile logFile;
 typedef char CharArray_tt[(255 + 1)];
 static CharArray_tt CharArray;
 string255 uutils_Trim(string255 s)
@@ -463,19 +452,11 @@ PChar uutils_Str2PChar(string255 s)
 LongWord uutils_endian(LongWord independent)
 {
     LongWord endian_result;
-    endian_result = independent;
+    endian_result = ((((independent & 0xff000000) >> 24) | ((independent & 0x00ff0000) >> 8)) | ((independent & 0x0000ff00) << 8)) | ((independent & 0x000000ff) << 24);
     return endian_result;
 };
 void uutils_AddFileLog(string255 s)
 {
-    if(logFile != NULL)
-    {
-        uphysfslayer_pfsWriteLn(logFile, _strconcat(_strconcat(uutils_IntToStr(GameTicks), __str1), s));
-    }
-    else
-    {
-        fpcrtl_writeLn(stdout, _strconcat(_strconcat(uutils_IntToStr(GameTicks), __str1), s));
-    }
 };
 void uutils_AddFileLogRaw(PChar s)
 {
@@ -491,10 +472,7 @@ THWFont uutils_CheckCJKFont(astring s,THWFont font)
     typedef widechar tmpstr_tt[(256 + 1)];
     tmpstr_tt tmpstr;
     checkcjkfont_result = font;
-    if((font >= CJKfnt16) || (fpcrtl_LengthA(s) == 0))
-    {
-        return checkcjkfont_result;
-    }
+    return checkcjkfont_result;
     l = fpcrtl_UTF8ToUnicode(((PWideChar)&(tmpstr)), fpcrtl__pcharA(s), uutils_Min((256 + 1), fpcrtl_LengthA(s))) - 1;
     i = 0;
     while(i < l)
@@ -502,7 +480,7 @@ THWFont uutils_CheckCJKFont(astring s,THWFont font)
         u = tmpstr[i];
         if((0x1100 <= u) && ((((((((((u <= 0x11ff) || ((0x2e80 <= u) && (u <= 0x2fdf))) || ((0x2ff0 <= u) && (u <= 0x31ff))) || ((0x31c0 <= u) && (u <= 0x31ef))) || ((0x3200 <= u) && (u <= 0x4dbf))) || ((0x4e00 <= u) && (u <= 0x9fff))) || ((0xac00 <= u) && (u <= 0xd7af))) || ((0xf900 <= u) && (u <= 0xfaff))) || ((0xfe30 <= u) && (u <= 0xfe4f))) || ((0xff00 <= u) && (u <= 0xffef))))
         {
-            checkcjkfont_result = ((THWFont)(font) + (((7) + 1) / 2));
+            checkcjkfont_result = ((THWFont)(font) + (((3) + 1) / 2));
             return checkcjkfont_result;
         }
         ++i;
@@ -729,41 +707,6 @@ string255 uutils_readValueFromINI(string255 key,string255 filePath)
 };
 void uutils_initModule(boolean isNotPreview)
 {
-    string255 logfileBase;
-    LongInt i;
-    if(isNotPreview)
-    {
-        if(GameType == gmtRecord)
-        {
-            logfileBase = __str2;
-        }
-        else
-        {
-            logfileBase = __str3;
-        }
-    }
-    else
-    {
-        logfileBase = __str4;
-    }
-    if(!uphysfslayer_pfsExists(__str5))
-    {
-        uphysfslayer_pfsMakeDir(__str5);
-    }
-    i = 0;
-    while(i < 7)
-    {
-        logFile = uphysfslayer_pfsOpenWrite(_strconcat(_strconcat(_strconcat(__str6, logfileBase), uutils_IntToStr(i)), __str7));
-        if(logFile != NULL)
-        {
-            break;
-        }
-        ++i;
-    }
-    if(logFile == NULL)
-    {
-        fpcrtl_writeLn(stdout, __str8);
-    }
     mobileRecord.PerformRumble = NULL;
     mobileRecord.GameLoading = NULL;
     mobileRecord.GameLoaded = NULL;
@@ -771,14 +714,4 @@ void uutils_initModule(boolean isNotPreview)
 };
 void uutils_freeModule()
 {
-    if(logFile != NULL)
-    {
-        uphysfslayer_pfsWriteLn(logFile, _strconcat(_strconcat(_strconcat(__str9, uutils_IntToStr(GameTicks)), __str10), uutils_IntToStr(TurnTimeLeft)));
-        uphysfslayer_pfsFlush(logFile);
-        uphysfslayer_pfsClose(logFile);
-    }
-    else
-    {
-        fpcrtl_writeLn(stdout, _strconcat(_strconcat(_strconcat(__str9, uutils_IntToStr(GameTicks)), __str10), uutils_IntToStr(TurnTimeLeft)));
-    }
 };

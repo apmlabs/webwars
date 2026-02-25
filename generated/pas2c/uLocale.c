@@ -318,18 +318,3 @@ astring ulocale_FormatA_10(astring fmt,astring arg1,astring arg2,astring arg3,as
     formata_result = ulocale_FormatA_11(fmt, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, 9);
     return formata_result;
 };
-void ulocale_LoadLocaleWrapper(PChar path,PChar userpath,PChar filename)
-{
-    PathPrefix = fpcrtl_str2astr(fpcrtl_StrPas(path));
-    UserPathPrefix = fpcrtl_str2astr(fpcrtl_StrPas(userpath));
-    allOK = true;
-    uvariables_initModule();
-    PathPrefix = _strappendA(PathPrefix, 0x0);
-    UserPathPrefix = _strappendA(UserPathPrefix, 0x0);
-    uphysfslayer_initModule(&(PathPrefix.s[1]), &(UserPathPrefix.s[1]));
-    PathPrefix = fpcrtl_copyA(PathPrefix, 1, fpcrtl_LengthA(PathPrefix) - 1);
-    UserPathPrefix = fpcrtl_copyA(UserPathPrefix, 1, fpcrtl_LengthA(UserPathPrefix) - 1);
-    ulocale_LoadLocale(fpcrtl_StrPas(filename));
-    uphysfslayer_freeModule();
-    uvariables_freeModule();
-};

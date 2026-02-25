@@ -140,12 +140,16 @@ begin
         begin
         // adjust associated heights
         Fontz[fntChat].Height:= fntSize;
+        {$IFNDEF MOBILE}{$IFNDEF EMSCRIPTEN}
         Fontz[CJKfntChat].Height:= fntSize;
+        {$ENDIF}{$ENDIF}
         // reload if initialized already
         if Fontz[fntChat].Handle <> nil then
             LoadFont(fntChat);
+        {$IFNDEF MOBILE}{$IFNDEF EMSCRIPTEN}
         if Fontz[CJKfntChat].Handle <> nil then
             LoadFont(CJKfntChat);
+        {$ENDIF}{$ENDIF}
         end;
 
     // adjust line height etc.

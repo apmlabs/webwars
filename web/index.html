@@ -187,6 +187,29 @@ var Module={
 Module.setStatus('Downloading...');
 window.onerror=function(){Module.setStatus('Error — see console');spinnerEl.style.display='none'};
 
+// PhysFS visibility probe — runs after engine has initialized PhysFS
+window._physfsProbeRan = false;
+window.writeAndProbe = function() {
+  if (window._physfsProbeRan) return;
+  window._physfsProbeRan = true;
+  console.log('[probe] Writing test files...');
+  try { Module.FS.mkdirTree('/Music'); } catch(e) {}
+  Module.FS.writeFile('/Music/probe.bin', new Uint8Array([1,2,3,4]));
+  try { Module.FS.mkdirTree('/Data/Music'); } catch(e) {}
+  Module.FS.writeFile('/Data/Music/probe.bin', new Uint8Array([5,6,7,8]));
+
+  var p1 = Module._malloc(32); Module.stringToUTF8('/Music/probe.bin', p1, 32);
+  var p2 = Module._malloc(32); Module.stringToUTF8('/Data/Music/probe.bin', p2, 32);
+  var r1 = Module._physfs_probe_open(p1);
+  var r2 = Module._physfs_probe_open(p2);
+  console.log('[probe] /Music/probe.bin →', r1);
+  console.log('[probe] /Data/Music/probe.bin →', r2);
+  Module._free(p1);
+  Module._free(p2);
+};
+// Auto-run probe once engine is running (poll until _malloc exists)
+(function pollProbe(){ if(Module._malloc && Module._physfs_probe_open) writeAndProbe(); else setTimeout(pollProbe, 500); })();
+
 // When engine exits (game over), reload for a new game — assets are cached so it's instant
 window._webwars_roundFinished=function(){
   var p=document.getElementById('click-prompt');
@@ -196,6 +219,7 @@ window._webwars_roundFinished=function(){
   setTimeout(function(){location.reload()},1500);
 };
 </script>
+<script src="hwengine-data.js"></script>
 <script async src="hwengine.js"></script>
 </body>
 </html>

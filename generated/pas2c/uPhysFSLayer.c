@@ -7,11 +7,10 @@
 #include "uUtils.h"
 #include "uVariables.h"
 #include "physfs.h"
-static const string255 __str6 = STRINIT("/Data");
-static const string255 __str5 = STRINIT("/Config/Logs");
-static const string255 __str4 = STRINIT("/Config/Data");
-static const string255 __str3 = STRINIT("/Config");
-static const string255 __str2 = STRINIT(" hedgewars");
+static const string255 __str5 = STRINIT("/Data");
+static const string255 __str4 = STRINIT("/Config/Logs");
+static const string255 __str3 = STRINIT("/Config/Data");
+static const string255 __str2 = STRINIT("/Config");
 static const string255 __str1 = STRINIT("/");
 static const string255 __str0 = STRINIT("");
 PSDL_RWops PHYSFSRWOPS_openRead(PChar fname);
@@ -148,7 +147,7 @@ void uphysfslayer_initModule(PChar localPrefix,PChar userPrefix)
     LongInt i;
     string255 cPhysfsId;
     PChar fp;
-    cPhysfsId = _strconcat(fpcrtl_pchar2str(fpcrtl_GetCurrentDir()), __str2);
+    cPhysfsId = fpcrtl_ParamStr(0);
     i = PHYSFS_init(uutils_Str2PChar(cPhysfsId));
     {i = 0;
      LongInt i__end__ = 1;
@@ -160,10 +159,10 @@ void uphysfslayer_initModule(PChar localPrefix,PChar userPrefix)
                                }
                            } while(i++ != i__end__);}
     uphysfslayer_pfsMountAtRoot(localPrefix);
-    uphysfslayer_pfsMount(userPrefix, fpcrtl__pchar(__str3));
+    uphysfslayer_pfsMount(userPrefix, fpcrtl__pchar(__str2));
+    uphysfslayer_pfsMakeDir(__str3);
     uphysfslayer_pfsMakeDir(__str4);
-    uphysfslayer_pfsMakeDir(__str5);
-    uphysfslayer_pfsMountAtRoot(uutils_Str2PChar(_strconcat(fpcrtl_pchar2str(userPrefix), __str6)));
+    uphysfslayer_pfsMountAtRoot(uutils_Str2PChar(_strconcat(fpcrtl_pchar2str(userPrefix), __str5)));
     PHYSFS_setWriteDir(userPrefix);
     hedgewarsMountPackages();
     uphysfslayer_pfsMountAtRoot(userPrefix);

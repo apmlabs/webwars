@@ -8,8 +8,9 @@
 #include "uPhysFSLayer.h"
 #include "uDebug.h"
 #include "uConsts.h"
-static const string255 __str26 = STRINIT("tintAdd");
-static const string255 __str25 = STRINIT("enableTexture");
+static const string255 __str27 = STRINIT("tintAdd");
+static const string255 __str26 = STRINIT("enableTexture");
+static const string255 __str25 = STRINIT("GL_EXT_framebuffer_object");
 static const string255 __str24 = STRINIT("tint");
 static const string255 __str23 = STRINIT("default");
 static const string255 __str22 = STRINIT("mvp");
@@ -52,11 +53,17 @@ static LongInt batchCount;
 static GLuint batchTexId;
 static GLuint batchVBO;
 static boolean batchInited;
+typedef TVertex2f texLRDtb_tt[(3 + 1)];
+static texLRDtb_tt texLRDtb;
+static texLRDtb_tt texLvb;
+static texLRDtb_tt texRvb;
 void urender_openglLoadIdentity_0();
 void urender_openglTranslProjMatrix_3(GLfloat X,GLfloat Y,GLfloat Z);
 void urender_openglScalef_3(GLfloat ScaleX,GLfloat ScaleY,GLfloat ScaleZ);
 void urender_openglRotatef_4(GLfloat RotX,GLfloat RotY,GLfloat RotZ,LongInt dir);
 void urender_openglTint_4(Byte r,Byte g,Byte b,Byte a);
+void urender_CreateFramebuffer_3(GLuint (*frame),GLuint (*depth),GLuint (*tex));
+void urender_DeleteFramebuffer_3(GLuint (*frame),GLuint (*depth),GLuint (*tex));
 boolean urender_isAreaOffscreen(LongInt X,LongInt Y,LongInt Width,LongInt Height)
 {
     boolean isareaoffscreen_result;
@@ -105,9 +112,79 @@ LongInt urender_isDyAreaOffscreen(LongInt Y,LongInt Height)
     isdyareaoffscreen_result = 0;
     return isdyareaoffscreen_result;
 };
-void urender_RenderClear()
+void urender_RenderClear_0()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+};
+void urender_RenderClear_1(TRenderMode mode)
+{
+    GLuint frame;
+    if((cStereoMode == smHorizontal) || (cStereoMode == smVertical))
+    {
+        switch(mode)
+        {case rmLeftEye:frame = framel;
+                        break;
+         case rmRightEye:frame = framer;
+                         break;
+         default: frame = defaultFrame;}
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame);
+        urender_RenderClear_0();
+    }
+    else
+    {
+        if(mode == rmLeftEye)
+        {
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            urender_RenderClear_0();
+            if(cStereoMode == smGreenRed)
+            {
+                glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_TRUE);
+            }
+            else
+            {
+                if(cStereoMode == smBlueRed)
+                {
+                    glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_TRUE);
+                }
+                else
+                {
+                    if(cStereoMode == smCyanRed)
+                    {
+                        glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+                    }
+                    else
+                    {
+                        glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+                    }
+                }
+            }
+        }
+        else
+        {
+            if(cStereoMode == smRedGreen)
+            {
+                glColorMask(GL_FALSE, GL_TRUE, GL_FALSE, GL_TRUE);
+            }
+            else
+            {
+                if(cStereoMode == smRedBlue)
+                {
+                    glColorMask(GL_FALSE, GL_FALSE, GL_TRUE, GL_TRUE);
+                }
+                else
+                {
+                    if(cStereoMode == smRedCyan)
+                    {
+                        glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_TRUE);
+                    }
+                    else
+                    {
+                        glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_TRUE);
+                    }
+                }
+            }
+        }
+    }
 };
 void urender_RenderSetClearColor(real r,real g,real b,real a)
 {
@@ -116,6 +193,19 @@ void urender_RenderSetClearColor(real r,real g,real b,real a)
 void urender_FinishRender()
 {
     urender_FlushBatch();
+    if((cStereoMode == smHorizontal) || (cStereoMode == smVertical))
+    {
+        urender_RenderClear_1(rmDefault);
+        urender_SetScale(cDefaultZoomLevel);
+        urender_SetTexCoordPointer(&(texLRDtb), (3 + 1));
+        glBindTexture(GL_TEXTURE_2D, texl);
+        urender_SetVertexPointer(&(texLvb), (3 + 1));
+        glDrawArrays(GL_TRIANGLE_FAN, 0, (3 + 1));
+        glBindTexture(GL_TEXTURE_2D, texl);
+        urender_SetVertexPointer(&(texRvb), (3 + 1));
+        glDrawArrays(GL_TRIANGLE_FAN, 0, (3 + 1));
+        urender_SetScale(zoom);
+    }
 };
 GLuint urender_CompileShader(string255 shaderFile,GLenum shaderType)
 {
@@ -212,6 +302,27 @@ boolean urender_glLoadExtension(string255 extension)
     uutils_AddFileLog(logmsg);
     return glloadextension_result;
 };
+void urender_CreateFramebuffer_3(GLuint (*frame),GLuint (*depth),GLuint (*tex))
+{
+    glGenFramebuffersEXT(1, &((*frame)));
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, (*frame));
+    glGenRenderbuffersEXT(1, &((*depth)));
+    glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, (*depth));
+    glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, cScreenWidth, cScreenHeight);
+    glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, (*depth));
+    glGenTextures(1, &((*tex)));
+    glBindTexture(GL_TEXTURE_2D, (*tex));
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, cScreenWidth, cScreenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, (*tex), 0);
+};
+void urender_DeleteFramebuffer_3(GLuint (*frame),GLuint (*depth),GLuint (*tex))
+{
+    glDeleteTextures(1, &((*tex)));
+    glDeleteRenderbuffersEXT(1, &((*depth)));
+    glDeleteFramebuffersEXT(1, &((*frame)));
+};
 void urender_RendererCleanup()
 {
 };
@@ -254,6 +365,65 @@ void urender_RendererSetup()
     uCurrentMVPLocation = uMainMVPLocation;
     urender_Tint_4(255, 255, 255, 255);
     urender_UpdateModelviewProjection();
+    if((cStereoMode == smHorizontal) || (cStereoMode == smVertical))
+    {
+        if(urender_glLoadExtension(__str25))
+        {
+            urender_CreateFramebuffer_3(&(framel), &(depthl), &(texl));
+            urender_CreateFramebuffer_3(&(framer), &(depthr), &(texr));
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, defaultFrame);
+        }
+        else
+        {
+            cStereoMode = smNone;
+        }
+    }
+    texLRDtb[0].X = 0.0;
+    texLRDtb[0].Y = 0.0;
+    texLRDtb[1].X = 1.0;
+    texLRDtb[1].Y = 0.0;
+    texLRDtb[2].X = 1.0;
+    texLRDtb[2].Y = 1.0;
+    texLRDtb[3].X = 0.0;
+    texLRDtb[3].Y = 1.0;
+    if(cStereoMode == smHorizontal)
+    {
+        texLvb[0].X = cScreenWidth /(float) -2;
+        texLvb[0].Y = cScreenHeight;
+        texLvb[1].X = 0;
+        texLvb[1].Y = cScreenHeight;
+        texLvb[2].X = 0;
+        texLvb[2].Y = 0;
+        texLvb[3].X = cScreenWidth /(float) -2;
+        texLvb[3].Y = 0;
+        texRvb[0].X = 0;
+        texRvb[0].Y = cScreenHeight;
+        texRvb[1].X = cScreenWidth /(float) 2;
+        texRvb[1].Y = cScreenHeight;
+        texRvb[2].X = cScreenWidth /(float) 2;
+        texRvb[2].Y = 0;
+        texRvb[3].X = 0;
+        texRvb[3].Y = 0;
+    }
+    else
+    {
+        texLvb[0].X = cScreenWidth /(float) -2;
+        texLvb[0].Y = cScreenHeight /(float) 2;
+        texLvb[1].X = cScreenWidth /(float) 2;
+        texLvb[1].Y = cScreenHeight /(float) 2;
+        texLvb[2].X = cScreenWidth /(float) 2;
+        texLvb[2].Y = 0;
+        texLvb[3].X = cScreenWidth /(float) -2;
+        texLvb[3].Y = 0;
+        texRvb[0].X = cScreenWidth /(float) -2;
+        texRvb[0].Y = cScreenHeight;
+        texRvb[1].X = cScreenWidth /(float) 2;
+        texRvb[1].Y = cScreenHeight;
+        texRvb[2].X = cScreenWidth /(float) 2;
+        texRvb[2].Y = cScreenHeight /(float) 2;
+        texRvb[3].X = cScreenWidth /(float) -2;
+        texRvb[3].Y = cScreenHeight /(float) 2;
+    }
     glViewport(0, 0, cScreenWidth, cScreenHeight);
     umatrix_initModule();
     umatrix_hglMatrixMode(MATRIX_MODELVIEW);
@@ -407,11 +577,11 @@ void urender_EnableTexture(boolean enable)
 {
     if(enable)
     {
-        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str25)), 1);
+        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str26)), 1);
     }
     else
     {
-        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str25)), 0);
+        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str26)), 0);
     }
 };
 void urender_UpdateViewLimits()
@@ -1790,25 +1960,46 @@ void urender_setTintAdd(boolean enable)
     urender_FlushBatch();
     if(enable)
     {
-        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str26)), 1);
+        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str27)), 1);
     }
     else
     {
-        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str26)), 0);
+        glUniform1i(glGetUniformLocation(shaderMain, fpcrtl__pchar(__str27)), 0);
     }
 };
 void urender_ChangeDepth(TRenderMode rm,GLfloat d)
 {
     LongInt tmp;
-    UNUSED (rm);
-    UNUSED (d);
-    UNUSED (tmp);
+    d = d /(float) 5;
+    if(rm == rmDefault)
+    {
+        return;
+    }
+    else
+    {
+        if(rm == rmLeftEye)
+        {
+            d = -d;
+        }
+    }
+    cStereoDepth = cStereoDepth + d;
+    urender_openglTranslProjMatrix_3(d, 0, 0);
+    tmp = fpcrtl_round((d /(float) cScaleFactor) * cScreenWidth);
+    ViewLeftX = ViewLeftX - tmp;
+    ViewRightX = ViewRightX - tmp;
 };
 void urender_ResetDepth(TRenderMode rm)
 {
     LongInt tmp;
-    UNUSED (rm);
-    UNUSED (tmp);
+    if(rm == rmDefault)
+    {
+        return;
+    }
+    urender_openglTranslProjMatrix_3(-cStereoDepth, 0, 0);
+    tmp = fpcrtl_round((cStereoDepth /(float) cScaleFactor) * cScreenWidth);
+    ViewLeftX = ViewLeftX + tmp;
+    ViewRightX = ViewRightX + tmp;
+    cStereoDepth = 0;
 };
 void urender_initModule()
 {
