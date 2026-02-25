@@ -59,3 +59,4 @@ AGENTS.md
 AmazonQ.md
 admin/__pycache__/
 GAP_ANALYSIS.md
+hedgewars/rust/hedgewars-server/target/
