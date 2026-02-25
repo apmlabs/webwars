@@ -169,10 +169,10 @@ main{flex:1;display:flex;overflow:hidden}
           <div class="config-row"><label>Template</label><select id="cfg-template" onchange="sendCfg()"><option value="0">Small</option><option value="1">Medium</option><option value="2">Large</option><option value="3">Cavern</option><option value="4">Wacky</option></select></div>
         </div>
         <div class="config-section">
-          <h3>Scheme</h3>
-          <div class="config-row"><label>Turn Time</label><select id="cfg-turntime" onchange="sendCfg()"><option value="15000">15s</option><option value="30000">30s</option><option value="45000" selected>45s</option><option value="60000">60s</option><option value="90000">90s</option></select></div>
-          <div class="config-row"><label>Sudden Death</label><select id="cfg-sd" onchange="sendCfg()"><option value="10">10 turns</option><option value="15" selected>15 turns</option><option value="25">25 turns</option><option value="50">50 turns</option></select></div>
-          <div class="config-row"><label>Health</label><input id="cfg-health" type="number" value="100" min="1" max="999" style="width:60px" onchange="sendCfg()"></div>
+          <h3>Game Settings</h3>
+          <div class="config-row"><label>Scheme</label><select id="cfg-scheme" onchange="onSchemeChange()"></select></div>
+          <div class="config-row"><label>Weapons</label><select id="cfg-weapons" onchange="onWeaponsChange()"></select></div>
+          <div class="config-row"><label>Style</label><select id="cfg-style" onchange="onStyleChange()"></select></div>
         </div>
         <div class="config-section">
           <h3>Players</h3>
@@ -196,6 +196,7 @@ main{flex:1;display:flex;overflow:hidden}
   </div>
 </main>
 
+<script src="gameconfig.js"></script>
 <script>
 // ── State ──
 var ws = null;
@@ -203,20 +204,40 @@ var myNick = '';
 var inRoom = false;
 var isChief = false;
 var rooms = [];
-var players = []; // [{nick, ready, inGame}]
-var readySet = {};
-var teams = []; // [{name, owner, color, grave, fort, voicepack, flag, diff, hogs:[{name,hat}], hhnum}]
-var roomCfg = {}; // map params + game params synced from server
-var themes = ['Nature','Cake','Island','Deepspace','Halloween','Cheese','Bath','Bamboo','Blox','EarthRise','Compost','Planes'];
+var players = [];
+var teams = [];
+var roomCfg = {};
+var curScheme = GameConfig.SCHEMES[0];
+var curWeapon = GameConfig.WEAPONS[0];
+var curStyle = 'Normal';
 var roomPoll = null;
 
 // ── Init ──
 (function() {
-  var sel = document.getElementById('cfg-theme');
-  themes.forEach(function(t) {
-    var o = document.createElement('option');
-    o.value = t; o.textContent = t;
-    sel.appendChild(o);
+  var sel;
+  // Themes — use the allThemes list from pre.js (via HWEngine) or hardcode the 29
+  var allThemes = ['Art','Bamboo','Bath','Beach','Brick','Cake','Castle','Cave','Cheese',
+    'Christmas','City','Compost','Desert','Digital','EarthRise','Freeway',
+    'Fruit','Golf','Halloween','Hell','Hoggywood','Island','Jungle','Nature',
+    'Olympics','Sheep','Snow','Stage','Underwater'];
+  sel = document.getElementById('cfg-theme');
+  allThemes.forEach(function(t) {
+    var o = document.createElement('option'); o.value = t; o.textContent = t; sel.appendChild(o);
+  });
+  // Schemes
+  sel = document.getElementById('cfg-scheme');
+  GameConfig.SCHEMES.forEach(function(s) {
+    var o = document.createElement('option'); o.value = s.name; o.textContent = s.name; sel.appendChild(o);
+  });
+  // Weapons
+  sel = document.getElementById('cfg-weapons');
+  GameConfig.WEAPONS.forEach(function(w) {
+    var o = document.createElement('option'); o.value = w.name; o.textContent = w.name; sel.appendChild(o);
+  });
+  // Styles
+  sel = document.getElementById('cfg-style');
+  GameConfig.STYLES.forEach(function(s) {
+    var o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
   });
   document.getElementById('nick-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') doLogin();
@@ -262,7 +283,7 @@ function doLogin() {
 function handleMsg(msg) {
   var cmd = msg[0];
 
-  if (cmd === 'CONNECTED') { send(['NICK', myNick]); send(['PROTO', '58']); return; }
+  if (cmd === 'CONNECTED') { send(['NICK', myNick]); send(['PROTO', '60']); return; }
   if (cmd === 'LOBBY:JOINED') { addChat(null, msg.slice(1).join(', ') + ' joined the lobby'); if (!inRoom) send(['LIST']); return; }
   if (cmd === 'ROOMS') { parseRooms(msg.slice(1)); return; }
   if (cmd === 'ROOM' && (msg[1] === 'ADD' || msg[1] === 'DEL' || msg[1] === 'UPD')) { send(['LIST']); return; }
@@ -452,11 +473,9 @@ function addTeam() {
 
 function updateRoomUI() {
   document.getElementById('btn-start').style.display = isChief ? '' : 'none';
-  // Disable config controls for non-chief
-  ['cfg-mapgen','cfg-theme','cfg-template','cfg-turntime','cfg-sd','cfg-health'].forEach(function(id) {
+  ['cfg-mapgen','cfg-theme','cfg-template','cfg-scheme','cfg-weapons','cfg-style'].forEach(function(id) {
     document.getElementById(id).disabled = !isChief;
   });
-  // Chief sends initial config
   if (isChief && !roomCfg.SEED) {
     var seed = String(Math.random()).slice(2);
     send(['CFG', 'SEED', seed]);
@@ -464,19 +483,29 @@ function updateRoomUI() {
     send(['CFG', 'THEME', document.getElementById('cfg-theme').value]);
     send(['CFG', 'TEMPLATE', document.getElementById('cfg-template').value]);
     send(['CFG', 'FEATURE_SIZE', '12']);
-    send(['CFG', 'AMMO', 'Default', defaultAmmo()]);
-    send(['CFG', 'SCHEME', 'Default', buildSchemeString()]);
+    send(['CFG', 'AMMO', curWeapon.name, curWeapon.ammo]);
+    send(['CFG', 'SCHEME', curScheme.name, GameConfig.buildSchemeString(curScheme)]);
+    if (curStyle !== 'Normal') send(['CFG', 'SCRIPT', curStyle]);
     roomCfg.SEED = [seed];
   }
 }
 
-function defaultAmmo() {
-  var n = 60;
-  var init  = '9'.repeat(n);
-  var prob  = '0'.repeat(n);
-  var delay = '0'.repeat(n);
-  var reinf = '0'.repeat(n);
-  return init + prob + delay + reinf;
+function onSchemeChange() {
+  if (!isChief) return;
+  curScheme = GameConfig.findScheme(document.getElementById('cfg-scheme').value);
+  send(['CFG', 'SCHEME', curScheme.name, GameConfig.buildSchemeString(curScheme)]);
+}
+
+function onWeaponsChange() {
+  if (!isChief) return;
+  curWeapon = GameConfig.findWeapon(document.getElementById('cfg-weapons').value);
+  send(['CFG', 'AMMO', curWeapon.name, curWeapon.ammo]);
+}
+
+function onStyleChange() {
+  if (!isChief) return;
+  curStyle = document.getElementById('cfg-style').value;
+  if (curStyle !== 'Normal') send(['CFG', 'SCRIPT', curStyle]);
 }
 
 function renderPlayers() {
@@ -510,45 +539,24 @@ function sendCfg() {
   send(['CFG', 'MAPGEN', document.getElementById('cfg-mapgen').value]);
   send(['CFG', 'THEME', document.getElementById('cfg-theme').value]);
   send(['CFG', 'TEMPLATE', document.getElementById('cfg-template').value]);
-  send(['CFG', 'SCHEME', 'Default', buildSchemeString()]);
-  send(['CFG', 'FEATURE_SIZE', document.getElementById('cfg-health').value || '12']);
-}
-
-function buildSchemeString() {
-  // Minimal scheme: gameflags booleans (27) + params (17) + scriptparam
-  // For simplicity, use defaults matching "Default" scheme
-  var tt = document.getElementById('cfg-turntime').value;
-  var sd = document.getElementById('cfg-sd').value;
-  var hp = document.getElementById('cfg-health').value || '100';
-  // 27 boolean flags (all false = default), then params
-  var flags = 'false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,true,false,false,false,false,false,false';
-  var params = [
-    '100',   // damagepct
-    tt,      // turntime (ms)
-    '100',   // (unused)
-    sd,      // sd_turns
-    '5',     // casefreq
-    '3',     // minestime
-    '4',     // minesnum
-    '0',     // minedudpct
-    '2',     // explosives
-    '0',     // airmines
-    '35',    // healthprob
-    '25',    // hcaseamount
-    '47',    // waterrise
-    '5',     // healthdec
-    '100',   // ropepct
-    '100',   // getawaytime
-    '0'      // worldedge
-  ];
-  return flags + ',' + params.join(',') + ',';
 }
 
 function applyCfgToUI(param, vals) {
-  if (isChief) return; // chief already has correct UI
+  if (isChief) return;
   if (param === 'MAPGEN') document.getElementById('cfg-mapgen').value = vals[0];
   if (param === 'THEME') document.getElementById('cfg-theme').value = vals[0];
   if (param === 'TEMPLATE') document.getElementById('cfg-template').value = vals[0];
+  if (param === 'SCHEME' && vals[0]) {
+    var s = GameConfig.findScheme(vals[0]);
+    if (s) { curScheme = s; document.getElementById('cfg-scheme').value = s.name; }
+    else if (vals[1]) { curScheme = GameConfig.parseSchemeString(vals[1]); }
+  }
+  if (param === 'AMMO' && vals[0]) {
+    var w = GameConfig.findWeapon(vals[0]);
+    if (w) { curWeapon = w; document.getElementById('cfg-weapons').value = w.name; }
+    else if (vals[1]) { curWeapon = {name:vals[0], ammo:vals[1]}; }
+  }
+  if (param === 'SCRIPT') { curStyle = vals[0] || 'Normal'; document.getElementById('cfg-style').value = curStyle; }
 }
 
 function renderTeams() {
@@ -593,18 +601,15 @@ function launchEngine() {
   var theme = (roomCfg.THEME && roomCfg.THEME[0]) || 'Nature';
   var template = (roomCfg.TEMPLATE && roomCfg.TEMPLATE[0]) || '0';
   var featureSize = (roomCfg.FEATURE_SIZE && roomCfg.FEATURE_SIZE[0]) || '12';
-  var script = (roomCfg.SCRIPT && roomCfg.SCRIPT[0]) || '';
-  var schemeData = (roomCfg.SCHEME && roomCfg.SCHEME.length > 1) ? roomCfg.SCHEME[1] : '';
-  var schemeParts = schemeData ? schemeData.split(',') : [];
-  var ammoData = (roomCfg.AMMO && roomCfg.AMMO.length > 1) ? roomCfg.AMMO[1] : '';
+  var script = curStyle !== 'Normal' ? curStyle : '';
 
   var gameConfig = {
     mode: 'TN', seed: seed, mapgen: mapgen, theme: theme, template: template,
-    featureSize: featureSize, script: script, scheme: schemeParts, ammo: ammoData,
+    featureSize: featureSize, script: script,
+    scheme: curScheme, ammo: curWeapon.ammo,
     teams: teams, myNick: myNick
   };
-  console.log('[Lobby] launchEngine config:', JSON.stringify({seed:seed, theme:theme, teamCount:teams.length, teamNames:teams.map(function(t){return t.name}), ammoLen:ammoData.length, schemeLen:schemeParts.length}));
-
+  console.log('[Lobby] launchEngine config:', JSON.stringify({seed:seed, theme:theme, scheme:curScheme.name, weapons:curWeapon.name, style:curStyle, teamCount:teams.length}));
   startEngine(gameConfig);
 }
 

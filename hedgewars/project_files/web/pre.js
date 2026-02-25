@@ -243,91 +243,15 @@ var HWEngine = {
         console.log('[HW] Selected random map, theme: ' + theme);
 
         // Order matches real Hedgewars server (EngineInteraction.hs)
-        // Random mapgen — no emap needed, just theme
         this.sendMessage('etheme ' + theme);
-
-        // 2. Seed + game config
         this.sendMessage('eseed ' + seed);
-        this.sendMessage('e$gmflags 0');
-        this.sendMessage('e$damagepct 100');
-        this.sendMessage('e$turntime 45000');
-        this.sendMessage('e$sd_turns 15');
-        this.sendMessage('e$casefreq 5');
-        this.sendMessage('e$minestime 3000');
-        this.sendMessage('e$minesnum 4');
-        this.sendMessage('e$minedudpct 0');
-        this.sendMessage('e$explosives 2');
-        this.sendMessage('e$airmines 0');
-        this.sendMessage('e$healthprob 35');
-        this.sendMessage('e$hcaseamount 25');
-        this.sendMessage('e$waterrise 47');
-        this.sendMessage('e$healthdec 5');
-        this.sendMessage('e$ropepct 100');
-        this.sendMessage('e$getawaytime 100');
-        this.sendMessage('e$worldedge 0');
-        this.sendMessage('e$template_filter 0');
-        this.sendMessage('e$feature_size 12');
-        this.sendMessage('e$mapgen 0');
 
-        // 3. Teams (ammo store sent per-team)
-        this.sendAmmoAndTeam('x', '4980735', 'Red Team',
-            ['Hog A1', 'Hog A2', 'Hog A3', 'Hog A4']);
-        this.sendAmmoAndTeam('x', '16776960', 'Blue Team',
-            ['Hog B1', 'Hog B2', 'Hog B3', 'Hog B4']);
-
-        // 4. Start
-        this.sendMessage('TL');
-        this.sendMessage('!');
-    },
-
-    startMultiplayerGame: function() {
-        var cfg = this.mpConfig;
-        console.log('[HW] Starting multiplayer game...', cfg);
-
-        // Start — TN for network game (must be first, before config)
-        this.sendMessage('TN');
-
-        // Map (random gen or named map)
-        var mapgen = cfg.mapgen || '0';
-        var mapGenTypes = ['+rnd+', '+maze+', '+drawn+', '+perlin+'];
-        var mapName = cfg.map || mapGenTypes[parseInt(mapgen)] || '+rnd+';
-        if (mapGenTypes.indexOf(mapName) === -1) this.sendMessage('emap ' + mapName);
-
-        // Theme
-        this.sendMessage('etheme ' + (cfg.theme || 'Nature'));
-
-        // Script
-        if (cfg.script && cfg.script !== 'Normal') {
-            this.sendMessage('escript Scripts/Multiplayer/' + cfg.script.replace(/ /g, '_') + '.lua');
-        }
-
-        // Seed + map gen
-        this.sendMessage('eseed ' + (cfg.seed || String(Date.now())));
-        this.sendMessage('e$mapgen ' + mapgen);
-        this.sendMessage('e$template_filter ' + (cfg.template || '0'));
-        this.sendMessage('e$feature_size ' + (cfg.featureSize || '12'));
-
-        // Scheme params from server CFG
-        var scheme = cfg.scheme || [];
-        // Game flags from first 27 booleans
-        var gmflags = 0;
-        var flagConsts = [0x1000,0x10,0x4,0x8,0x20,0x40,0x80,0x100,0x200,0x400,0x800,0x2000,0x4000,0x8000,0x10000,0x20000,0x40000,0x80000,0x100000,0x200000,0x400000,0x800000,0x1000000,0x2000000,0x4000000,0x8000000,0x10000000];
-        for (var i = 0; i < 27 && i < scheme.length; i++) {
-            if (scheme[i] === 'true') gmflags |= flagConsts[i];
-        }
-        this.sendMessage('e$gmflags ' + gmflags);
-
-        // Numeric scheme params (indices 27+)
-        var paramNames = ['e$damagepct','e$turntime','','e$sd_turns','e$casefreq','e$minestime','e$minesnum','e$minedudpct','e$explosives','e$airmines','e$healthprob','e$hcaseamount','e$waterrise','e$healthdec','e$ropepct','e$getawaytime','e$worldedge'];
-        var paramMult = [1,1000,0,1,1,1000,1,1,1,1,1,1,1,1,1,1,1];
-        for (var j = 0; j < paramNames.length; j++) {
-            if (paramNames[j] && (27 + j) < scheme.length) {
-                this.sendMessage(paramNames[j] + ' ' + (parseInt(scheme[27 + j]) * paramMult[j]));
-            }
-        }
-
-        // Fallback defaults if no scheme
-        if (scheme.length === 0) {
+        // Use Default scheme via GameConfig
+        var scheme = (typeof GameConfig !== 'undefined') ? GameConfig.SCHEMES[0] : null;
+        if (scheme && typeof GameConfig.sendSchemeIPC === 'function') {
+            GameConfig.sendSchemeIPC(this, scheme);
+        } else {
+            // Fallback if gameconfig.js not loaded (index.html standalone)
             this.sendMessage('e$gmflags 0');
             this.sendMessage('e$damagepct 100');
             this.sendMessage('e$turntime 45000');
@@ -345,41 +269,93 @@ var HWEngine = {
             this.sendMessage('e$ropepct 100');
             this.sendMessage('e$getawaytime 100');
             this.sendMessage('e$worldedge 0');
-            this.sendMessage('e$template_filter 0');
-            this.sendMessage('e$feature_size 12');
+        }
+        this.sendMessage('e$template_filter 0');
+        this.sendMessage('e$feature_size 12');
+        this.sendMessage('e$mapgen 0');
+
+        // Teams (ammo store sent per-team)
+        this.sendAmmoAndTeam('x', '4980735', 'Red Team',
+            ['Hog A1', 'Hog A2', 'Hog A3', 'Hog A4']);
+        this.sendAmmoAndTeam('x', '16776960', 'Blue Team',
+            ['Hog B1', 'Hog B2', 'Hog B3', 'Hog B4']);
+
+        // Start
+        this.sendMessage('TL');
+        this.sendMessage('!');
+    },
+
+    startMultiplayerGame: function() {
+        var cfg = this.mpConfig;
+        console.log('[HW] Starting multiplayer game...', cfg);
+
+        // TN for network game (must be first, before config)
+        this.sendMessage('TN');
+
+        // Map
+        var mapgen = cfg.mapgen || '0';
+        var mapGenTypes = ['+rnd+', '+maze+', '+drawn+', '+perlin+'];
+        var mapName = cfg.map || mapGenTypes[parseInt(mapgen)] || '+rnd+';
+        if (mapGenTypes.indexOf(mapName) === -1) this.sendMessage('emap ' + mapName);
+
+        this.sendMessage('etheme ' + (cfg.theme || 'Nature'));
+
+        // Script
+        if (cfg.script && cfg.script !== 'Normal') {
+            this.sendMessage('escript Scripts/Multiplayer/' + cfg.script.replace(/ /g, '_') + '.lua');
         }
 
-        // Teams — ammo per team, matching EngineInteraction.hs teamSetup
+        this.sendMessage('eseed ' + (cfg.seed || String(Date.now())));
+        this.sendMessage('e$mapgen ' + mapgen);
+        this.sendMessage('e$template_filter ' + (cfg.template || '0'));
+        this.sendMessage('e$feature_size ' + (cfg.featureSize || '12'));
+
+        // Scheme — cfg.scheme is now a scheme object {name, flags, params, scriptparam}
+        var scheme = cfg.scheme;
+        if (scheme && scheme.flags && typeof GameConfig !== 'undefined') {
+            GameConfig.sendSchemeIPC(this, scheme);
+        } else {
+            // Fallback defaults
+            this.sendMessage('e$gmflags 0');
+            this.sendMessage('e$damagepct 100');
+            this.sendMessage('e$turntime 45000');
+            this.sendMessage('e$sd_turns 15');
+            this.sendMessage('e$casefreq 5');
+            this.sendMessage('e$minestime 3000');
+            this.sendMessage('e$minesnum 4');
+            this.sendMessage('e$minedudpct 0');
+            this.sendMessage('e$explosives 2');
+            this.sendMessage('e$airmines 0');
+            this.sendMessage('e$healthprob 35');
+            this.sendMessage('e$hcaseamount 25');
+            this.sendMessage('e$waterrise 47');
+            this.sendMessage('e$healthdec 5');
+            this.sendMessage('e$ropepct 100');
+            this.sendMessage('e$getawaytime 100');
+            this.sendMessage('e$worldedge 0');
+        }
+
+        // Teams — ammo per team
         var ammo = cfg.ammo || '';
-        var initHealth = (scheme.length > 27) ? scheme[27] : '100';
+        var initHealth = (scheme && scheme.params) ? (scheme.params[2] || 100) : 100;
         var teams = cfg.teams || [];
         for (var k = 0; k < teams.length; k++) {
             var t = teams[k];
-            // Ammo store per team
-            if (ammo.length >= 56 * 4) {
-                var n = ammo.length / 4;
-                this.sendMessage('eammloadt ' + ammo.substring(0, n));
-                this.sendMessage('eammprob ' + ammo.substring(n, n*2));
-                this.sendMessage('eammdelay ' + ammo.substring(n*2, n*3));
-                this.sendMessage('eammreinf ' + ammo.substring(n*3, n*4));
+            if (ammo.length >= 240 && typeof GameConfig !== 'undefined') {
+                GameConfig.sendAmmoIPC(this, ammo);
             } else {
                 this.sendMessage('eammloadt ' + this.defaultAmmo);
                 this.sendMessage('eammprob ' + this.defaultProb);
                 this.sendMessage('eammdelay ' + this.defaultDelay);
                 this.sendMessage('eammreinf ' + this.defaultReinf);
+                this.sendMessage('eammstore');
             }
-            // eammstore if scheme says so (index 14=true or index 20=false)
-            var needStore = (scheme.length > 14 && scheme[14] === 'true') || (scheme.length <= 20 || scheme[20] === 'false');
-            if (needStore) this.sendMessage('eammstore');
 
-            // Team color: (1 + colorIndex) * 2113696
             var colorDecimal = (1 + parseInt(t.color || '0')) * 2113696;
             this.sendMessage('eaddteam <hash> ' + colorDecimal + ' ' + t.name);
-            // Only mark OTHER players' teams as externally driven
             if (t.owner !== cfg.myNick) this.sendMessage('erdriven');
             this.sendMessage('efort ' + (t.fort || 'Plane'));
 
-            // Hedgehogs
             var hhnum = t.hhnum || 4;
             var hogs = t.hogs || [];
             for (var h = 0; h < hhnum && h < hogs.length; h++) {
@@ -388,7 +364,6 @@ var HWEngine = {
             }
         }
 
-        // Pong to start
         this.sendMessage('!');
     }
 };
