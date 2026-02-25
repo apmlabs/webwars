@@ -242,16 +242,26 @@ var HWEngine = {
         var theme = this._chosenTheme || 'Nature';
         console.log('[HW] Selected random map, theme: ' + theme);
 
+        // Read config from UI dropdowns if available
+        var cfg = (typeof window._webwars_hotseatConfig === 'function') ? window._webwars_hotseatConfig() : null;
+        var scheme = (cfg && cfg.scheme) ? cfg.scheme : ((typeof GameConfig !== 'undefined') ? GameConfig.SCHEMES[0] : null);
+        var weapon = (cfg && cfg.weapon) ? cfg.weapon : null;
+        var style = (cfg && cfg.style && cfg.style !== 'Normal') ? cfg.style : null;
+
         // Order matches real Hedgewars server (EngineInteraction.hs)
         this.sendMessage('etheme ' + theme);
+
+        // Script (must be before seed for some game styles)
+        if (style) {
+            this.sendMessage('escript Scripts/Multiplayer/' + style.replace(/ /g, '_') + '.lua');
+        }
+
         this.sendMessage('eseed ' + seed);
 
-        // Use Default scheme via GameConfig
-        var scheme = (typeof GameConfig !== 'undefined') ? GameConfig.SCHEMES[0] : null;
-        if (scheme && typeof GameConfig.sendSchemeIPC === 'function') {
+        // Scheme
+        if (scheme && typeof GameConfig !== 'undefined') {
             GameConfig.sendSchemeIPC(this, scheme);
         } else {
-            // Fallback if gameconfig.js not loaded (index.html standalone)
             this.sendMessage('e$gmflags 0');
             this.sendMessage('e$damagepct 100');
             this.sendMessage('e$turntime 45000');
@@ -274,15 +284,33 @@ var HWEngine = {
         this.sendMessage('e$feature_size 12');
         this.sendMessage('e$mapgen 0');
 
-        // Teams (ammo store sent per-team)
-        this.sendAmmoAndTeam('x', '4980735', 'Red Team',
-            ['Hog A1', 'Hog A2', 'Hog A3', 'Hog A4']);
-        this.sendAmmoAndTeam('x', '16776960', 'Blue Team',
-            ['Hog B1', 'Hog B2', 'Hog B3', 'Hog B4']);
+        // Teams with selected weapon set
+        var ammoStr = (weapon && weapon.ammo) ? weapon.ammo : null;
+        var initHealth = scheme ? (scheme.params[2] || 100) : 100;
+        this._sendHotseatTeam('x', '4980735', 'Red Team', ['Hog A1','Hog A2','Hog A3','Hog A4'], initHealth, ammoStr);
+        this._sendHotseatTeam('x', '16776960', 'Blue Team', ['Hog B1','Hog B2','Hog B3','Hog B4'], initHealth, ammoStr);
 
         // Start
         this.sendMessage('TL');
         this.sendMessage('!');
+    },
+
+    _sendHotseatTeam: function(hash, color, name, hogs, health, ammoStr) {
+        if (ammoStr && ammoStr.length >= 240 && typeof GameConfig !== 'undefined') {
+            GameConfig.sendAmmoIPC(this, ammoStr);
+        } else {
+            this.sendMessage('eammloadt ' + this.defaultAmmo);
+            this.sendMessage('eammprob ' + this.defaultProb);
+            this.sendMessage('eammdelay ' + this.defaultDelay);
+            this.sendMessage('eammreinf ' + this.defaultReinf);
+            this.sendMessage('eammstore');
+        }
+        this.sendMessage('eaddteam ' + hash + ' ' + color + ' ' + name);
+        this.sendMessage('efort Earth');
+        for (var i = 0; i < hogs.length; i++) {
+            this.sendMessage('eaddhh 0 ' + health + ' ' + hogs[i]);
+            this.sendMessage('ehat NoHat');
+        }
     },
 
     startMultiplayerGame: function() {

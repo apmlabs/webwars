@@ -61,6 +61,9 @@ kbd{display:inline-block;background:#141830;border:1px solid #232a48;border-radi
     <progress id="progress" hidden max="100" value="0"></progress>
     <span class="hint-text">Right-click to pick a weapon · Space to fire · Arrow keys to move</span>
     <span class="spacer"></span>
+    <select id="cfg-scheme" style="background:#1a2040;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:2px 6px;font-size:11px" title="Scheme"></select>
+    <select id="cfg-weapons" style="background:#1a2040;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:2px 6px;font-size:11px" title="Weapons"></select>
+    <select id="cfg-style" style="background:#1a2040;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:2px 6px;font-size:11px" title="Game Style"></select>
     <a class="bar-btn" href="lobby.html">🌐 Multiplayer</a>
     <a class="bar-btn" href="https://github.com/apmlabs/webwars" target="_blank">⭐ GitHub</a>
     <button class="bar-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
@@ -220,6 +223,26 @@ window._webwars_roundFinished=function(){
 };
 </script>
 <script src="gameconfig.js"></script>
+<script>
+// Populate config dropdowns
+(function(){
+  var sel;
+  sel = document.getElementById('cfg-scheme');
+  GameConfig.SCHEMES.forEach(function(s){ var o=document.createElement('option'); o.value=s.name; o.textContent=s.name; sel.appendChild(o); });
+  sel = document.getElementById('cfg-weapons');
+  GameConfig.WEAPONS.forEach(function(w){ var o=document.createElement('option'); o.value=w.name; o.textContent=w.name; sel.appendChild(o); });
+  sel = document.getElementById('cfg-style');
+  GameConfig.STYLES.forEach(function(s){ var o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
+})();
+// Store selected config for pre.js to read
+window._webwars_hotseatConfig = function() {
+  return {
+    scheme: GameConfig.findScheme(document.getElementById('cfg-scheme').value),
+    weapon: GameConfig.findWeapon(document.getElementById('cfg-weapons').value),
+    style: document.getElementById('cfg-style').value
+  };
+};
+</script>
 <script src="hwengine-data.js"></script>
 <script async src="hwengine.js"></script>
 </body>

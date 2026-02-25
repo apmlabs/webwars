@@ -377,6 +377,14 @@ function handleMsg(msg) {
   if (cmd === 'BYE') { addChat(null, 'Disconnected: ' + (msg[1]||'')); return; }
   if (cmd === 'WARNING') { addChat(null, '⚠️ ' + msg[1]); return; }
   if (cmd === 'ERROR') { addChat(null, '❌ ' + msg[1]); return; }
+  if (cmd === 'ASKPASSWORD') { addChat(null, '🔒 This nick is registered. Password auth not supported in web client.'); return; }
+  if (cmd === 'KICKED') { addChat(null, '🚫 You were kicked from the room'); leaveRoom(); return; }
+  if (cmd === 'ROOM' && msg[1] === 'DEL' || cmd === 'ROOMABANDONED') {
+    if (inRoom) { addChat(null, '🚪 Room was closed'); leaveRoom(); }
+    return;
+  }
+  if (cmd === 'JOINING') { addChat(null, 'Joining room...'); return; }
+  if (cmd === 'TEAMCHAT') { addChat('[team] ' + msg[1], msg[2]); return; }
   if (cmd === 'NICK' || cmd === 'PROTO' || cmd === 'SERVER_MESSAGE' || cmd === 'NOTICE') return;
   console.log('Unhandled:', msg);
 }
@@ -484,7 +492,7 @@ function updateRoomUI() {
     send(['CFG', 'TEMPLATE', document.getElementById('cfg-template').value]);
     send(['CFG', 'FEATURE_SIZE', '12']);
     send(['CFG', 'AMMO', curWeapon.name, curWeapon.ammo]);
-    send(['CFG', 'SCHEME', curScheme.name, GameConfig.buildSchemeString(curScheme)]);
+    send(['CFG', 'SCHEME'].concat([curScheme.name]).concat(GameConfig.buildSchemeArray(curScheme)));
     if (curStyle !== 'Normal') send(['CFG', 'SCRIPT', curStyle]);
     roomCfg.SEED = [seed];
   }
@@ -493,7 +501,7 @@ function updateRoomUI() {
 function onSchemeChange() {
   if (!isChief) return;
   curScheme = GameConfig.findScheme(document.getElementById('cfg-scheme').value);
-  send(['CFG', 'SCHEME', curScheme.name, GameConfig.buildSchemeString(curScheme)]);
+  send(['CFG', 'SCHEME'].concat([curScheme.name]).concat(GameConfig.buildSchemeArray(curScheme)));
 }
 
 function onWeaponsChange() {
@@ -549,7 +557,7 @@ function applyCfgToUI(param, vals) {
   if (param === 'SCHEME' && vals[0]) {
     var s = GameConfig.findScheme(vals[0]);
     if (s) { curScheme = s; document.getElementById('cfg-scheme').value = s.name; }
-    else if (vals[1]) { curScheme = GameConfig.parseSchemeString(vals[1]); }
+    else if (vals.length > 2) { curScheme = GameConfig.parseSchemeArray(vals.slice(1)); }
   }
   if (param === 'AMMO' && vals[0]) {
     var w = GameConfig.findWeapon(vals[0]);

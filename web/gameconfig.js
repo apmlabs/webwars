@@ -232,23 +232,24 @@ function getInitHealth(scheme) {
     return scheme.params[2] || 100;
 }
 
-// Build CFG SCHEME string for server protocol (comma-separated: 25 bools + 18 params + scriptparam)
-function buildSchemeString(scheme) {
+// Build CFG SCHEME array for server protocol (each value is a separate protocol line)
+// Returns array: [flag1, flag2, ..., flag25, param26, ..., param43, !scriptparam]
+function buildSchemeArray(scheme) {
     var parts = [];
     for (var i = 0; i < scheme.flags.length; i++) parts.push(scheme.flags[i] ? 'true' : 'false');
     for (var j = 0; j < scheme.params.length; j++) parts.push(String(scheme.params[j]));
-    parts.push(scheme.scriptparam || '');
-    return parts.join(',');
+    // Qt prepends '!' to scriptparam (last element) — server does B.tail to strip it
+    parts.push('!' + (scheme.scriptparam || ''));
+    return parts;
 }
 
-// Parse CFG SCHEME string back into a scheme object
-function parseSchemeString(str) {
-    var parts = str.split(',');
+// Parse CFG SCHEME values (array of strings) back into a scheme object
+function parseSchemeArray(arr) {
     var flags = [];
-    for (var i = 0; i < 25 && i < parts.length; i++) flags.push(parts[i] === 'true' ? 1 : 0);
+    for (var i = 0; i < 25 && i < arr.length; i++) flags.push(arr[i] === 'true' ? 1 : 0);
     var params = [];
-    for (var j = 25; j < 43 && j < parts.length; j++) params.push(parseInt(parts[j]) || 0);
-    var sp = parts.length > 43 ? parts.slice(43).join(',') : null;
+    for (var j = 25; j < 43 && j < arr.length; j++) params.push(parseInt(arr[j]) || 0);
+    var sp = (arr.length > 43 && arr[43]) ? arr[43].replace(/^!/, '') : null;
     return {name:'Custom', flags:flags, params:params, scriptparam:sp || null};
 }
 
@@ -281,8 +282,8 @@ return {
     sendSchemeIPC: sendSchemeIPC,
     sendAmmoIPC: sendAmmoIPC,
     getInitHealth: getInitHealth,
-    buildSchemeString: buildSchemeString,
-    parseSchemeString: parseSchemeString,
+    buildSchemeArray: buildSchemeArray,
+    parseSchemeArray: parseSchemeArray,
     findScheme: findScheme,
     findWeapon: findWeapon
 };
