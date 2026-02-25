@@ -9,6 +9,10 @@ hedgewars/build/
 *.data
 *.wasm.map
 
+# But DO track the final build output in dist/
+!dist/hwengine.wasm
+!dist/hwengine.js
+
 # Dependencies
 node_modules/
 emsdk/
