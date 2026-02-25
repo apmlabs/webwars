@@ -116,7 +116,7 @@ if(BUILD_ENGINE_JS)
     set(HW_DATA_DIR "${CMAKE_SOURCE_DIR}/share/hedgewars/Data")
     set(HW_DEMO_FILE "${CMAKE_SOURCE_DIR}/test.hwd")
     
-    add_flag_append(CMAKE_C_FLAGS "-sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1 -sINITIAL_MEMORY=268435456 -sGL_UNSAFE_OPTS=1 -sGL_POOL_TEMP_BUFFERS=1 -sLZ4=1 -sFORCE_FILESYSTEM=1 --post-js ${HW_POST_JS} --pre-js ${HW_PRE_JS}")
+    add_flag_append(CMAKE_C_FLAGS "-sUSE_SDL=2 -sUSE_SDL_IMAGE=1 -sUSE_LIBPNG=1 -sUSE_SDL_TTF=2 -sUSE_VORBIS=1 -sUSE_OGG=1")
 endif()
 
 #compile the c files
@@ -147,7 +147,14 @@ if(EMSCRIPTEN)
         -fwasm-exceptions
         -Wl,--wrap=hwengine_MainLoop
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
-        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal,_mainloop_frame_bg,_usound_PlayMusic,_physfs_probe_open")
+        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal,_mainloop_frame_bg,_usound_PlayMusic,_physfs_probe_open"
+        -sINITIAL_MEMORY=268435456
+        -sGL_UNSAFE_OPTS=1
+        -sGL_POOL_TEMP_BUFFERS=1
+        -sLZ4=1
+        -sFORCE_FILESYSTEM=1
+        --pre-js ${HW_PRE_JS}
+        --post-js ${HW_POST_JS})
     set_target_properties(hwengine PROPERTIES SUFFIX ".html")
 endif()
 

@@ -698,6 +698,13 @@ begin
     // loading failed
     if tmpsurf = nil then
         begin
+        {$IFDEF EMSCRIPTEN}
+        // Boot manifest: log ALL missing files with criticality
+        if (imageFlags and ifCritical) <> 0 then
+            WriteLnToConsole('[MANIFEST] CRITICAL missing: ' + s)
+        else
+            WriteLnToConsole('[MANIFEST] optional missing: ' + s);
+        {$ENDIF}
         // output sdl error if loading failed when data source was available
         if rwops <> nil then
             begin
@@ -705,13 +712,13 @@ begin
             if (imageFlags and ifCritical) <> 0 then
                 OutError(logMsg + ' ' + msgFailed, false);
 
-            if SDLCheck(false, 'LoadImage: ' + logMsg + ' ' + msgFailed, (imageFlags and ifCritical) <> 0) then
+            if SDLCheck(false, 'LoadImage: ' + logMsg + ' ' + msgFailed, {$IFDEF EMSCRIPTEN}false{$ELSE}(imageFlags and ifCritical) <> 0{$ENDIF}) then
                 exit;
             // rwops was already freed by IMG_Load_RW
             rwops:= nil;
             end
         else if (imageFlags and ifCritical) <> 0 then
-            OutError(logMsg + ' ' + msgFailed, (imageFlags and ifCritical) <> 0);
+            OutError(logMsg + ' ' + msgFailed, {$IFDEF EMSCRIPTEN}false{$ELSE}true{$ENDIF});
         exit;
         end;
 

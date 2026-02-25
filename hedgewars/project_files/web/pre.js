@@ -108,6 +108,110 @@ var HWEngine = {
         'Sticks':'Bamboo','Trash':'Compost'
     },
 
+    // Theme → music filename (from each theme's theme.cfg)
+    themeMusic: {
+        'Art':'Art.ogg','Bamboo':'oriental.ogg','Bath':'bath.ogg','Beach':'Beach.ogg',
+        'Blox':'Nature.ogg','Brick':'Brick.ogg','Cake':'snow.ogg','Castle':'Castle.ogg',
+        'Cave':'snow.ogg','Cheese':'EarthRise.ogg','Christmas':'snow.ogg','City':'City.ogg',
+        'Compost':'Compost.ogg','CrazyMission':'snow.ogg','Deepspace':'hell.ogg',
+        'Desert':'Desert.ogg','Digital':'Freeway.ogg','EarthRise':'EarthRise.ogg',
+        'Eyes':'hell.ogg','Freeway':'Freeway.ogg','Fruit':'Fruit.ogg','Golf':'Golf.ogg',
+        'Halloween':'Halloween.ogg','Hell':'hell.ogg','Hoggywood':'Rock.ogg',
+        'Island':'pirate.ogg','Jungle':'Jungle.ogg','Nature':'Nature.ogg',
+        'Olympics':'Olympics.ogg','Planes':'City.ogg','Sheep':'Sheep.ogg','Snow':'snow.ogg',
+        'Stage':'Rock.ogg','Underwater':'underwater.ogg'
+    },
+
+    // All available themes (non-hidden ones suitable for random selection)
+    allThemes: [
+        'Art','Bamboo','Bath','Beach','Brick','Cake','Castle','Cave','Cheese',
+        'Christmas','City','Compost','Desert','Digital','EarthRise','Freeway',
+        'Fruit','Golf','Halloween','Hell','Hoggywood','Island','Jungle','Nature',
+        'Olympics','Sheep','Snow','Stage','Underwater'
+    ],
+
+    // Per-theme file manifest (all png + cfg files needed by engine)
+    themeFiles: {
+        'Art':["BlueWater.png","Border.png","Chunk.png","Droplet.png","Girder.png","LandBackTex.png","LandTex.png","Mona.png","SDDroplet.png","SDFlake.png","SDSplash.png","SDWater.png","Schrei.png","Sky.png","Soup.png","Splash.png","Zeit.png","horizont.png","theme.cfg"],
+        'Bamboo':["Bamboo.png","Bamboo2.png","Bamboo3.png","Border.png","Chunk.png","Clouds.png","Flake.png","Flower.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","SkyL.png","horizont.png","theme.cfg"],
+        'Bath':["Border.png","Bubble.png","Chunk.png","Clouds.png","Duck.png","Duck2.png","Dust.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","SDClouds.png","SDFlake.png","Sky.png","Toothbrush.png","Toothbrush_b.png","Toothbrush_g.png","horizont.png","horizontL.png","horizontR.png","theme.cfg"],
+        'Beach':["BeachBall.png","BlueWater.png","Boat.png","Border.png","Clouds.png","Droplet.png","Dust.png","Flake.png","Girder.png","LandBackTex.png","LandObject3.png","LandObject38.png","LandObject3_mask.png","LandObject4.png","LandObject5.png","LandTex.png","Object.png","Pier.png","Shell.png","Sky.png","Splash.png","SprayObject29.png","SprayObject36.png","Surfboard.png","horizont.png","kite_base.png","kite_overlay.png","theme.cfg"],
+        'Blox':["Border.png","LandBackTex.png","LandTex.png","horizont.png","theme.cfg","tmp.png"],
+        'Brick':["BlueWater.png","Border.png","Chunk.png","Clouds.png","Droplet.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","Splash.png","horizont.png","plant1.png","plant2.png","plant3.png","plant4.png","plant5.png","plant6.png","plant7.png","plant8.png","plant9.png","spray1.png","spray2.png","spray3.png","theme.cfg"],
+        'Cake':["BlueWater.png","Border.png","CandyCane.png","Cherry.png","Chunk.png","Clouds.png","CupCake.png","Droplet.png","Flake.png","Gingerbread.png","Girder.png","IceCream.png","LandBackTex.png","LandTex.png","Lollipop.png","Oreo.png","Oreo2.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","Snowball.png","Splash.png","amSnowball.png","horizont.png","plant1.png","plant2.png","plant3.png","theme.cfg"],
+        'Castle':["Axe.png","BlueWater.png","Border.png","Chunk.png","Clouds.png","Droplet.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","SDClouds.png","SDDroplet.png","SDSplash.png","SDWater.png","Shield.png","Sky.png","SkyL.png","SkyR.png","Spear.png","Splash.png","Sword.png","horizont.png","theme.cfg"],
+        'Cave':["Border.png","Chunk.png","Crystal01.png","Crystal02.png","CrystalSpray01.png","CrystalSpray02.png","CrystalSpray03.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","SkyL.png","Stalactite.png","Stalactite_mask.png","Stalagmite01.png","Stalagmite01_mask.png","Stalagmite02.png","Stalagmite02_mask.png","horizont.png","theme.cfg"],
+        'Cheese':["Border.png","Chunk.png","Flake.png","LandBackTex.png","LandTex.png","Sky.png","cheese.png","cheese_mask.png","fork.png","horizont.png","knife.png","mouseleft.png","mouseright.png","theme.cfg"],
+        'Christmas':["Ball.png","Border.png","CandyCane.png","Chunk.png","Dust.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","Skytrees.png","Snowball.png","Snowman.png","amGirder.png","amSnowball.png","holly.png","holly2.png","horizont.png","plant2.png","plant3.png","plant4.png","reindeer.png","theme.cfg","tree.png"],
+        'City':["Border.png","Chunk.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","horizont.png","plant1.png","plant2.png","plant3.png","plant4.png","theme.cfg"],
+        'Compost':["BlueWater.png","Border.png","Carrot1.png","Carrot2.png","Carrot3.png","Carrot4.png","Chunk.png","Clouds.png","Cucumber1.png","Cucumber2.png","Cucumber3.png","Cucumber4.png","Droplet.png","Eggshell1.png","Eggshell2.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Onion1.png","Onion2.png","SDClouds.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","Snowball.png","Splash.png","amSnowball.png","horizont.png","theme.cfg"],
+        'CrazyMission':["BlueWater.png","Border.png","Droplet.png","Flake.png","LandTex.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","SkyL.png","Splash.png","theme.cfg"],
+        'Deepspace':["BlueWater.png","Border.png","Droplet.png","Flake.png","LandTex.png","SDDroplet.png","SDFlake.png","SDSplash.png","SDWater.png","Sky.png","Splash.png","theme.cfg"],
+        'Desert':["BlueWater.png","Border.png","Chunk.png","Clouds.png","Droplet.png","Dust.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","SDClouds.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","Smoke.png","Splash.png","buzzard.png","cactus.png","cobra.png","cowskull.png","horizont.png","rock1.png","rock2.png","sand.png","sandR.png","theme.cfg"],
+        'Digital':["BlueWater.png","Border.png","Chunk.png","Clouds.png","Droplet.png","Dust.png","FileA.png","FileHello.png","FileHi.png","FileImg.png","FileMusic.png","FileOmega.png","Flake.png","Flash.png","Folder.png","FolderDoc.png","FolderImg.png","FolderMusic.png","Girder.png","LandBackTex.png","LandTex.png","Mouse.png","Notebook.png","Sky.png","Splash.png","horizont.png","theme.cfg"],
+        'EarthRise':["Border.png","Chunk.png","Flake.png","LandBackTex.png","LandTex.png","Rock.png","RockShort.png","RockShort_mask.png","Rock_mask.png","Sky.png","SkyL.png","horizont.png","horizontL.png","horizontR.png","theme.cfg"],
+        'Eyes':["BlueWater.png","Border.png","Clouds.png","Droplet.png","Flake.png","LandTex.png","SDClouds.png","SDDroplet.png","SDFlake.png","SDSplash.png","SDWater.png","Sky.png","Splash.png","horizont.png","theme.cfg"],
+        'Freeway':["AppleDirt.png","AppleSmall.png","Border.png","BottleDirt.png","Chunk.png","Clouds.png","FishDirt.png","Flake.png","LandBackTex.png","LandTex.png","SDClouds.png","Sky.png","Tire.png","TireDirt.png","horizont.png","theme.cfg"],
+        'Fruit':["Banana1.png","Banana2.png","BlueWater.png","Border.png","Chunk.png","Clouds.png","Droplet.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Orange1.png","Orange2.png","SDClouds.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","SkyL.png","Snowball.png","Splash.png","Watermelon.png","Watermelon_mask.png","amSnowball.png","horizont.png","theme.cfg"],
+        'Golf':["Bag.png","Ball.png","Balldirt.png","BlueWater.png","Border.png","Car.png","Chunk.png","Clouds.png","Club.png","Club2.png","Droplet.png","Flag1.png","Flag2.png","Flag3.png","Flag4.png","Flake.png","Girder.png","Hole.png","LandBackTex.png","LandTex.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","SkyL.png","Splash.png","Tee.png","horizont.png","theme.cfg"],
+        'Halloween':["BlueWater.png","Border.png","Chunk.png","Clouds.png","Droplet.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Rock.png","RockShort.png","SDClouds.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","SkyL.png","Splash.png","horizont.png","theme.cfg"],
+        'Hell':["BlueWater.png","Border.png","Chunk.png","Clouds.png","Droplet.png","Flake.png","LandBackTex.png","LandTex.png","SDClouds.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","Splash.png","horizont.png","plant1.png","plant2.png","plant3.png","plant4.png","theme.cfg"],
+        'Hoggywood':["Border.png","Clouds.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","SDClouds.png","SignL.png","SignR.png","Sky.png","SkyL.png","camera.png","clapper.png","hogscar.png","horizont.png","horizontL.png","palm.png","reel.png","reel2.png","star1.png","star2.png","star3.png","star4.png","star5.png","theme.cfg"],
+        'Island':["Border.png","Chunk.png","Flake.png","LandBackTex.png","LandTex.png","Sky.png","SkyL.png","anchor.png","horizont.png","plant1.png","plant2.png","plant3.png","plant4.png","theme.cfg"],
+        'Jungle':["BlueWater.png","Border.png","Clouds.png","Droplet.png","FernLeft.png","FernRight.png","Flake.png","FlowerBlue.png","FlowerRed.png","Flowers.png","Girder.png","LandBackTex.png","LandTex.png","Liana.png","Monkey.png","PalmTree.png","Sky.png","SkyL.png","Snake.png","Spider.png","Splash.png","horizont.png","theme.cfg"],
+        'Nature':["Border.png","Chunk.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","butterfly.png","horizont.png","mole.png","mole2.png","mole3.png","mushroom.png","mushroom2.png","plant1.png","plant2.png","plant3.png","plant4.png","snail.png","theme.cfg"],
+        'Olympics':["Border.png","Chunk.png","Column01.png","Column02.png","Column03.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","SkyL.png","Statue.png","horizont.png","theme.cfg"],
+        'Planes':["Border.png","LandTex.png","Sky.png","horizont.png","theme.cfg"],
+        'Sheep':["Border.png","Chunk.png","Clouds.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","SkyL.png","barriere.png","fleur.png","fleurland.png","fleurland2.png","fleurland3.png","fleurland4.png","grass.png","grass2.png","grassp.png","grassp2.png","horizont.png","mouton1.png","mouton2.png","mouton3.png","mouton4.png","rocher.png","theme.cfg"],
+        'Snow':["Border.png","Chunk.png","Dust.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Sky.png","Snowball.png","amGirder.png","amSnowball.png","horizont.png","plant1.png","plant2.png","plant3.png","plant4.png","theme.cfg"],
+        'Stage':["Bass.png","BlueWater.png","Border.png","Box.png","Chunk.png","Droplet.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","Light.png","MicL.png","MicR.png","SDDroplet.png","SDSplash.png","SDWater.png","Sky.png","SkyL.png","Splash.png","drum.png","horizont.png","poster1.png","poster2.png","poster3.png","poster4.png","theme.cfg"],
+        'Underwater':["BlueWater.png","Border.png","Clouds.png","Droplet.png","Dust.png","Flake.png","Girder.png","LandBackTex.png","LandTex.png","SDClouds.png","SDDroplet.png","SDFlake.png","SDSplash.png","SDWater.png","Sky.png","Snowball.png","Splash.png","amSnowball.png","anchor.png","clam.png","coral.png","coral2.png","crab.png","horizont.png","theme.cfg"]
+    },
+
+    // Fetch theme assets + music into Emscripten FS before engine needs them
+    // Returns a Promise that resolves when all files are written
+    fetchThemeAssets: function(theme) {
+        var basePath = (window._webwars_assetBase || 'assets');
+        var promises = [];
+
+        // Fetch theme directory (skip Nature — already in core.data)
+        if (theme !== 'Nature') {
+            var themeUrl = basePath + '/Themes/' + theme + '/';
+            var files = this.themeFiles[theme] || [];
+            var fsDir = '/Data/Themes/' + theme;
+            promises.push(this._fetchFilesIntoFS(themeUrl, files, fsDir));
+        }
+
+        // Fetch music file
+        var musicFN = this.themeMusic[theme] || 'Nature.ogg';
+        promises.push(this._fetchFileIntoFS(
+            basePath + '/Music/' + musicFN, '/Data/Music/' + musicFN));
+
+        return Promise.all(promises);
+    },
+
+    _fetchFileIntoFS: function(url, fsPath) {
+        return fetch(url).then(function(r) {
+            if (!r.ok) { console.log('[Assets] Not found: ' + url); return; }
+            return r.arrayBuffer().then(function(buf) {
+                var parts = fsPath.split('/');
+                for (var i = 1; i < parts.length - 1; i++) {
+                    try { FS.mkdir(parts.slice(0, i + 1).join('/')); } catch(e) {}
+                }
+                FS.writeFile(fsPath, new Uint8Array(buf));
+                console.log('[Assets] Loaded ' + fsPath + ' (' + (buf.byteLength/1024|0) + 'KB)');
+            });
+        }).catch(function(e) { console.log('[Assets] Failed: ' + url, e.message); });
+    },
+
+    _fetchFilesIntoFS: function(baseUrl, files, fsDir) {
+        var self = this;
+        try { FS.mkdir(fsDir); } catch(e) {}
+        return Promise.all(files.map(function(f) {
+            return self._fetchFileIntoFS(baseUrl + f, fsDir + '/' + f);
+        }));
+    },
+
     sendAmmoAndTeam: function(hash, color, name, hogs) {
         // Sanity check: engine expects exactly 60 chars per ammo string
         if (this.defaultAmmo.length !== 60 || this.zeroAmmo.length !== 60) {
@@ -135,14 +239,11 @@ var HWEngine = {
         console.log('[HW] Starting hotseat game...');
 
         var seed = '{' + Math.random().toString(36).substring(2, 10) + '}';
-        var maps = Object.keys(this.mapThemes);
-        var map = maps[Math.floor(Math.random() * maps.length)];
-        var theme = this.mapThemes[map];
-        console.log('[HW] Selected map: ' + map + ' theme: ' + theme);
+        var theme = this._chosenTheme || 'Nature';
+        console.log('[HW] Selected random map, theme: ' + theme);
 
         // Order matches real Hedgewars server (EngineInteraction.hs)
-        // 1. Map + theme
-        this.sendMessage('emap ' + map);
+        // Random mapgen — no emap needed, just theme
         this.sendMessage('etheme ' + theme);
 
         // 2. Seed + game config
@@ -317,6 +418,25 @@ Module.preRun.push(function() {
         function(ch) { HWEngine.onStdoutByte(ch); },
         function(ch) { HWEngine.onStderrByte(ch); }
     );
+
+    // Choose theme now and fetch assets before engine starts
+    var theme;
+    if (HWEngine.mpConfig) {
+        theme = HWEngine.mpConfig.theme || 'Nature';
+    } else {
+        theme = HWEngine.allThemes[Math.floor(Math.random() * HWEngine.allThemes.length)];
+    }
+    HWEngine._chosenTheme = theme;
+    console.log('[Assets] Pre-fetching theme: ' + theme);
+
+    Module.addRunDependency('theme-assets');
+    HWEngine.fetchThemeAssets(theme).then(function() {
+        console.log('[Assets] Theme assets ready');
+        Module.removeRunDependency('theme-assets');
+    }).catch(function(e) {
+        console.error('[Assets] Fetch failed, continuing anyway:', e);
+        Module.removeRunDependency('theme-assets');
+    });
 });
 
 Module.print = function(text) { if (text) console.log('[Engine]', text); };

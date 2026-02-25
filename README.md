@@ -34,7 +34,8 @@ Browser (WASM engine) ←WebSocket→ Gateway (Node.js) ←TCP→ Hedgewars Serv
 | Component | Tech | Description |
 |-----------|------|-------------|
 | Game engine | WebAssembly (3.97MB) | Full Hedgewars engine compiled from Pascal via C |
-| Game assets | Preloaded .data (187MB) | Graphics, sounds, fonts, maps, Lua scripts |
+| Core assets | Preloaded .data (7MB) | Sprites, shaders, fonts, sounds, scripts, Nature theme |
+| Theme assets | Fetched on demand (~3-7MB) | 29 themes + music loaded dynamically per game |
 | WS gateway | Node.js | Bridges browser WebSocket to HW server TCP |
 | Game server | Haskell | Official Hedgewars server (rooms, relay, protocol) |
 | Admin panel | Flask + Leaflet | Live traffic map, visitor geo, bot detection |

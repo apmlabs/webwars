@@ -6,7 +6,7 @@
 #include "uFloat.h"
 #include "GL.h"
 enum{cNetProtoVersion = 60};
-static const string255 cVersionString = STRINIT("1.1.0");
+static const string255 cVersionString = STRINIT("1.1.0-dev");
 static const string255 cRevisionString = STRINIT("0000");
 static const string255 cHashString = STRINIT("unknown");
 static const string255 cDefaultPathPrefix = STRINIT("/home/ubuntu/emsdk/upstream/emscripten/cache/sysroot/share/hedgewars//Data");

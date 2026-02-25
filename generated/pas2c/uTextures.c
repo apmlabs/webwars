@@ -8,12 +8,13 @@
 #include "uDebug.h"
 #include "uConsole.h"
 #include "uLandUtils.h"
-static const string255 __str5 = STRINIT(" priority=");
-static const string255 __str4 = STRINIT(" height=");
-static const string255 __str3 = STRINIT("Texture not freed: width=");
-static const string255 __str2 = STRINIT("FIXME FIXME FIXME. App shutdown without full cleanup of texture list; read game0.log and please report this problem");
-static const string255 __str1 = STRINIT("Lock surface");
-static const string255 __str0 = STRINIT("Surface2Tex failed, expecting 32 bit surface");
+static const string255 __str6 = STRINIT(" priority=");
+static const string255 __str5 = STRINIT(" height=");
+static const string255 __str4 = STRINIT("Texture not freed: width=");
+static const string255 __str3 = STRINIT("FIXME FIXME FIXME. App shutdown without full cleanup of texture list; read game0.log and please report this problem");
+static const string255 __str2 = STRINIT("Lock surface");
+static const string255 __str1 = STRINIT("Surface2Tex failed, expecting 32 bit surface");
+static const string255 __str0 = STRINIT("Surface2Tex: nil surface (missing asset), returning nil");
 static PTexture TextureList;
 void utextures_SetTextureParameters(boolean enableClamp)
 {
@@ -197,6 +198,11 @@ PTexture utextures_Surface2Tex(PSDL_Surface surf,boolean enableClamp)
     {
         return NULL;
     }
+    if(surf == NULL)
+    {
+        uconsole_WriteLnToConsole(__str0);
+        return NULL;
+    }
     fpcrtl_new(surface2tex_result);
     surface2tex_result->PrevTexture = NULL;
     surface2tex_result->NextTexture = NULL;
@@ -212,7 +218,7 @@ PTexture utextures_Surface2Tex(PSDL_Surface surf,boolean enableClamp)
     surface2tex_result->h = surf->h;
     if((*surf->format).BytesPerPixel != 4)
     {
-        udebug_checkFails(false, __str0, true);
+        udebug_checkFails(false, __str1, true);
         surface2tex_result->id = 0;
         return surface2tex_result;
     }
@@ -220,7 +226,7 @@ PTexture utextures_Surface2Tex(PSDL_Surface surf,boolean enableClamp)
     glBindTexture(GL_TEXTURE_2D, surface2tex_result->id);
     if(sdlh_SDL_MustLock(surf))
     {
-        if(udebug_SDLCheck(SDL_LockSurface(surf) >= 0, __str1, true))
+        if(udebug_SDLCheck(SDL_LockSurface(surf) >= 0, __str2, true))
         {
             return NULL;
         }
@@ -313,12 +319,12 @@ void utextures_freeModule()
     PTexture tex;
     if(TextureList != NULL)
     {
-        uconsole_WriteToConsole(__str2);
+        uconsole_WriteToConsole(__str3);
     }
     while(TextureList != NULL)
     {
         tex = TextureList;
-        uutils_AddFileLog(_strconcat(_strconcat(_strconcat(_strconcat(_strconcat(__str3, uutils_IntToStr(((LongInt)tex->w))), __str4), uutils_IntToStr(((LongInt)tex->h))), __str5), uutils_IntToStr(fpcrtl_round(tex->priority * 1000))));
+        uutils_AddFileLog(_strconcat(_strconcat(_strconcat(_strconcat(_strconcat(__str4, uutils_IntToStr(((LongInt)tex->w))), __str5), uutils_IntToStr(((LongInt)tex->h))), __str6), uutils_IntToStr(fpcrtl_round(tex->priority * 1000))));
         utextures_FreeAndNilTexture(&(tex));
     }
 };

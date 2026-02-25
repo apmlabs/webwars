@@ -345,7 +345,7 @@ var convertedSurf: PSDL_Surface;
 begin
     doSurfaceConversion:= tmpsurf;
     if ((tmpsurf^.format^.bitsperpixel = 32) and (tmpsurf^.format^.rshift > tmpsurf^.format^.bshift)) or
-       (tmpsurf^.format^.bitsperpixel = 24) then
+       (tmpsurf^.format^.bitsperpixel <> 32) then
     begin
         convertedSurf:= SDL_ConvertSurface(tmpsurf, conversionFormat, SDL_SWSURFACE);
         SDL_FreeSurface(tmpsurf);

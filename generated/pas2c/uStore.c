@@ -14,32 +14,34 @@
 #include "uLocale.h"
 #include "uInputHandler.h"
 #include "adler32.h"
-static const string255 __str56 = STRINIT("fullscr");
-static const string255 __str55 = STRINIT("hwengine");
-static const string255 __str54 = STRINIT("SDL_CreateWindow");
-static const string255 __str53 = STRINIT("Hedgewars");
-static const string255 __str52 = STRINIT("Freeing old primary surface...");
-static const string255 __str51 = STRINIT("IMG_Init");
-static const string255 __str50 = STRINIT("Init SDL_image... ");
-static const string255 __str49 = STRINIT("Preparing to change video parameters...");
-static const string255 __str48 = STRINIT("RenderHelpWindow: fail to create surface");
-static const string255 __str47 = STRINIT(" ");
-static const string255 __str46 = STRINIT("???");
-static const string255 __str45 = STRINIT("Freeing progress textures... ");
-static const string255 __str44 = STRINIT("Error - Progress or Loading texture is nil!");
-static const string255 __str43 = STRINIT("Progress");
-static const string255 __str42 = STRINIT("progress sprite: ");
-static const string255 __str41 = STRINIT("SDLGLcontext");
-static const string255 __str40 = STRINIT("Setting up OpenGL (using driver: ");
-static const string255 __str39 = STRINIT("Settings file not found");
-static const string255 __str38 = STRINIT("color");
-static const string255 __str37 = STRINIT("[colors]");
-static const string255 __str36 = STRINIT("Loading default clan colors from: ");
-static const string255 __str35 = STRINIT("Got Hat");
-static const string255 __str34 = STRINIT("Hat => ");
-static const string255 __str33 = STRINIT(" [AD: ");
-static const string255 __str32 = STRINIT(" [CD: ");
-static const string255 __str31 = STRINIT("LoadImage: ");
+static const string255 __str58 = STRINIT("fullscr");
+static const string255 __str57 = STRINIT("hwengine");
+static const string255 __str56 = STRINIT("SDL_CreateWindow");
+static const string255 __str55 = STRINIT("Hedgewars");
+static const string255 __str54 = STRINIT("Freeing old primary surface...");
+static const string255 __str53 = STRINIT("IMG_Init");
+static const string255 __str52 = STRINIT("Init SDL_image... ");
+static const string255 __str51 = STRINIT("Preparing to change video parameters...");
+static const string255 __str50 = STRINIT("RenderHelpWindow: fail to create surface");
+static const string255 __str49 = STRINIT(" ");
+static const string255 __str48 = STRINIT("???");
+static const string255 __str47 = STRINIT("Freeing progress textures... ");
+static const string255 __str46 = STRINIT("Error - Progress or Loading texture is nil!");
+static const string255 __str45 = STRINIT("Progress");
+static const string255 __str44 = STRINIT("progress sprite: ");
+static const string255 __str43 = STRINIT("SDLGLcontext");
+static const string255 __str42 = STRINIT("Setting up OpenGL (using driver: ");
+static const string255 __str41 = STRINIT("Settings file not found");
+static const string255 __str40 = STRINIT("color");
+static const string255 __str39 = STRINIT("[colors]");
+static const string255 __str38 = STRINIT("Loading default clan colors from: ");
+static const string255 __str37 = STRINIT("Got Hat");
+static const string255 __str36 = STRINIT("Hat => ");
+static const string255 __str35 = STRINIT(" [AD: ");
+static const string255 __str34 = STRINIT(" [CD: ");
+static const string255 __str33 = STRINIT("LoadImage: ");
+static const string255 __str32 = STRINIT("[MANIFEST] optional missing: ");
+static const string255 __str31 = STRINIT("[MANIFEST] CRITICAL missing: ");
 static const string255 __str30 = STRINIT(".png");
 static const string255 __str29 = STRINIT(".png [flags: ");
 static const string255 __str28 = STRINIT("Number texture creation for ammo type #");
@@ -770,13 +772,21 @@ PSDL_Surface ustore_LoadImage(string255 filename,LongInt imageFlags)
     }
     if(tmpsurf == NULL)
     {
+        if((imageFlags & ifCritical) != 0)
+        {
+            uconsole_WriteLnToConsole(_strconcat(__str31, s));
+        }
+        else
+        {
+            uconsole_WriteLnToConsole(_strconcat(__str32, s));
+        }
         if(rwops != NULL)
         {
             if((imageFlags & ifCritical) != 0)
             {
                 udebug_OutError(_strconcat(_strappend(logMsg, 0x20), msgFailed), false);
             }
-            if(udebug_SDLCheck(false, _strconcat(_strappend(_strconcat(__str31, logMsg), 0x20), msgFailed), (imageFlags & ifCritical) != 0))
+            if(udebug_SDLCheck(false, _strconcat(_strappend(_strconcat(__str33, logMsg), 0x20), msgFailed), false))
             {
                 return loadimage_result;
             }
@@ -786,7 +796,7 @@ PSDL_Surface ustore_LoadImage(string255 filename,LongInt imageFlags)
         {
             if((imageFlags & ifCritical) != 0)
             {
-                udebug_OutError(_strconcat(_strappend(logMsg, 0x20), msgFailed), (imageFlags & ifCritical) != 0);
+                udebug_OutError(_strconcat(_strappend(logMsg, 0x20), msgFailed), false);
             }
         }
         return loadimage_result;
@@ -819,7 +829,7 @@ PSDL_Surface ustore_LoadImage(string255 filename,LongInt imageFlags)
              if (y <= y__end__) do {
                                        syncedPixelDigest = adler32_Adler32Update(syncedPixelDigest, &((*((PByteArray)tmpsurf->pixels))[y * tmpsurf->pitch]), tmpsurf->w * 4);
                                    } while(y++ != y__end__);}
-            digestMsg = _strappend(_strconcat(__str32, uutils_IntToStr(syncedPixelDigest)), 0x5d);
+            digestMsg = _strappend(_strconcat(__str34, uutils_IntToStr(syncedPixelDigest)), 0x5d);
         }
         else
         {
@@ -837,7 +847,7 @@ PSDL_Surface ustore_LoadImage(string255 filename,LongInt imageFlags)
                                            syncedPixelDigest = adler32_Adler32Update(syncedPixelDigest, rowData, tmpsurf->w);
                                        } while(y++ != y__end__);}
                 fpcrtl_FreeMem(rowData, tmpsurf->w);
-                digestMsg = _strappend(_strconcat(__str33, uutils_IntToStr(syncedPixelDigest)), 0x5d);
+                digestMsg = _strappend(_strconcat(__str35, uutils_IntToStr(syncedPixelDigest)), 0x5d);
             }
         }
         if(sdlh_SDL_MustLock(tmpsurf))
@@ -903,10 +913,10 @@ void ustore_LoadHedgehogHat2(THedgehog (*HH),string255 newHat,boolean allowSurfR
         ustore_freeTmpHatSurf();
         tmpHatSurf = ustore_LoadDataImage(ptHats, newHat, ifNone);
     }
-    uutils_AddFileLog(_strconcat(__str34, newHat));
+    uutils_AddFileLog(_strconcat(__str36, newHat));
     if(tmpHatSurf != NULL)
     {
-        uutils_AddFileLog(__str35);
+        uutils_AddFileLog(__str37);
         (*HH).HatTex = utextures_Surface2Tex(tmpHatSurf, true);
         if(allowSurfReuse)
         {
@@ -934,12 +944,12 @@ void ustore_LoadDefaultClanColors(string255 s)
     {
         return;
     }
-    uconsole_WriteLnToConsole(_strconcat(__str36, s));
+    uconsole_WriteLnToConsole(_strconcat(__str38, s));
     l = __str13;
     if(uphysfslayer_pfsExists(s))
     {
         f = uphysfslayer_pfsOpenRead(s);
-        while(!uphysfslayer_pfsEOF(f) && (_strncompare(l, __str37)))
+        while(!uphysfslayer_pfsEOF(f) && (_strncompare(l, __str39)))
         {
             uphysfslayer_pfsReadLn(f, &(l));
         }
@@ -954,7 +964,7 @@ void ustore_LoadDefaultClanColors(string255 s)
                 ++i;
             }
             temp = fpcrtl_copy(key, 1, 5);
-            if(_strcompare(temp, __str38))
+            if(_strcompare(temp, __str40))
             {
                 temp = fpcrtl_copy(key, 6, fpcrtl_Length(key) - 5);
                 tempClanID = uutils_StrToInt(temp);
@@ -995,7 +1005,7 @@ void ustore_LoadDefaultClanColors(string255 s)
     }
     else
     {
-        uconsole_WriteLnToConsole(__str39);
+        uconsole_WriteLnToConsole(__str41);
     }
 };
 void ustore_SetupOpenGLAttributes()
@@ -1013,12 +1023,12 @@ void ustore_SetupOpenGLAttributes()
 };
 void ustore_SetupOpenGL()
 {
-    uutils_AddFileLog(_strappend(_strconcat(__str40, fpcrtl_pchar2str(SDL_GetCurrentVideoDriver())), 0x29));
+    uutils_AddFileLog(_strappend(_strconcat(__str42, fpcrtl_pchar2str(SDL_GetCurrentVideoDriver())), 0x29));
     if(SDLGLcontext == NULL)
     {
         SDLGLcontext = SDL_GL_CreateContext(SDLwindow);
     }
-    if(udebug_SDLCheck(SDLGLcontext != NULL, __str41, true))
+    if(udebug_SDLCheck(SDLGLcontext != NULL, __str43, true))
     {
         return;
     }
@@ -1035,15 +1045,15 @@ void ustore_AddProgress()
     }
     if(Step == 0)
     {
-        uconsole_WriteToConsole(_strconcat(msgLoading, __str42));
-        texsurf = ustore_LoadDataImage(ptGraphics, __str43, ifCritical | ifColorKey);
+        uconsole_WriteToConsole(_strconcat(msgLoading, __str44));
+        texsurf = ustore_LoadDataImage(ptGraphics, __str45, ifCritical | ifColorKey);
         ProgrTex = utextures_Surface2Tex(texsurf, false);
         LoadingText = urenderutils_RenderStringTex(trmsg[sidLoading], 0xfff39ee8, fntBig);
         squaresize = texsurf->w >> 1;
         numsquares = texsurf->h / squaresize;
         SDL_FreeSurface(texsurf);
     }
-    if(udebug_checkFails((ProgrTex != NULL) && (LoadingText != NULL), __str44, true))
+    if(udebug_checkFails((ProgrTex != NULL) && (LoadingText != NULL), __str46, true))
     {
         return;
     }
@@ -1066,7 +1076,7 @@ void ustore_AddProgress()
 };
 void ustore_FinishProgress()
 {
-    uconsole_WriteLnToConsole(__str45);
+    uconsole_WriteLnToConsole(__str47);
     utextures_FreeAndNilTexture(&(ProgrTex));
     utextures_FreeAndNilTexture(&(LoadingText));
     Step = 0;
@@ -1090,11 +1100,11 @@ PTexture ustore_RenderHelpWindow(astring caption,astring subcaption,astring desc
     astring tmpdesc;
     if(fpcrtl_LengthA(caption) == 0)
     {
-        caption = fpcrtl_str2astr(__str46);
+        caption = fpcrtl_str2astr(__str48);
     }
     if(fpcrtl_LengthA(subcaption) == 0)
     {
-        subcaption = fpcrtl_str2astr(__str47);
+        subcaption = fpcrtl_str2astr(__str49);
     }
     font = uutils_CheckCJKFont(caption, fnt16);
     font = uutils_CheckCJKFont(subcaption, font);
@@ -1144,7 +1154,7 @@ PTexture ustore_RenderHelpWindow(astring caption,astring subcaption,astring desc
     w += wa;
     h += ha + 8;
     tmpsurf = SDL_CreateRGBSurface(SDL_SWSURFACE, w, h, 32, RMask, GMask, BMask, AMask);
-    if(udebug_checkFails(tmpsurf != NULL, __str48, true))
+    if(udebug_checkFails(tmpsurf != NULL, __str50, true))
     {
         return NULL;
     }
@@ -1316,11 +1326,11 @@ void ustore_chFullScr(string255 (*s))
         cScreenWidth = cWindowedWidth;
         cScreenHeight = cWindowedHeight;
     }
-    uutils_AddFileLog(__str49);
+    uutils_AddFileLog(__str51);
     if(SDLwindow == NULL)
     {
-        uconsole_WriteToConsole(__str50);
-        if(udebug_SDLCheck(IMG_Init(IMG_INIT_PNG) != 0, __str51, true))
+        uconsole_WriteToConsole(__str52);
+        if(udebug_SDLCheck(IMG_Init(IMG_INIT_PNG) != 0, __str53, true))
         {
             return;
         }
@@ -1330,7 +1340,7 @@ void ustore_chFullScr(string255 (*s))
     {
         AmmoMenuInvalidated = true;
         urender_SetScale(cDefaultZoomLevel);
-        uutils_AddFileLog(__str52);
+        uutils_AddFileLog(__str54);
     }
     ustore_SetupOpenGLAttributes();
     x = SDL_WINDOWPOS_CENTERED_MASK;
@@ -1342,7 +1352,7 @@ void ustore_chFullScr(string255 (*s))
         {
             flags = flags | SDL_WINDOW_FULLSCREEN;
         }
-        SDLwindow = SDL_CreateWindow(fpcrtl__pchar(__str53), x, y, cScreenWidth, cScreenHeight, flags);
+        SDLwindow = SDL_CreateWindow(fpcrtl__pchar(__str55), x, y, cScreenWidth, cScreenHeight, flags);
     }
     else
     {
@@ -1362,11 +1372,11 @@ void ustore_chFullScr(string255 (*s))
             urender_UpdateViewLimits();
         }
     }
-    if(udebug_SDLCheck(SDLwindow != NULL, __str54, true))
+    if(udebug_SDLCheck(SDLwindow != NULL, __str56, true))
     {
         return;
     }
-    ico = ustore_LoadDataImage(ptGraphics, __str55, ifIgnoreCaps);
+    ico = ustore_LoadDataImage(ptGraphics, __str57, ifIgnoreCaps);
     if(ico != NULL)
     {
         SDL_SetWindowIcon(SDLwindow, ico);
@@ -1417,7 +1427,7 @@ void ustore_initModule()
 {
     TAmmoType ai;
     LongInt i;
-    ucommands_RegisterVariable_3(__str56, &(ustore_chFullScr), true);
+    ucommands_RegisterVariable_3(__str58, &(ustore_chFullScr), true);
     cScaleFactor = 2.0;
     urender_UpdateViewLimits();
     Step = 0;

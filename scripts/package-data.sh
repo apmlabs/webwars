@@ -19,9 +19,11 @@ for f in "$DATA_DIR"/Graphics/*.png; do
     dst="/Data/Graphics/${bn//@/@@}"
     PRELOAD+=("${src}@${dst}")
 done
-for sub in Hedgehog AmmoMenu SuddenDeath Buttons; do
+for sub in Hedgehog AmmoMenu SuddenDeath Buttons Graves; do
     [ -d "$DATA_DIR/Graphics/$sub" ] && PRELOAD+=("$DATA_DIR/Graphics/$sub@/Data/Graphics/$sub")
 done
+# Default flag (engine loads with ifNone but looks better with it)
+[ -f "$DATA_DIR/Graphics/Flags/hedgewars.png" ] && PRELOAD+=("$DATA_DIR/Graphics/Flags/hedgewars.png@/Data/Graphics/Flags/hedgewars.png")
 
 # Shaders, Tiles, Names, misc, Scripts
 PRELOAD+=("$DATA_DIR/Shaders@/Data/Shaders")

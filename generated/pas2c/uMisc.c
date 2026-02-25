@@ -237,7 +237,7 @@ PSDL_Surface umisc_doSurfaceConversion(PSDL_Surface tmpsurf)
     PSDL_Surface dosurfaceconversion_result;
     PSDL_Surface convertedSurf;
     dosurfaceconversion_result = tmpsurf;
-    if((((*tmpsurf->format).BitsPerPixel == 32) && ((*tmpsurf->format).Rshift > (*tmpsurf->format).Bshift)) || ((*tmpsurf->format).BitsPerPixel == 24))
+    if((((*tmpsurf->format).BitsPerPixel == 32) && ((*tmpsurf->format).Rshift > (*tmpsurf->format).Bshift)) || ((*tmpsurf->format).BitsPerPixel != 32))
     {
         convertedSurf = SDL_ConvertSurface(tmpsurf, conversionFormat, SDL_SWSURFACE);
         SDL_FreeSurface(tmpsurf);

@@ -215,6 +215,11 @@ var tw, th, x, y: Longword;
     fromP4, toP4: PLongWordArray;
 begin
 if cOnlyStats then exit(nil);
+if surf = nil then
+    begin
+    WriteLnToConsole('Surface2Tex: nil surface (missing asset), returning nil');
+    exit(nil)
+    end;
 new(Surface2Tex);
 Surface2Tex^.PrevTexture:= nil;
 Surface2Tex^.NextTexture:= nil;
