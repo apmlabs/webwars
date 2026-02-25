@@ -294,15 +294,20 @@ def api_history():
 
 @app.route('/api/visitors')
 def api_visitors():
-    """Recent visitor log."""
+    """Recent visitor log — players only (downloaded .data), last 7 days."""
     conn = get_db()
-    player_ips = {r[0] for r in conn.execute("SELECT DISTINCT ip FROM visitors WHERE page LIKE '%.data'").fetchall()}
+    cutoff = int(time.time()) - 7 * 86400
     rows = conn.execute(f'''
-        SELECT ip, page, city, country, isp, timestamp, user_agent
-        FROM visitors WHERE ip NOT IN ({_HIDDEN_SQL}) ORDER BY timestamp DESC LIMIT 100
-    ''').fetchall()
+        SELECT ip, MAX(page) as page, city, country, isp, MAX(timestamp) as timestamp, user_agent
+        FROM visitors
+        WHERE ip IN (SELECT DISTINCT ip FROM visitors WHERE page LIKE '%.data')
+          AND ip NOT IN ({_HIDDEN_SQL})
+          AND timestamp > ?
+        GROUP BY ip
+        ORDER BY timestamp DESC LIMIT 100
+    ''', (cutoff,)).fetchall()
     conn.close()
-    return jsonify([{**dict(r), 'cloud': is_cloud_ip(r['isp']), 'played': r['ip'] in player_ips} for r in rows])
+    return jsonify([{**dict(r), 'cloud': is_cloud_ip(r['isp']), 'played': True} for r in rows])
 
 if __name__ == '__main__':
     init_db()
