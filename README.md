@@ -12,6 +12,8 @@ The game server is also theirs — a Haskell binary that handles lobby, rooms, a
 
 **Solo (hotseat):** Open [webwars.link](https://webwars.link) — two teams on one keyboard, taking turns. Right-click to pick a weapon, Space to fire, Arrow keys to move.
 
+**Custom game:** Open [webwars.link/play.html](https://webwars.link/play.html) to choose a theme (30 options), game style (22 modes like Racer, Shoppa, King), scheme, and weapon set before starting.
+
 **Multiplayer:** Open [webwars.link/lobby.html](https://webwars.link/lobby.html) in two browser tabs:
 1. Enter a nickname and click Connect
 2. One player creates a room, the other joins it
