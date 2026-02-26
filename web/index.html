@@ -223,29 +223,39 @@ window._webwars_roundFinished=function(){
 </script>
 <script src="gameconfig.js"></script>
 <script>
-// Read config from URL params (set by play.html custom game)
+// Read config from URL params (set by play.html)
 (function(){
   var p=new URLSearchParams(location.search);
-  var schemeName=p.get('scheme')||'Default';
-  var weaponsName=p.get('weapons')||'Default';
-  var styleName=p.get('style')||'Normal';
-  var themeName=p.get('theme')||'Random';
-  // Show current mode in top bar
-  var parts=[];
-  if(styleName!=='Normal') parts.push(styleName);
-  if(schemeName!=='Default') parts.push(schemeName);
-  if(weaponsName!=='Default'&&weaponsName!==schemeName) parts.push(weaponsName+' weapons');
-  if(themeName!=='Random') parts.push(themeName);
-  var label=document.getElementById('mode-label');
-  if(label) label.textContent=parts.length?parts.join(' · '):'Quick Play';
-  window._webwars_hotseatConfig = function() {
-    return {
-      scheme: GameConfig.findScheme(schemeName),
-      weapon: GameConfig.findWeapon(weaponsName),
-      style: styleName,
-      theme: themeName
+  var mission=p.get('mission');
+  if(mission){
+    // Mission mode — engine will call startMissionGame
+    var label=document.getElementById('mode-label');
+    if(label) label.textContent=mission.replace(/_/g,' ').replace(/^.*\//,'');
+    window._webwars_missionConfig = function(){
+      return {script:mission, name:mission.replace(/[^a-zA-Z0-9]/g,'_')};
     };
-  };
+  } else {
+    // Hotseat mode
+    var schemeName=p.get('scheme')||'Default';
+    var weaponsName=p.get('weapons')||'Default';
+    var styleName=p.get('style')||'Normal';
+    var themeName=p.get('theme')||'Random';
+    var parts=[];
+    if(styleName!=='Normal') parts.push(styleName);
+    if(schemeName!=='Default') parts.push(schemeName);
+    if(weaponsName!=='Default'&&weaponsName!==schemeName) parts.push(weaponsName+' weapons');
+    if(themeName!=='Random') parts.push(themeName);
+    var label=document.getElementById('mode-label');
+    if(label) label.textContent=parts.length?parts.join(' · '):'Quick Play';
+    window._webwars_hotseatConfig = function() {
+      return {
+        scheme: GameConfig.findScheme(schemeName),
+        weapon: GameConfig.findWeapon(weaponsName),
+        style: styleName,
+        theme: themeName
+      };
+    };
+  }
 })();
 </script>
 <script src="hwengine-data.js"></script>

@@ -352,6 +352,79 @@ function findTheme(name) {
     return THEMES[0];
 }
 
+// ── Missions ──
+var MISSIONS = {
+  training: [
+    {name:'Basic_Training_-_Movement', title:'Movement'},
+    {name:'Basic_Training_-_Bazooka', title:'Bazooka'},
+    {name:'Basic_Training_-_Grenade', title:'Grenade'},
+    {name:'Basic_Training_-_Rope', title:'Rope'},
+    {name:'Basic_Training_-_Flying_Saucer', title:'Flying Saucer'}
+  ],
+  challenge: [
+    {name:'Target_Practice_-_Bazooka_easy', title:'Target Practice: Bazooka (Easy)'},
+    {name:'Target_Practice_-_Bazooka_hard', title:'Target Practice: Bazooka (Hard)'},
+    {name:'Target_Practice_-_Homing_Bee', title:'Target Practice: Homing Bee'},
+    {name:'Target_Practice_-_Grenade_easy', title:'Target Practice: Grenade (Easy)'},
+    {name:'Target_Practice_-_Grenade_hard', title:'Target Practice: Grenade (Hard)'},
+    {name:'Target_Practice_-_Cluster_Bomb', title:'Target Practice: Cluster Bomb'},
+    {name:'Target_Practice_-_Shotgun', title:'Target Practice: Shotgun'},
+    {name:'Basic_Training_-_Sniper_Rifle', title:'Sniper Rifle'},
+    {name:'Challenge_-_Speed_Shoppa_-_Hedgelove', title:'Speed Shoppa: Hedgelove'},
+    {name:'Challenge_-_Speed_Shoppa_-_Ropes', title:'Speed Shoppa: Ropes'},
+    {name:'Challenge_-_Speed_Shoppa_-_ShoppaKing', title:'Speed Shoppa: ShoppaKing'},
+    {name:'User_Mission_-_Rope_Knock_Challenge', title:'Rope Knock Challenge'},
+    {name:'User_Mission_-_RCPlane_Challenge', title:'RC Plane Challenge'},
+    {name:'User_Mission_-_That_Sinking_Feeling', title:'That Sinking Feeling'},
+    {name:'ClimbHome', title:'ClimbHome'}
+  ],
+  scenario: [
+    {name:'Bazooka_Battlefield', title:'Bazooka Battlefield'},
+    {name:'User_Mission_-_Bamboo_Thicket', title:'Bamboo Thicket'},
+    {name:'User_Mission_-_The_Great_Escape', title:'The Great Escape'},
+    {name:'User_Mission_-_Teamwork', title:'Teamwork'},
+    {name:'User_Mission_-_Teamwork_2', title:'Teamwork 2'},
+    {name:'User_Mission_-_Newton_and_the_Hammock', title:'Newton and the Hammock'},
+    {name:'User_Mission_-_Diver', title:'Diver'},
+    {name:'User_Mission_-_Spooky_Tree', title:'Spooky Tree'},
+    {name:'User_Mission_-_Nobody_Laugh', title:'Nobody Laugh'},
+    {name:'User_Mission_-_Dangerous_Ducklings', title:'Dangerous Ducklings'},
+    {name:'portal', title:'Portal'},
+    {name:'Tentacle_Terror', title:'Tentacle Terror'},
+    {name:'Big_Armory', title:'Big Armory'}
+  ],
+  campaign: [
+    {name:'A_Classic_Fairytale', title:'A Classic Fairytale', missions:[
+      {script:'first_blood.lua', title:'Mission 1: First Blood'},
+      {script:'shadow.lua', title:'Mission 2: The Shadow Falls'},
+      {script:'journey.lua', title:'Mission 3: The Journey Back'},
+      {script:'united.lua', title:'Mission 4: United We Stand'},
+      {script:'backstab.lua', title:'Mission 5: Backstab'},
+      {script:'dragon.lua', title:'Mission 6: Dragon\'s Lair'},
+      {script:'family.lua', title:'Mission 7: Family Reunion'},
+      {script:'queen.lua', title:'Mission 8: Long Live The Queen'},
+      {script:'enemy.lua', title:'Mission 9: The Enemy Of My Enemy'},
+      {script:'epil.lua', title:'Mission 10: Epilogue'}
+    ]},
+    {name:'A_Space_Adventure', title:'A Space Adventure', missions:[
+      {script:'cosmos.lua', title:'Menu: Spacetrip'},
+      {script:'moon01.lua', title:'The First Stop'},
+      {script:'fruit01.lua', title:'Bad Timing'},
+      {script:'desert01.lua', title:'Searching in the Dust'},
+      {script:'ice01.lua', title:'A Frozen Adventure'},
+      {script:'ice02.lua', title:'Side: Hard Flying'},
+      {script:'desert02.lua', title:'Side: Running for Survival'},
+      {script:'fruit02.lua', title:'Getting to the Device'},
+      {script:'death01.lua', title:'The Last Encounter'},
+      {script:'fruit03.lua', title:'Side: Precise Shooting'},
+      {script:'death02.lua', title:'Side: Killing the Specialists'},
+      {script:'desert03.lua', title:'Side: Precise Flying'},
+      {script:'moon02.lua', title:'Side: Chasing the Blue Hog'},
+      {script:'final.lua', title:'The Big Bang'}
+    ]}
+  ]
+};
+
 return {
     FLAG_BITS: FLAG_BITS,
     SCHEME_PARAMS: SCHEME_PARAMS,
@@ -359,6 +432,7 @@ return {
     WEAPONS: WEAPONS,
     THEMES: THEMES,
     STYLES: STYLES,
+    MISSIONS: MISSIONS,
     QUICK_MAPS: QUICK_MAPS,
     TEAM_COLORS: TEAM_COLORS,
     TEAM_COLORS_DEC: TEAM_COLORS_DEC,

@@ -33,6 +33,7 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-sy
 .btn-secondary{background:none;border:1px solid #2a3352;color:#8892b0}
 .btn-secondary:hover{border-color:#4fc3f7;color:#4fc3f7}
 select:disabled{opacity:.5;cursor:not-allowed}
+.tab-btn.active-tab{border-color:#4fc3f7;color:#4fc3f7}
 
 .footer{margin-top:auto;padding:24px;font-size:11px;color:#3d4560;text-align:center}
 .footer a{color:#4a5270;text-decoration:none}
@@ -60,6 +61,25 @@ select:disabled{opacity:.5;cursor:not-allowed}
     <h3>Multiplayer</h3>
     <p>Play online against others. Create or join a room.</p>
   </a>
+  <div class="card" id="missions-card" onclick="showMissions()">
+    <div class="icon">🏆</div>
+    <h3>Single Player</h3>
+    <p>Training, challenges, scenarios, and campaigns.</p>
+  </div>
+</div>
+
+<div id="missions-panel" style="display:none;background:#111627;border:1px solid #1e2744;border-radius:12px;padding:28px 32px;margin-top:24px;max-width:560px;width:calc(100% - 40px)">
+  <h3 id="missions-title">Single Player</h3>
+  <div style="display:flex;gap:8px;margin:12px 0 16px">
+    <button class="btn btn-secondary tab-btn active-tab" onclick="showTab('training')">Training</button>
+    <button class="btn btn-secondary tab-btn" onclick="showTab('challenge')">Challenges</button>
+    <button class="btn btn-secondary tab-btn" onclick="showTab('scenario')">Scenarios</button>
+    <button class="btn btn-secondary tab-btn" onclick="showTab('campaign')">Campaigns</button>
+  </div>
+  <div id="mission-list" style="max-height:300px;overflow-y:auto"></div>
+  <div class="btn-row">
+    <button class="btn btn-secondary" onclick="hideMissions()">Back</button>
+  </div>
 </div>
 
 <div id="custom-panel">
@@ -191,7 +211,9 @@ function onWeaponsChange(){
 
 function showCustom(){
   document.getElementById('custom-panel').style.display='block';
+  document.getElementById('missions-panel').style.display='none';
   document.getElementById('custom-card').style.borderColor='#4fc3f7';
+  document.getElementById('missions-card').style.borderColor='';
 }
 function hideCustom(){
   document.getElementById('custom-panel').style.display='none';
@@ -203,6 +225,67 @@ function launchCustom(){
   var w=document.getElementById('cfg-weapons').value;
   var g=document.getElementById('cfg-style').value;
   window.location.href='index.html?theme='+encodeURIComponent(t)+'&scheme='+encodeURIComponent(s)+'&weapons='+encodeURIComponent(w)+'&style='+encodeURIComponent(g);
+}
+
+// ── Missions panel ──
+var _currentTab='training';
+var _currentCampaign=null;
+
+function showMissions(){
+  document.getElementById('missions-panel').style.display='block';
+  document.getElementById('custom-panel').style.display='none';
+  document.getElementById('missions-card').style.borderColor='#4fc3f7';
+  document.getElementById('custom-card').style.borderColor='';
+  showTab('training');
+}
+function hideMissions(){
+  if(_currentCampaign){_currentCampaign=null;showTab('campaign');return;}
+  document.getElementById('missions-panel').style.display='none';
+  document.getElementById('missions-card').style.borderColor='';
+}
+function showTab(tab){
+  _currentTab=tab;_currentCampaign=null;
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active-tab');if(b.textContent.toLowerCase().indexOf(tab)===0)b.classList.add('active-tab');});
+  var list=document.getElementById('mission-list');
+  list.innerHTML='';
+  if(tab==='campaign'){
+    GameConfig.MISSIONS.campaign.forEach(function(c){
+      var d=document.createElement('div');
+      d.style.cssText='padding:10px 12px;border:1px solid #1e2744;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:border-color .15s';
+      d.onmouseenter=function(){d.style.borderColor='#4fc3f7'};
+      d.onmouseleave=function(){d.style.borderColor='#1e2744'};
+      d.innerHTML='<div style="font-size:14px;font-weight:600">'+c.title+'</div><div style="font-size:11px;color:#5a6480;margin-top:2px">'+c.missions.length+' missions</div>';
+      d.onclick=function(){showCampaignMissions(c)};
+      list.appendChild(d);
+    });
+  } else {
+    var missions=GameConfig.MISSIONS[tab]||[];
+    missions.forEach(function(m){
+      var d=document.createElement('div');
+      d.style.cssText='padding:10px 12px;border:1px solid #1e2744;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:border-color .15s';
+      d.onmouseenter=function(){d.style.borderColor='#4fc3f7'};
+      d.onmouseleave=function(){d.style.borderColor='#1e2744'};
+      d.textContent=m.title;d.style.fontSize='13px';
+      var folder=tab==='training'?'Training':tab==='challenge'?'Challenge':'Scenario';
+      d.onclick=function(){window.location.href='index.html?mission='+encodeURIComponent('Missions/'+folder+'/'+m.name+'.lua')};
+      list.appendChild(d);
+    });
+  }
+}
+function showCampaignMissions(c){
+  _currentCampaign=c;
+  document.getElementById('missions-title').textContent=c.title;
+  var list=document.getElementById('mission-list');
+  list.innerHTML='';
+  c.missions.forEach(function(m){
+    var d=document.createElement('div');
+    d.style.cssText='padding:10px 12px;border:1px solid #1e2744;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;font-size:13px';
+    d.onmouseenter=function(){d.style.borderColor='#4fc3f7'};
+    d.onmouseleave=function(){d.style.borderColor='#1e2744'};
+    d.textContent=m.title;
+    d.onclick=function(){window.location.href='index.html?mission='+encodeURIComponent('Missions/Campaign/'+c.name+'/'+m.script)};
+    list.appendChild(d);
+  });
 }
 </script>
 </body>

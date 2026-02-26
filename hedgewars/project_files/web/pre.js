@@ -37,7 +37,37 @@ var HWEngine = {
         // Auto-respond to config request 'C'
         if (len >= 2 && bytes[1] === 0x43) {
             if (this.mpConfig) this.startMultiplayerGame();
+            else if (this.missionConfig) this.startMissionGame();
             else this.startHotseatGame();
+        }
+
+        // Mission/campaign variable storage (V=campaign, v=mission → localStorage)
+        if (len >= 4 && (bytes[1] === 0x56 || bytes[1] === 0x76)) {
+            var prefix = bytes[1] === 0x56 ? 'V' : 'v';
+            var op = String.fromCharCode(bytes[2]);
+            var payload = new TextDecoder().decode(bytes.slice(3, len));
+            var storageKey = 'hw_' + prefix + '_' + (this.missionConfig ? this.missionConfig.name : 'unknown');
+            if (op === '?') {
+                var val = localStorage.getItem(storageKey + '_' + payload) || '';
+                this.sendMessage(prefix + '.' + val);
+            } else if (op === '!') {
+                var sp = payload.indexOf(' ');
+                if (sp > 0) localStorage.setItem(storageKey + '_' + payload.substring(0, sp), payload.substring(sp + 1));
+            }
+        }
+
+        // Game stats (i messages) — store for post-game display
+        if (len >= 3 && bytes[1] === 0x69) {
+            var statType = String.fromCharCode(bytes[2]);
+            var statData = new TextDecoder().decode(bytes.slice(3, len));
+            if (!this._gameStats) this._gameStats = [];
+            this._gameStats.push({type: statType, data: statData});
+        }
+
+        // Game finished
+        if (len >= 2 && bytes[1] === 0x71) {
+            if (typeof window._webwars_gameStats === 'function' && this._gameStats)
+                window._webwars_gameStats(this._gameStats);
         }
 
         // In multiplayer, relay engine messages to lobby
@@ -313,6 +343,25 @@ var HWEngine = {
         }
     },
 
+    startMissionGame: function() {
+        var cfg = this.missionConfig;
+        console.log('[HW] Starting mission: ' + cfg.script);
+        var seed = '{' + Math.random().toString(36).substring(2, 10) + '}';
+        this.sendMessage('TL');
+        // One team, 8 hedgehogs (mission script controls actual count)
+        var teamName = cfg.team || 'Player';
+        this.sendMessage('eaddteam 16776960 ' + teamName);
+        for (var i = 0; i < 8; i++) this.sendMessage('ename hog' + (i+1));
+        for (var i = 0; i < 8; i++) this.sendMessage('ehat NoHat');
+        this.sendMessage('eammloadt 9391929422199121032235111001201000000211110101011');
+        this.sendMessage('eammprob 0405040541600655546554464776576666666155510101115');
+        this.sendMessage('eammdelay 0000000000000205500000040007004000000000220000000');
+        this.sendMessage('eammreinf 1311110312111111123114111111111111111211111111111');
+        this.sendMessage('eammstore');
+        this.sendMessage('eseed ' + seed);
+        this.sendMessage('escript ' + cfg.script);
+    },
+
     startMultiplayerGame: function() {
         var cfg = this.mpConfig;
         console.log('[HW] Starting multiplayer game...', cfg);
@@ -409,6 +458,11 @@ if (typeof window !== 'undefined' && window.location.search.indexOf('mp=1') !== 
 if (typeof window !== 'undefined' && window._webwars_mpConfig && !HWEngine.mpConfig) {
     HWEngine.mpConfig = window._webwars_mpConfig;
     console.log('[HW] Multiplayer mode, config injected by lobby');
+}
+// Check for mission config
+if (typeof window !== 'undefined' && typeof window._webwars_missionConfig === 'function') {
+    HWEngine.missionConfig = window._webwars_missionConfig();
+    console.log('[HW] Mission mode: ' + HWEngine.missionConfig.script);
 }
 Module.noInitialRun = false;
 Module.arguments = ['--prefix', '/Data', '--user-prefix', '/Data', 'test.hwd'];
