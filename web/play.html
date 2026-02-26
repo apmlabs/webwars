@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WebWars — Play</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+.logo{font-weight:900;font-size:42px;letter-spacing:4px;margin-top:60px;background:linear-gradient(135deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#9b59b6);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shine 3s linear infinite}
+@keyframes shine{to{background-position:200% center}}
+.subtitle{color:#5a6480;font-size:14px;margin-top:6px;margin-bottom:40px}
+.cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px;padding:0 20px}
+.card{background:#111627;border:1px solid #1e2744;border-radius:12px;padding:28px 24px;width:240px;cursor:pointer;transition:all .2s;text-decoration:none;color:inherit;display:flex;flex-direction:column;align-items:center;text-align:center}
+.card:hover{border-color:#4fc3f7;transform:translateY(-4px);box-shadow:0 8px 32px rgba(79,195,247,0.15)}
+.card .icon{font-size:40px;margin-bottom:14px}
+.card h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.card p{font-size:12px;color:#5a6480;line-height:1.5}
+
+/* Custom game panel */
+#custom-panel{display:none;background:#111627;border:1px solid #1e2744;border-radius:12px;padding:28px 32px;margin-top:24px;max-width:480px;width:calc(100% - 40px)}
+#custom-panel h3{font-size:16px;font-weight:700;margin-bottom:16px}
+.cfg-row{display:flex;align-items:center;margin-bottom:12px}
+.cfg-row label{width:90px;font-size:13px;color:#8892b0}
+.cfg-row select{flex:1;background:#0a0e1a;color:#e0e0e0;border:1px solid #2a3352;border-radius:6px;padding:6px 10px;font-size:13px}
+.cfg-row select:focus{outline:none;border-color:#4fc3f7}
+.btn-row{display:flex;gap:10px;margin-top:18px}
+.btn{padding:8px 20px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
+.btn-primary{background:linear-gradient(135deg,#4fc3f7,#66bb6a);color:#0a0e1a}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-secondary{background:none;border:1px solid #2a3352;color:#8892b0}
+.btn-secondary:hover{border-color:#4fc3f7;color:#4fc3f7}
+
+.footer{margin-top:auto;padding:24px;font-size:11px;color:#3d4560;text-align:center}
+.footer a{color:#4a5270;text-decoration:none}
+.footer a:hover{color:#4fc3f7}
+</style>
+</head>
+<body>
+
+<div class="logo">WEBWARS</div>
+<div class="subtitle">Hedgewars in your browser — no download required</div>
+
+<div class="cards">
+  <a class="card" href="index.html">
+    <div class="icon">⚡</div>
+    <h3>Quick Play</h3>
+    <p>Jump straight in. Random map, two teams, hotseat.</p>
+  </a>
+  <div class="card" id="custom-card" onclick="showCustom()">
+    <div class="icon">🎮</div>
+    <h3>Custom Game</h3>
+    <p>Pick your scheme, weapons, and game style before playing.</p>
+  </div>
+  <a class="card" href="lobby.html">
+    <div class="icon">🌐</div>
+    <h3>Multiplayer</h3>
+    <p>Play online against others. Create or join a room.</p>
+  </a>
+</div>
+
+<div id="custom-panel">
+  <h3>Custom Game Setup</h3>
+  <div class="cfg-row"><label>Scheme</label><select id="cfg-scheme"></select></div>
+  <div class="cfg-row"><label>Weapons</label><select id="cfg-weapons"></select></div>
+  <div class="cfg-row"><label>Game Style</label><select id="cfg-style"></select></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="launchCustom()">▶ Start Game</button>
+    <button class="btn btn-secondary" onclick="hideCustom()">Cancel</button>
+  </div>
+</div>
+
+<div class="footer">
+  Built on <a href="https://hedgewars.org" target="_blank">Hedgewars</a> (GPL v2) ·
+  <a href="https://github.com/apmlabs/webwars" target="_blank">GitHub</a>
+</div>
+
+<script src="gameconfig.js"></script>
+<script>
+(function(){
+  var sel;
+  sel=document.getElementById('cfg-scheme');
+  GameConfig.SCHEMES.forEach(function(s){var o=document.createElement('option');o.value=s.name;o.textContent=s.name;sel.appendChild(o)});
+  sel=document.getElementById('cfg-weapons');
+  GameConfig.WEAPONS.forEach(function(w){var o=document.createElement('option');o.value=w.name;o.textContent=w.name;sel.appendChild(o)});
+  sel=document.getElementById('cfg-style');
+  GameConfig.STYLES.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o)});
+})();
+function showCustom(){document.getElementById('custom-panel').style.display='block';document.getElementById('custom-card').style.borderColor='#4fc3f7'}
+function hideCustom(){document.getElementById('custom-panel').style.display='none';document.getElementById('custom-card').style.borderColor=''}
+function launchCustom(){
+  var s=document.getElementById('cfg-scheme').value;
+  var w=document.getElementById('cfg-weapons').value;
+  var g=document.getElementById('cfg-style').value;
+  window.location.href='index.html?scheme='+encodeURIComponent(s)+'&weapons='+encodeURIComponent(w)+'&style='+encodeURIComponent(g);
+}
+</script>
+</body>
+</html>
