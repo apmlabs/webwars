@@ -229,18 +229,21 @@ window._webwars_roundFinished=function(){
   var schemeName=p.get('scheme')||'Default';
   var weaponsName=p.get('weapons')||'Default';
   var styleName=p.get('style')||'Normal';
+  var themeName=p.get('theme')||'Random';
   // Show current mode in top bar
   var parts=[];
   if(styleName!=='Normal') parts.push(styleName);
   if(schemeName!=='Default') parts.push(schemeName);
   if(weaponsName!=='Default'&&weaponsName!==schemeName) parts.push(weaponsName+' weapons');
+  if(themeName!=='Random') parts.push(themeName);
   var label=document.getElementById('mode-label');
   if(label) label.textContent=parts.length?parts.join(' · '):'Quick Play';
   window._webwars_hotseatConfig = function() {
     return {
       scheme: GameConfig.findScheme(schemeName),
       weapon: GameConfig.findWeapon(weaponsName),
-      style: styleName
+      style: styleName,
+      theme: themeName
     };
   };
 })();

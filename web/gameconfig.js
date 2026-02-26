@@ -185,6 +185,40 @@ var WEAPONS = [
           '111111011111111111111111111111111111111111111111111111111111'}
 ];
 
+// ── 29 Themes ──
+var THEMES = [
+    {name:'Random', desc:'A random theme each game.'},
+    {name:'Art', desc:'Famous paintings and art supplies. Soup water.'},
+    {name:'Bamboo', desc:'Asian bamboo forest with flowers and butterflies.'},
+    {name:'Bath', desc:'Giant bathtub with rubber ducks and toothbrushes.'},
+    {name:'Beach', desc:'Sandy beach with surfboards, boats, and kites.'},
+    {name:'Brick', desc:'Red brick walls with climbing plants.'},
+    {name:'Cake', desc:'Candy land with cupcakes, lollipops, and gingerbread.'},
+    {name:'Castle', desc:'Medieval castle with swords, shields, and spears.'},
+    {name:'Cave', desc:'Underground cave with crystals and stalactites.'},
+    {name:'Cheese', desc:'Swiss cheese landscape with mice and cutlery.'},
+    {name:'Christmas', desc:'Snowy winter with candy canes, snowmen, and reindeer.'},
+    {name:'City', desc:'Urban rooftops and buildings.'},
+    {name:'Compost', desc:'Garden compost heap with vegetables and eggshells.'},
+    {name:'Desert', desc:'Arid desert with cacti, cobras, and cow skulls.'},
+    {name:'Digital', desc:'Inside a computer — files, folders, and circuit boards.'},
+    {name:'EarthRise', desc:'Moon surface with Earth rising on the horizon.'},
+    {name:'Freeway', desc:'Highway roadside with tires and litter.'},
+    {name:'Fruit', desc:'Tropical fruit paradise with bananas and watermelons.'},
+    {name:'Golf', desc:'Golf course with clubs, flags, and golf carts.'},
+    {name:'Halloween', desc:'Spooky graveyard with dark skies.'},
+    {name:'Hell', desc:'Fiery underworld with lava and dark plants.'},
+    {name:'Hoggywood', desc:'Movie studio with cameras, reels, and star signs.'},
+    {name:'Island', desc:'Pirate island with anchors and tropical plants.'},
+    {name:'Jungle', desc:'Dense jungle with monkeys, snakes, and spiders.'},
+    {name:'Nature', desc:'Green meadow with mushrooms, snails, and butterflies.'},
+    {name:'Olympics', desc:'Ancient Greek arena with columns and statues.'},
+    {name:'Sheep', desc:'French countryside with sheep and flowers.'},
+    {name:'Snow', desc:'Snowy landscape with snowballs and pine trees.'},
+    {name:'Stage', desc:'Rock concert stage with drums, lights, and speakers.'},
+    {name:'Underwater', desc:'Ocean floor with corals, crabs, and clams.'}
+];
+
 // ── 21 Game Styles (Lua scripts in Scripts/Multiplayer/) ──
 var STYLES = [
     {name:'Normal', desc:'Standard game. No special rules.', script:null, lock:null},
@@ -310,11 +344,20 @@ function findStyle(name) {
     return STYLES[0];
 }
 
+// Find theme by name
+function findTheme(name) {
+    for (var i = 0; i < THEMES.length; i++) {
+        if (THEMES[i].name === name) return THEMES[i];
+    }
+    return THEMES[0];
+}
+
 return {
     FLAG_BITS: FLAG_BITS,
     SCHEME_PARAMS: SCHEME_PARAMS,
     SCHEMES: SCHEMES,
     WEAPONS: WEAPONS,
+    THEMES: THEMES,
     STYLES: STYLES,
     QUICK_MAPS: QUICK_MAPS,
     TEAM_COLORS: TEAM_COLORS,
@@ -327,6 +370,7 @@ return {
     parseSchemeArray: parseSchemeArray,
     findScheme: findScheme,
     findWeapon: findWeapon,
-    findStyle: findStyle
+    findStyle: findStyle,
+    findTheme: findTheme
 };
 })();

@@ -427,7 +427,12 @@ Module.preRun.push(function() {
     if (HWEngine.mpConfig) {
         theme = HWEngine.mpConfig.theme || 'Nature';
     } else {
-        theme = HWEngine.allThemes[Math.floor(Math.random() * HWEngine.allThemes.length)];
+        var cfg = (typeof window._webwars_hotseatConfig === 'function') ? window._webwars_hotseatConfig() : null;
+        if (cfg && cfg.theme && cfg.theme !== 'Random') {
+            theme = cfg.theme;
+        } else {
+            theme = HWEngine.allThemes[Math.floor(Math.random() * HWEngine.allThemes.length)];
+        }
     }
     HWEngine._chosenTheme = theme;
     console.log('[Assets] Pre-fetching theme: ' + theme);

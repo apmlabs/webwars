@@ -66,6 +66,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
   <h3>Custom Game Setup</h3>
 
   <div class="cfg-row">
+    <label>Theme</label>
+    <div class="cfg-right">
+      <select id="cfg-theme" onchange="onThemeChange()"></select>
+      <div class="cfg-desc" id="desc-theme"></div>
+    </div>
+  </div>
+  <div class="cfg-row">
     <label>Style</label>
     <div class="cfg-right">
       <select id="cfg-style" onchange="onStyleChange()"></select>
@@ -102,10 +109,14 @@ select:disabled{opacity:.5;cursor:not-allowed}
 <script src="gameconfig.js"></script>
 <script>
 (function(){
+  var selTheme=document.getElementById('cfg-theme');
   var selStyle=document.getElementById('cfg-style');
   var selScheme=document.getElementById('cfg-scheme');
   var selWeapons=document.getElementById('cfg-weapons');
 
+  GameConfig.THEMES.forEach(function(t){
+    var o=document.createElement('option'); o.value=t.name; o.textContent=t.name; selTheme.appendChild(o);
+  });
   GameConfig.STYLES.forEach(function(s){
     var o=document.createElement('option'); o.value=s.name; o.textContent=s.name; selStyle.appendChild(o);
   });
@@ -117,10 +128,16 @@ select:disabled{opacity:.5;cursor:not-allowed}
   });
 
   // Show initial descriptions
+  onThemeChange();
   onStyleChange();
   onSchemeChange();
   onWeaponsChange();
 })();
+
+function onThemeChange(){
+  var t=GameConfig.findTheme(document.getElementById('cfg-theme').value);
+  document.getElementById('desc-theme').textContent=t.desc||'';
+}
 
 function findStyle(name){
   for(var i=0;i<GameConfig.STYLES.length;i++) if(GameConfig.STYLES[i].name===name) return GameConfig.STYLES[i];
@@ -181,10 +198,11 @@ function hideCustom(){
   document.getElementById('custom-card').style.borderColor='';
 }
 function launchCustom(){
+  var t=document.getElementById('cfg-theme').value;
   var s=document.getElementById('cfg-scheme').value;
   var w=document.getElementById('cfg-weapons').value;
   var g=document.getElementById('cfg-style').value;
-  window.location.href='index.html?scheme='+encodeURIComponent(s)+'&weapons='+encodeURIComponent(w)+'&style='+encodeURIComponent(g);
+  window.location.href='index.html?theme='+encodeURIComponent(t)+'&scheme='+encodeURIComponent(s)+'&weapons='+encodeURIComponent(w)+'&style='+encodeURIComponent(g);
 }
 </script>
 </body>
