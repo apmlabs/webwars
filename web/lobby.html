@@ -237,7 +237,7 @@ var roomPoll = null;
   // Styles
   sel = document.getElementById('cfg-style');
   GameConfig.STYLES.forEach(function(s) {
-    var o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o);
+    var o = document.createElement('option'); o.value = s.name; o.textContent = s.name; sel.appendChild(o);
   });
   document.getElementById('nick-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') doLogin();

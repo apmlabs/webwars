@@ -61,9 +61,7 @@ kbd{display:inline-block;background:#141830;border:1px solid #232a48;border-radi
     <progress id="progress" hidden max="100" value="0"></progress>
     <span class="hint-text">Right-click to pick a weapon · Space to fire · Arrow keys to move</span>
     <span class="spacer"></span>
-    <select id="cfg-scheme" style="background:#1a2040;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:2px 6px;font-size:11px" title="Scheme"></select>
-    <select id="cfg-weapons" style="background:#1a2040;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:2px 6px;font-size:11px" title="Weapons"></select>
-    <select id="cfg-style" style="background:#1a2040;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:2px 6px;font-size:11px" title="Game Style"></select>
+    <span id="mode-label" class="hint-text" style="color:#4fc3f7"></span>
     <a class="bar-btn" href="play.html">☰ Menu</a>
     <a class="bar-btn" href="lobby.html">🌐 Multiplayer</a>
     <a class="bar-btn" href="https://github.com/apmlabs/webwars" target="_blank">⭐ GitHub</a>
@@ -214,39 +212,38 @@ window.writeAndProbe = function() {
 // Auto-run probe once engine is running (poll until _malloc exists)
 (function pollProbe(){ if(Module._malloc && Module._physfs_probe_open) writeAndProbe(); else setTimeout(pollProbe, 500); })();
 
-// When engine exits (game over), reload for a new game — assets are cached so it's instant
+// When engine exits (game over), return to menu
 window._webwars_roundFinished=function(){
   var p=document.getElementById('click-prompt');
-  p.querySelector('.label').textContent='Game Over — Reloading...';
+  p.querySelector('.label').textContent='Game Over — Returning to menu...';
   p.querySelector('.sub').textContent='';
   p.style.display='flex';
-  setTimeout(function(){location.reload()},1500);
+  setTimeout(function(){ location.href='play.html'; },1500);
 };
 </script>
 <script src="gameconfig.js"></script>
 <script>
-// Populate config dropdowns + apply URL params from play.html
+// Read config from URL params (set by play.html custom game)
 (function(){
   var p=new URLSearchParams(location.search);
-  var sel;
-  sel = document.getElementById('cfg-scheme');
-  GameConfig.SCHEMES.forEach(function(s){ var o=document.createElement('option'); o.value=s.name; o.textContent=s.name; sel.appendChild(o); });
-  if(p.get('scheme')) sel.value=p.get('scheme');
-  sel = document.getElementById('cfg-weapons');
-  GameConfig.WEAPONS.forEach(function(w){ var o=document.createElement('option'); o.value=w.name; o.textContent=w.name; sel.appendChild(o); });
-  if(p.get('weapons')) sel.value=p.get('weapons');
-  sel = document.getElementById('cfg-style');
-  GameConfig.STYLES.forEach(function(s){ var o=document.createElement('option'); o.value=s; o.textContent=s; sel.appendChild(o); });
-  if(p.get('style')) sel.value=p.get('style');
-})();
-// Store selected config for pre.js to read
-window._webwars_hotseatConfig = function() {
-  return {
-    scheme: GameConfig.findScheme(document.getElementById('cfg-scheme').value),
-    weapon: GameConfig.findWeapon(document.getElementById('cfg-weapons').value),
-    style: document.getElementById('cfg-style').value
+  var schemeName=p.get('scheme')||'Default';
+  var weaponsName=p.get('weapons')||'Default';
+  var styleName=p.get('style')||'Normal';
+  // Show current mode in top bar
+  var parts=[];
+  if(styleName!=='Normal') parts.push(styleName);
+  if(schemeName!=='Default') parts.push(schemeName);
+  if(weaponsName!=='Default'&&weaponsName!==schemeName) parts.push(weaponsName+' weapons');
+  var label=document.getElementById('mode-label');
+  if(label) label.textContent=parts.length?parts.join(' · '):'Quick Play';
+  window._webwars_hotseatConfig = function() {
+    return {
+      scheme: GameConfig.findScheme(schemeName),
+      weapon: GameConfig.findWeapon(weaponsName),
+      style: styleName
+    };
   };
-};
+})();
 </script>
 <script src="hwengine-data.js"></script>
 <script async src="hwengine.js"></script>

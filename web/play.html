@@ -6,9 +6,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center}
-.logo{font-weight:900;font-size:42px;letter-spacing:4px;margin-top:60px;background:linear-gradient(135deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#9b59b6);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shine 3s linear infinite}
+.logo{font-weight:900;font-size:42px;letter-spacing:4px;margin-top:48px;background:linear-gradient(135deg,#ff6b6b,#ffd93d,#6bcb77,#4d96ff,#9b59b6);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shine 3s linear infinite}
 @keyframes shine{to{background-position:200% center}}
-.subtitle{color:#5a6480;font-size:14px;margin-top:6px;margin-bottom:40px}
+.subtitle{color:#5a6480;font-size:14px;margin-top:6px;margin-bottom:32px}
 .cards{display:flex;gap:20px;flex-wrap:wrap;justify-content:center;max-width:800px;padding:0 20px}
 .card{background:#111627;border:1px solid #1e2744;border-radius:12px;padding:28px 24px;width:240px;cursor:pointer;transition:all .2s;text-decoration:none;color:inherit;display:flex;flex-direction:column;align-items:center;text-align:center}
 .card:hover{border-color:#4fc3f7;transform:translateY(-4px);box-shadow:0 8px 32px rgba(79,195,247,0.15)}
@@ -17,18 +17,22 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-sy
 .card p{font-size:12px;color:#5a6480;line-height:1.5}
 
 /* Custom game panel */
-#custom-panel{display:none;background:#111627;border:1px solid #1e2744;border-radius:12px;padding:28px 32px;margin-top:24px;max-width:480px;width:calc(100% - 40px)}
+#custom-panel{display:none;background:#111627;border:1px solid #1e2744;border-radius:12px;padding:28px 32px;margin-top:24px;max-width:560px;width:calc(100% - 40px)}
 #custom-panel h3{font-size:16px;font-weight:700;margin-bottom:16px}
-.cfg-row{display:flex;align-items:center;margin-bottom:12px}
-.cfg-row label{width:90px;font-size:13px;color:#8892b0}
-.cfg-row select{flex:1;background:#0a0e1a;color:#e0e0e0;border:1px solid #2a3352;border-radius:6px;padding:6px 10px;font-size:13px}
-.cfg-row select:focus{outline:none;border-color:#4fc3f7}
+.cfg-row{display:flex;align-items:flex-start;margin-bottom:14px}
+.cfg-row label{width:90px;font-size:13px;color:#8892b0;padding-top:7px;flex-shrink:0}
+.cfg-right{flex:1;display:flex;flex-direction:column}
+.cfg-right select{background:#0a0e1a;color:#e0e0e0;border:1px solid #2a3352;border-radius:6px;padding:6px 10px;font-size:13px;width:100%}
+.cfg-right select:focus{outline:none;border-color:#4fc3f7}
+.cfg-desc{font-size:11px;color:#5a6480;margin-top:4px;line-height:1.4;min-height:15px}
+.cfg-lock{font-size:11px;color:#ffd93d;margin-top:4px}
 .btn-row{display:flex;gap:10px;margin-top:18px}
 .btn{padding:8px 20px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s}
 .btn-primary{background:linear-gradient(135deg,#4fc3f7,#66bb6a);color:#0a0e1a}
 .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
 .btn-secondary{background:none;border:1px solid #2a3352;color:#8892b0}
 .btn-secondary:hover{border-color:#4fc3f7;color:#4fc3f7}
+select:disabled{opacity:.5;cursor:not-allowed}
 
 .footer{margin-top:auto;padding:24px;font-size:11px;color:#3d4560;text-align:center}
 .footer a{color:#4a5270;text-decoration:none}
@@ -60,9 +64,30 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-sy
 
 <div id="custom-panel">
   <h3>Custom Game Setup</h3>
-  <div class="cfg-row"><label>Scheme</label><select id="cfg-scheme"></select></div>
-  <div class="cfg-row"><label>Weapons</label><select id="cfg-weapons"></select></div>
-  <div class="cfg-row"><label>Game Style</label><select id="cfg-style"></select></div>
+
+  <div class="cfg-row">
+    <label>Style</label>
+    <div class="cfg-right">
+      <select id="cfg-style" onchange="onStyleChange()"></select>
+      <div class="cfg-desc" id="desc-style"></div>
+      <div class="cfg-lock" id="lock-msg"></div>
+    </div>
+  </div>
+  <div class="cfg-row">
+    <label>Scheme</label>
+    <div class="cfg-right">
+      <select id="cfg-scheme" onchange="onSchemeChange()"></select>
+      <div class="cfg-desc" id="desc-scheme"></div>
+    </div>
+  </div>
+  <div class="cfg-row">
+    <label>Weapons</label>
+    <div class="cfg-right">
+      <select id="cfg-weapons" onchange="onWeaponsChange()"></select>
+      <div class="cfg-desc" id="desc-weapons"></div>
+    </div>
+  </div>
+
   <div class="btn-row">
     <button class="btn btn-primary" onclick="launchCustom()">▶ Start Game</button>
     <button class="btn btn-secondary" onclick="hideCustom()">Cancel</button>
@@ -77,16 +102,84 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-sy
 <script src="gameconfig.js"></script>
 <script>
 (function(){
-  var sel;
-  sel=document.getElementById('cfg-scheme');
-  GameConfig.SCHEMES.forEach(function(s){var o=document.createElement('option');o.value=s.name;o.textContent=s.name;sel.appendChild(o)});
-  sel=document.getElementById('cfg-weapons');
-  GameConfig.WEAPONS.forEach(function(w){var o=document.createElement('option');o.value=w.name;o.textContent=w.name;sel.appendChild(o)});
-  sel=document.getElementById('cfg-style');
-  GameConfig.STYLES.forEach(function(s){var o=document.createElement('option');o.value=s;o.textContent=s;sel.appendChild(o)});
+  var selStyle=document.getElementById('cfg-style');
+  var selScheme=document.getElementById('cfg-scheme');
+  var selWeapons=document.getElementById('cfg-weapons');
+
+  GameConfig.STYLES.forEach(function(s){
+    var o=document.createElement('option'); o.value=s.name; o.textContent=s.name; selStyle.appendChild(o);
+  });
+  GameConfig.SCHEMES.forEach(function(s){
+    var o=document.createElement('option'); o.value=s.name; o.textContent=s.name; selScheme.appendChild(o);
+  });
+  GameConfig.WEAPONS.forEach(function(w){
+    var o=document.createElement('option'); o.value=w.name; o.textContent=w.name; selWeapons.appendChild(o);
+  });
+
+  // Show initial descriptions
+  onStyleChange();
+  onSchemeChange();
+  onWeaponsChange();
 })();
-function showCustom(){document.getElementById('custom-panel').style.display='block';document.getElementById('custom-card').style.borderColor='#4fc3f7'}
-function hideCustom(){document.getElementById('custom-panel').style.display='none';document.getElementById('custom-card').style.borderColor=''}
+
+function findStyle(name){
+  for(var i=0;i<GameConfig.STYLES.length;i++) if(GameConfig.STYLES[i].name===name) return GameConfig.STYLES[i];
+  return GameConfig.STYLES[0];
+}
+
+function onStyleChange(){
+  var style=findStyle(document.getElementById('cfg-style').value);
+  document.getElementById('desc-style').textContent=style.desc||'';
+
+  var selScheme=document.getElementById('cfg-scheme');
+  var selWeapons=document.getElementById('cfg-weapons');
+  var lockMsg=document.getElementById('lock-msg');
+  var msgs=[];
+
+  // Apply locks from game style .cfg (like Qt client)
+  if(style.lock){
+    if(style.lock.scheme && style.lock.scheme!==true){
+      selScheme.value=style.lock.scheme;
+      selScheme.disabled=true;
+      msgs.push('Scheme locked to '+style.lock.scheme);
+    } else { selScheme.disabled=false; }
+
+    if(style.lock.weapons===true){
+      selWeapons.disabled=true;
+      msgs.push('Weapons controlled by script');
+    } else if(style.lock.weapons){
+      selWeapons.value=style.lock.weapons;
+      selWeapons.disabled=true;
+      msgs.push('Weapons locked to '+style.lock.weapons);
+    } else { selWeapons.disabled=false; }
+  } else {
+    selScheme.disabled=false;
+    selWeapons.disabled=false;
+  }
+
+  lockMsg.textContent=msgs.length?'🔒 '+msgs.join('. '):'';
+  onSchemeChange();
+  onWeaponsChange();
+}
+
+function onSchemeChange(){
+  var s=GameConfig.findScheme(document.getElementById('cfg-scheme').value);
+  document.getElementById('desc-scheme').textContent=s.desc||'';
+}
+
+function onWeaponsChange(){
+  var w=GameConfig.findWeapon(document.getElementById('cfg-weapons').value);
+  document.getElementById('desc-weapons').textContent=w.desc||'';
+}
+
+function showCustom(){
+  document.getElementById('custom-panel').style.display='block';
+  document.getElementById('custom-card').style.borderColor='#4fc3f7';
+}
+function hideCustom(){
+  document.getElementById('custom-panel').style.display='none';
+  document.getElementById('custom-card').style.borderColor='';
+}
 function launchCustom(){
   var s=document.getElementById('cfg-scheme').value;
   var w=document.getElementById('cfg-weapons').value;
