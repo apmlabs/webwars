@@ -42,7 +42,7 @@ configure_file(${CMAKE_SOURCE_DIR}/hedgewars/config.inc.in ${CMAKE_CURRENT_BINAR
 
 #get the list of pas files that are going to be converted and compiled
 file(GLOB engine_sources_pas "${CMAKE_SOURCE_DIR}/hedgewars/*.pas")
-list(REMOVE_ITEM engine_sources_pas "${CMAKE_SOURCE_DIR}/hedgewars/uTouch.pas")
+#list(REMOVE_ITEM engine_sources_pas "${CMAKE_SOURCE_DIR}/hedgewars/uTouch.pas") # included for EMSCRIPTEN_MOBILE
 list(REMOVE_ITEM engine_sources_pas "${CMAKE_SOURCE_DIR}/hedgewars/PNGh.pas")
 list(REMOVE_ITEM engine_sources_pas "${CMAKE_SOURCE_DIR}/hedgewars/pas2cSystem.pas")
 list(REMOVE_ITEM engine_sources_pas "${CMAKE_SOURCE_DIR}/hedgewars/pas2cRedo.pas")
@@ -96,6 +96,7 @@ endif()
 
 if(BUILD_ENGINE_JS)
     set(pas2c_args ${pas2c_args} -d EMSCRIPTEN)
+    set(pas2c_args ${pas2c_args} -d EMSCRIPTEN_MOBILE -d USE_TOUCH_INTERFACE)
 endif()
 
 #invoke pas2c on main module, it will call all the others
@@ -122,6 +123,8 @@ endif()
 #compile the c files
 add_definitions(-DPAS2C)
 add_definitions(-DHWLIBRARY)
+add_definitions(-DUSE_TOUCH_INTERFACE)
+add_definitions(-DEMSCRIPTEN_MOBILE)
 add_definitions(-Werror=incompatible-pointer-types)
 
 add_executable(hwengine WIN32 ${engine_sources} ${CMAKE_CURRENT_SOURCE_DIR}/web_entry.c ${CMAKE_CURRENT_SOURCE_DIR}/ipc_browser.c ${CMAKE_CURRENT_SOURCE_DIR}/physfs_probe.c)
@@ -147,7 +150,7 @@ if(EMSCRIPTEN)
         -fwasm-exceptions
         -Wl,--wrap=hwengine_MainLoop
         "-sEXPORTED_RUNTIME_METHODS=FS,HEAPU8"
-        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal,_mainloop_frame_bg,_usound_PlayMusic,_physfs_probe_open"
+        "-sEXPORTED_FUNCTIONS=_hwengine_RunEngine_internal,_mainloop_frame_bg,_usound_PlayMusic,_physfs_probe_open,_hw_set_mobile_device"
         -sINITIAL_MEMORY=268435456
         -sGL_UNSAFE_OPTS=1
         -sGL_POOL_TEMP_BUFFERS=1

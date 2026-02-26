@@ -62,6 +62,7 @@ var
     cReadyDelay        : Longword;
     cStereoMode        : TStereoMode;
     cOnlyStats         : boolean;
+    cMobileDevice      : boolean;
 {$IFDEF USE_VIDEO_RECORDING}
     RecPrefix          : shortstring;
     cAVFormat          : shortstring;
@@ -2742,6 +2743,7 @@ begin
     PathPrefix      := './';
     GameType        := gmtLocal;
     cOnlyStats      := False;
+    cMobileDevice   := False;
     cScriptName     := '';
     cScriptParam    := '';
     cTestLua        := False;

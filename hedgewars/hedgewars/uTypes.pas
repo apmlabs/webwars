@@ -573,7 +573,7 @@ type
 
     PTouch_Data = ^TTouch_Data;
     TTouch_Data = record
-        id                       : TSDL_FingerId;
+        id                       : Int64;
         x,y                      : LongInt;
         dx,dy                    : LongInt;
         historicalX, historicalY : LongInt;

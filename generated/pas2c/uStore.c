@@ -488,7 +488,7 @@ void ustore_StoreLoad(boolean reload)
         ustore_AddProgress();
     }
     {ii = 0;
-     TSprite ii__end__ = 219;
+     TSprite ii__end__ = 231;
      if (ii <= ii__end__) do {
                                  {
                                      if(((((((((cReducedQuality & (rqNoBackground | rqLowRes)) == 0) || !(((ii == sprSky) || (ii == sprSkyL) || (ii == sprSkyR) || (ii == sprHorizont) || (ii == sprHorizontL) || (ii == sprHorizontR)))) && (((cReducedQuality & rqPlainSplash) == 0) || !(((ii == sprSplash) || (ii == sprDroplet) || (ii == sprSDSplash) || (ii == sprSDDroplet))))) && ((((cReducedQuality & rqKillFlakes) == 0) || cSnow) || !(((ii == sprFlake) || (ii == sprSDFlake))))) && ((cCloudsNumber > 0) || (ii != sprCloud))) && ((vobCount > 0) || (ii != sprFlake))) && (SpritesData[ii].saveSurf || !cOnlyStats)) && allOK)
@@ -665,7 +665,7 @@ void ustore_StoreRelease(boolean reload)
     LongInt i;
     LongInt t;
     {ii = 0;
-     TSprite ii__end__ = 219;
+     TSprite ii__end__ = 231;
      if (ii <= ii__end__) do {
                                  utextures_FreeAndNilTexture(&(SpritesData[ii].Texture));
                                  if((SpritesData[ii].Surface != NULL) && !reload)
@@ -1057,7 +1057,7 @@ void ustore_AddProgress()
     {
         return;
     }
-    urender_RenderClear_0();
+    urender_RenderClear();
     if(Step < numsquares)
     {
         r.x = 0;
@@ -1385,7 +1385,7 @@ void ustore_chFullScr(string255 (*s))
     ustore_SetupOpenGL();
     if(reinit)
     {
-        urender_RenderClear_0();
+        urender_RenderClear();
         if(SuddenDeathDmg)
         {
             ustore_SetSkyColor((SDSkyColor.r * (SDTint.r /(float) 255)) /(float) 255, (SDSkyColor.g * (SDTint.g /(float) 255)) /(float) 255, (SDSkyColor.b * (SDTint.b /(float) 255)) /(float) 255);

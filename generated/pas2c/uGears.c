@@ -7,6 +7,7 @@
 #include "uRandom.h"
 #include "uIO.h"
 #include "uLandGraphics.h"
+#include "uTouch.h"
 #include "uLocale.h"
 #include "uAmmos.h"
 #include "uStats.h"
@@ -262,6 +263,7 @@ void ugears_ProcessGears()
     if(GameTicks == NewTurnTick)
     {
         uscript_ScriptCall_1(__str2);
+        utouch_NewTurnBeginning();
     }
     PrvInactive = AllInactive;
     AllInactive = true;

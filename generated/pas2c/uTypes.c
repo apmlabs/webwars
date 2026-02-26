@@ -2136,6 +2136,42 @@ string255 __attribute__((overloadable)) fpcrtl_GetEnumName(int dummy, const TSpr
     case sprWindR:
         return fpcrtl_make_string("sprWindR");
         break;
+    case sprFireButton:
+        return fpcrtl_make_string("sprFireButton");
+        break;
+    case sprArrowUp:
+        return fpcrtl_make_string("sprArrowUp");
+        break;
+    case sprArrowDown:
+        return fpcrtl_make_string("sprArrowDown");
+        break;
+    case sprArrowLeft:
+        return fpcrtl_make_string("sprArrowLeft");
+        break;
+    case sprArrowRight:
+        return fpcrtl_make_string("sprArrowRight");
+        break;
+    case sprJumpWidget:
+        return fpcrtl_make_string("sprJumpWidget");
+        break;
+    case sprAMWidget:
+        return fpcrtl_make_string("sprAMWidget");
+        break;
+    case sprPauseButton:
+        return fpcrtl_make_string("sprPauseButton");
+        break;
+    case sprTimerButton:
+        return fpcrtl_make_string("sprTimerButton");
+        break;
+    case sprTargetButton:
+        return fpcrtl_make_string("sprTargetButton");
+        break;
+    case sprSwitchButton:
+        return fpcrtl_make_string("sprSwitchButton");
+        break;
+    case sprBounceButton:
+        return fpcrtl_make_string("sprBounceButton");
+        break;
     case sprFlake:
         return fpcrtl_make_string("sprFlake");
         break;

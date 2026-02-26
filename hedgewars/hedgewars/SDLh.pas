@@ -555,7 +555,6 @@ type
     PSDL_Texture  = Pointer;
     PSDL_GLContext= Pointer;
     TSDL_TouchId  = Int64;
-    TSDL_FingerId = Int64;
     TSDL_Keycode = LongInt;
     TSDL_Scancode = LongInt;
     TSDL_JoystickID = LongInt;
@@ -734,8 +733,8 @@ type
     TSDL_TouchFingerEvent = record
         type_: LongWord;
         timestamp: LongWord;
-        touchId: TSDL_TouchId;
-        fingerId: TSDL_FingerId;
+        touchId: Int64;
+        fingerId: Int64;
         x, y, dx, dy: Single;
         pressure: Single;
         end;
@@ -743,7 +742,7 @@ type
     TSDL_MultiGestureEvent = record
         type_: LongWord;
         timestamp: LongWord;
-        touchId: TSDL_TouchId;
+        touchId: Int64;
         dTheta, dDist, x, y: Single;
         numFingers, padding: Word;
         end;

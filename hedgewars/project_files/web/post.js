@@ -16,6 +16,13 @@ Module.onRuntimeInitialized = async function() {
     }
 
     console.log('[HW] Calling hwengine_RunEngine_internal()');
+
+    // Detect mobile/touch device and tell the engine
+    var isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (Module._hw_set_mobile_device) {
+        Module._hw_set_mobile_device(isMobile ? 1 : 0);
+        console.log('[HW] Mobile device:', isMobile);
+    }
     
     try {
         var result = await Module._hwengine_RunEngine_internal();

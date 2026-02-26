@@ -31,22 +31,22 @@ procedure freeModule;
 procedure ProcessTouch;
 procedure NewTurnBeginning;
 
-procedure onTouchDown(x, y: Single; pointerId: TSDL_FingerId);
-procedure onTouchMotion(x, y, dx, dy: Single; pointerId: TSDL_FingerId);
-procedure onTouchUp(x, y: Single; pointerId: TSDL_FingerId);
+procedure onTouchDown(x, y: Single; pointerId: Int64);
+procedure onTouchMotion(x, y, dx, dy: Single; pointerId: Int64);
+procedure onTouchUp(x, y: Single; pointerId: Int64);
 
 function convertToCursorX(x: LongInt): LongInt;
 function convertToCursorY(y: LongInt): LongInt;
 
-function addFinger(x,y: Longword; id: TSDL_FingerId): PTouch_Data;
-function updateFinger(x,y,dx,dy: Longword; id: TSDL_FingerId): PTouch_Data;
-procedure deleteFinger(id: TSDL_FingerId);
+function addFinger(x,y: Longword; id: Int64): PTouch_Data;
+function updateFinger(x,y,dx,dy: Longword; id: Int64): PTouch_Data;
+procedure deleteFinger(id: Int64);
 
 procedure onTouchClick(finger: TTouch_Data);
 procedure onTouchDoubleClick(finger: TTouch_Data);
 procedure onTouchLongClick(finger: TTouch_Data);
 
-function findFinger(id: TSDL_FingerId): PTouch_Data;
+function findFinger(id: Int64): PTouch_Data;
 procedure aim(finger: TTouch_Data);
 function isOnCrosshair(finger: TTouch_Data): boolean;
 function isOnCurrentHog(finger: TTouch_Data): boolean;
@@ -63,14 +63,15 @@ implementation
 
 const
     clickTime = 200;
-    nilFingerId = High(TSDL_FingerId);
+    kNoFinger = 9223372036854775807;
     baseRectSize = 96;
+    maxFingers = 16;
 
 var
     rectSize, halfRectSize: LongInt;
 
     pointerCount : Longword;
-    fingers: array of TTouch_Data;
+    fingers: array[0..Pred(maxFingers)] of TTouch_Data;
     moveCursor : boolean;
     invertCursor : boolean;
 
@@ -86,7 +87,7 @@ var
     buttonsDown: Longword;
     targetting, targetted: boolean; //true when targetting an airstrike or the like
 
-procedure onTouchDown(x, y: Single; pointerId: TSDL_FingerId);
+procedure onTouchDown(x, y: Single; pointerId: Int64);
 var
     finger: PTouch_Data;
     xr, yr, tmp: LongWord;
@@ -205,7 +206,7 @@ if buttonsDown = 0 then
     end;
 end;
 
-procedure onTouchMotion(x, y, dx, dy: Single; pointerId: TSDL_FingerId);
+procedure onTouchMotion(x, y, dx, dy: Single; pointerId: Int64);
 var
     finger, secondFinger: PTouch_Data;
     currentPinchDelta, zoom : Single;
@@ -255,7 +256,7 @@ if (buttonsDown = 0) and (pointerCount = 2) then
 
 end;
 
-procedure onTouchUp(x,y: Single; pointerId: TSDL_FingerId);
+procedure onTouchUp(x,y: Single; pointerId: Int64);
 var
     finger: PTouch_Data;
     widget: POnScreenWidget;
@@ -366,19 +367,15 @@ if isOnWidget(jumpWidget, finger) then
     end;
 end;
 
-function addFinger(x,y: Longword; id: TSDL_FingerId): PTouch_Data;
+function addFinger(x,y: Longword; id: Int64): PTouch_Data;
 var
     xCursor, yCursor, index : LongInt;
 begin
 // check array size
 // note: pointerCount will be incremented later,
 // so at this point it's the index of the new entry
-if Length(fingers) <= pointerCount then
-    begin
-    setLength(fingers, Length(fingers)*2);
-    for index := Length(fingers) div 2 to (Length(fingers)-1) do
-        fingers[index].id := nilFingerId;
-    end;
+if pointerCount >= maxFingers then
+    exit(nil);
 
 xCursor := convertToCursorX(x);
 yCursor := convertToCursorY(y);
@@ -399,7 +396,7 @@ addFinger:= @fingers[pointerCount];
 inc(pointerCount);
 end;
 
-function updateFinger(x, y, dx, dy: Longword; id: TSDL_FingerId): PTouch_Data;
+function updateFinger(x, y, dx, dy: Longword; id: Int64): PTouch_Data;
 var finger : PTouch_Data;
 begin
 finger:= findFinger(id);
@@ -416,7 +413,7 @@ else
 updateFinger:= finger
 end;
 
-procedure deleteFinger(id: TSDL_FingerId);
+procedure deleteFinger(id: Int64);
 var
     index : Longword;
 begin
@@ -438,10 +435,10 @@ for index := 0 to pointerCount do
             fingers[index].timeSinceDown := fingers[pointerCount].timeSinceDown;
             fingers[index].pressedWidget := fingers[pointerCount].pressedWidget;
 
-            fingers[pointerCount].id := nilFingerId;
+            fingers[pointerCount].id := kNoFinger;
             end
         else
-            fingers[index].id := nilFingerId;
+            fingers[index].id := kNoFinger;
         break;
         end;
     end;
@@ -529,11 +526,11 @@ if bounceButtonPressed then
     end;
 end;
 
-function findFinger(id: TSDL_FingerId): PTouch_Data;
+function findFinger(id: Int64): PTouch_Data;
 var
     index: LongWord;
 begin
-    for index:= 0 to (Length(fingers)-1) do
+    for index:= 0 to (maxFingers-1) do
         if fingers[index].id = id then
             begin
             findFinger:= @fingers[index];
@@ -618,7 +615,7 @@ begin
     calculateDelta := Round(sqrt(sqr(finger2.x-finger1.x) + sqr(finger2.y-finger1.y)));
 end;
 
-// Under the premise that all pointer ids in pointerIds:TSDL_FingerId are packed to the far left.
+// Under the premise that all pointer ids in pointerIds:Int64 are packed to the far left.
 // If the pointer to be ignored is not pointerIds[0] the second must be there
 function getSecondFinger(finger: TTouch_Data): PTouch_Data;
 begin
@@ -648,8 +645,7 @@ end;
 
 procedure printFinger(finger: TTouch_Data);
 begin
-    WriteLnToConsole(Format('id: %d, x: %d y: %d (rel x: %d rel y: %d), time: %d',
-                            [finger.id, finger.x, finger.y, finger.historicalX, finger.historicalY, finger.timeSinceDown]));
+    finger:= finger; // suppress unused hint
 end;
 
 procedure initModule;
@@ -660,9 +656,8 @@ begin
     pointerCount:= 0;
     bounceButtonPressed:= false;
 
-    setLength(fingers, 4);
-    for index := 0 to (Length(fingers)-1) do
-        fingers[index].id := nilFingerId;
+    for index := 0 to (maxFingers-1) do
+        fingers[index].id := kNoFinger;
 
     rectSize:= baseRectSize;
     halfRectSize:= baseRectSize shr 1;
@@ -672,5 +667,4 @@ procedure freeModule;
 begin
 end;
 
-begin
 end.

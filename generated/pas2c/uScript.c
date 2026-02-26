@@ -131,7 +131,7 @@ static const string255 __str354 = STRINIT("gfMultiWeapon");
 static const string255 __str353 = STRINIT("gfSwitchHog");
 static const string255 __str352 = STRINIT("gtDuck");
 static const string255 __str351 = STRINIT("amDuck");
-static const string255 __str350 = STRINIT("desktop");
+static const string255 __str350 = STRINIT("touch");
 static const string255 __str349 = STRINIT("INTERFACE");
 static const string255 __str348 = STRINIT("LOCALE");
 static const string255 __str347 = STRINIT("lua_open failed");
@@ -840,7 +840,7 @@ LongInt uscript_LuaToSpriteOrd(Plua_State L,LongInt i,string255 call,string255 p
     {
         i = fpcrtl_trunc(lua_tonumber(L, i));
     }
-    if((i < (0)) || (i > (219)))
+    if((i < (0)) || (i > (231)))
     {
         uscript_LuaCallError(__str30, call, paramsyntax);
         luatospriteord_result = -1;
@@ -5867,7 +5867,7 @@ void uscript_initModule()
                                  uscript_ScriptSetInteger(uutils_EnumToStr_1(cg), (cg));
                              } while(cg++ != cg__end__);}
     {spr = 0;
-     TSprite spr__end__ = 219;
+     TSprite spr__end__ = 231;
      if (spr <= spr__end__) do {
                                    uscript_ScriptSetInteger(uutils_EnumToStr_1(spr), (spr));
                                } while(spr++ != spr__end__);}

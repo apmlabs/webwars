@@ -62,7 +62,7 @@ void ucaptions_DrawCaptions()
 {
     TCapGroup grp;
     LongInt offset;
-    offset = 8;
+    offset = 48;
     {grp = 0;
      TCapGroup grp__end__ = 5;
      if (grp <= grp__end__) do {

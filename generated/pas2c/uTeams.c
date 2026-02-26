@@ -15,6 +15,7 @@ LongInt MaxTeamHealth;
 #include "uGearsList.h"
 #include "uVisualGearsList.h"
 #include "uTextures.h"
+#include "uTouch.h"
 static const string255 __str40 = STRINIT("owner");
 static const string255 __str39 = STRINIT("flag");
 static const string255 __str38 = STRINIT("hat");
@@ -397,6 +398,22 @@ void uteams_SwitchHedgehog()
            }
        } while(!((!CurrentTeam->Passive && (CurrentTeam->Hedgehogs[CurrentTeam->CurrHedgehog].Gear != NULL)) && (CurrentTeam->Hedgehogs[CurrentTeam->CurrHedgehog].Effects[heFrozen] < 256)));
     uteams_SwitchCurrentHedgehog(&(CurrentTeam->Hedgehogs[CurrentTeam->CurrHedgehog]));
+    if((Ammoz[CurrentHedgehog->CurAmmoType].Ammo.Propz & ammoprop_NoCrosshair) == 0)
+    {
+        if(!arrowUp.show)
+        {
+            uworld_animateWidget(&(arrowUp), true, true);
+            uworld_animateWidget(&(arrowDown), true, true);
+        }
+    }
+    else
+    {
+        if(arrowUp.show)
+        {
+            uworld_animateWidget(&(arrowUp), true, false);
+            uworld_animateWidget(&(arrowDown), true, false);
+        }
+    }
     AmmoMenuInvalidated = true;
 };
 void uteams_AfterSwitchHedgehog()

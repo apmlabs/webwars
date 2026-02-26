@@ -6,8 +6,8 @@ typedef struct __hwFloat {
             boolean isNegative;
             union
             {struct
-             {LongWord Round;
-              LongWord Frac;};
+             {LongWord Frac;
+              LongWord Round;};
              struct
              {QWord QWordValue;};};
         } hwFloat;

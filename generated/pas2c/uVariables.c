@@ -35,6 +35,7 @@ string255 recordFileName;
 LongWord cReadyDelay;
 TStereoMode cStereoMode;
 boolean cOnlyStats;
+boolean cMobileDevice;
 string255 cMapName;
 LongInt syncedPixelDigest;
 boolean isCursorVisible;
@@ -223,6 +224,18 @@ TMobileRecord mobileRecord;
 LongInt MaxTextureSize;
 PSDL_Window SDLwindow;
 PSDL_GLContext SDLGLcontext;
+GLfloat buttonScale;
+boolean bounceButtonPressed;
+TOnScreenWidget arrowUp;
+TOnScreenWidget arrowDown;
+TOnScreenWidget arrowLeft;
+TOnScreenWidget arrowRight;
+TOnScreenWidget firebutton;
+TOnScreenWidget jumpWidget;
+TOnScreenWidget AMWidget;
+TOnScreenWidget pauseButton;
+TOnScreenWidget utilityWidget;
+TOnScreenWidget utilityWidget2;
 cPathz_tt cPathz;
 cPathzInit_tt cPathzInit = {STRINIT(""),
                             STRINIT("//"),
@@ -1157,6 +1170,210 @@ SpritesDataInit_tt SpritesDataInit = {{
                                           .critical = true,
                                           .checkSum = false,
                                           .priority = tpMedium,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("firebutton"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 128,
+                                          .Height = 128,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("arrowup"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 100,
+                                          .Height = 100,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("arrowdown"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 100,
+                                          .Height = 100,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("arrowleft"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 100,
+                                          .Height = 100,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("arrowright"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 100,
+                                          .Height = 100,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("forwardjump"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 128,
+                                          .Height = 128,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("backjump"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 128,
+                                          .Height = 128,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("pause"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 120,
+                                          .Height = 100,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("timerbutton"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 128,
+                                          .Height = 128,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("targetbutton"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 128,
+                                          .Height = 128,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("switchbutton"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 128,
+                                          .Height = 128,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
+                                          .getDimensions = false,
+                                          .getImageDimensions = true
+                                      },
+                                      {
+                                          .FileName = STRINIT("bouncebutton"),
+                                          .Path = ptButtons,
+                                          .AltPath = ptNone,
+                                          .Texture = NULL,
+                                          .Surface = NULL,
+                                          .Width = 128,
+                                          .Height = 128,
+                                          .imageWidth = 0,
+                                          .imageHeight = 0,
+                                          .saveSurf = false,
+                                          .critical = true,
+                                          .checkSum = false,
+                                          .priority = tpHigh,
                                           .getDimensions = false,
                                           .getImageDimensions = true
                                       },
@@ -5825,6 +6042,7 @@ void uvariables_preInitModule()
     PathPrefix = fpcrtl_str2astr(__str2);
     GameType = gmtLocal;
     cOnlyStats = false;
+    cMobileDevice = false;
     cScriptName = __str1;
     cScriptParam = __str1;
     cTestLua = false;

@@ -42,6 +42,7 @@
 #include "uVisualGearsHandlers.h"
 #include "uTextures.h"
 #include "uRender.h"
+#include "uTouch.h"
 LongInt hwengine_RunEngine(LongInt argc,PPChar argv);
 void hwengine_preInitEverything();
 void hwengine_initEverything(boolean complete);

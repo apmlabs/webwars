@@ -75,8 +75,8 @@ enum{AMTypeMaskY = 0x00000002};
 enum{AMTypeMaskAlpha = 0x00000004};
 enum{AMSlotSize = 32};
 enum{AMSlotPadding = ((AMSlotSize - 32) >> 1)};
-enum{amNumOffsetY = 0};
-enum{amNumOffsetX = AMSlotSize};
+enum{amNumOffsetX = 0};
+enum{amNumOffsetY = AMSlotSize};
 enum{cSendCursorPosTime = 50};
 enum{cCursorEdgesDist = 100};
 astring uworld_AddGoal_4(astring s,LongWord gf,TGoalStrId si,LongInt i)
@@ -208,6 +208,155 @@ void uworld_InitCameraBorders()
 };
 void uworld_InitTouchInterface()
 {
+    if(!cMobileDevice)
+    {
+        return;
+    }
+    buttonScale = 1 /(float) cDefaultZoomLevel;
+    {
+        jumpWidget.show = true;
+        jumpWidget.sprite = sprJumpWidget;
+        jumpWidget.frame.w = fpcrtl_round((*SpritesData[jumpWidget.sprite].Texture).w * buttonScale);
+        jumpWidget.frame.h = fpcrtl_round((*SpritesData[jumpWidget.sprite].Texture).h * buttonScale);
+        jumpWidget.frame.x = (cScreenWidth >> 1) - fpcrtl_round(jumpWidget.frame.w * 1.2);
+        jumpWidget.frame.y = cScreenHeight - (jumpWidget.frame.h * 2);
+        jumpWidget.active.x = jumpWidget.frame.x;
+        jumpWidget.active.y = jumpWidget.frame.y;
+        jumpWidget.active.w = jumpWidget.frame.w;
+        jumpWidget.active.h = jumpWidget.frame.h;
+    }
+    {
+        AMWidget.show = true;
+        AMWidget.sprite = sprAMWidget;
+        AMWidget.frame.w = fpcrtl_round((*SpritesData[AMWidget.sprite].Texture).w * buttonScale);
+        AMWidget.frame.h = fpcrtl_round((*SpritesData[AMWidget.sprite].Texture).h * buttonScale);
+        AMWidget.frame.x = (cScreenWidth >> 1) - (AMWidget.frame.w * 2);
+        AMWidget.frame.y = cScreenHeight - fpcrtl_round(AMWidget.frame.h * 1.2);
+        AMWidget.active.x = AMWidget.frame.x;
+        AMWidget.active.y = AMWidget.frame.y;
+        AMWidget.active.w = AMWidget.frame.w;
+        AMWidget.active.h = AMWidget.frame.h;
+    }
+    {
+        arrowLeft.show = true;
+        arrowLeft.sprite = sprArrowLeft;
+        arrowLeft.frame.w = fpcrtl_round((*SpritesData[arrowLeft.sprite].Texture).w * buttonScale);
+        arrowLeft.frame.h = fpcrtl_round((*SpritesData[arrowLeft.sprite].Texture).h * buttonScale);
+        arrowLeft.frame.x = -(cScreenWidth >> 1) + fpcrtl_round(arrowLeft.frame.w * 0.25);
+        arrowLeft.frame.y = cScreenHeight - fpcrtl_round(arrowLeft.frame.h * 1.5);
+        arrowLeft.active.x = arrowLeft.frame.x;
+        arrowLeft.active.y = arrowLeft.frame.y;
+        arrowLeft.active.w = arrowLeft.frame.w;
+        arrowLeft.active.h = arrowLeft.frame.h;
+    }
+    {
+        arrowRight.show = true;
+        arrowRight.sprite = sprArrowRight;
+        arrowRight.frame.w = fpcrtl_round((*SpritesData[arrowRight.sprite].Texture).w * buttonScale);
+        arrowRight.frame.h = fpcrtl_round((*SpritesData[arrowRight.sprite].Texture).h * buttonScale);
+        arrowRight.frame.x = -(cScreenWidth >> 1) + fpcrtl_round(arrowRight.frame.w * 1.5);
+        arrowRight.frame.y = cScreenHeight - fpcrtl_round(arrowRight.frame.h * 1.5);
+        arrowRight.active.x = arrowRight.frame.x;
+        arrowRight.active.y = arrowRight.frame.y;
+        arrowRight.active.w = arrowRight.frame.w;
+        arrowRight.active.h = arrowRight.frame.h;
+    }
+    {
+        firebutton.show = true;
+        firebutton.sprite = sprFireButton;
+        firebutton.frame.w = fpcrtl_round((*SpritesData[firebutton.sprite].Texture).w * buttonScale);
+        firebutton.frame.h = fpcrtl_round((*SpritesData[firebutton.sprite].Texture).h * buttonScale);
+        firebutton.frame.x = arrowRight.frame.x + arrowRight.frame.w;
+        firebutton.frame.y = (arrowRight.frame.y + (arrowRight.frame.w >> 1)) - (firebutton.frame.w >> 1);
+        firebutton.active.x = firebutton.frame.x;
+        firebutton.active.y = firebutton.frame.y;
+        firebutton.active.w = firebutton.frame.w;
+        firebutton.active.h = firebutton.frame.h;
+    }
+    {
+        arrowUp.show = false;
+        arrowUp.sprite = sprArrowUp;
+        arrowUp.frame.w = fpcrtl_round((*SpritesData[arrowUp.sprite].Texture).w * buttonScale);
+        arrowUp.frame.h = fpcrtl_round((*SpritesData[arrowUp.sprite].Texture).h * buttonScale);
+        arrowUp.frame.x = (cScreenWidth >> 1) - (arrowUp.frame.w * 2);
+        arrowUp.frame.y = jumpWidget.frame.y - fpcrtl_round(arrowUp.frame.h * 1.25);
+        arrowUp.active.x = arrowUp.frame.x;
+        arrowUp.active.y = arrowUp.frame.y;
+        arrowUp.active.w = arrowUp.frame.w;
+        arrowUp.active.h = arrowUp.frame.h;
+        {
+            arrowUp.moveAnim.target.x = arrowUp.frame.x;
+            arrowUp.moveAnim.target.y = arrowUp.frame.y;
+            arrowUp.moveAnim.source.x = arrowUp.frame.x - fpcrtl_round(arrowUp.frame.w * 0.75);
+            arrowUp.moveAnim.source.y = arrowUp.frame.y;
+        }
+    }
+    {
+        arrowDown.show = false;
+        arrowDown.sprite = sprArrowDown;
+        arrowDown.frame.w = fpcrtl_round((*SpritesData[arrowDown.sprite].Texture).w * buttonScale);
+        arrowDown.frame.h = fpcrtl_round((*SpritesData[arrowDown.sprite].Texture).h * buttonScale);
+        arrowDown.frame.x = (cScreenWidth >> 1) - (arrowDown.frame.w * 2);
+        arrowDown.frame.y = jumpWidget.frame.y - fpcrtl_round(arrowDown.frame.h * 1.25);
+        arrowDown.active.x = arrowDown.frame.x;
+        arrowDown.active.y = arrowDown.frame.y;
+        arrowDown.active.w = arrowDown.frame.w;
+        arrowDown.active.h = arrowDown.frame.h;
+        {
+            arrowDown.moveAnim.target.x = arrowDown.frame.x;
+            arrowDown.moveAnim.target.y = arrowDown.frame.y;
+            arrowDown.moveAnim.source.x = arrowDown.frame.x + fpcrtl_round(arrowDown.frame.w * 0.75);
+            arrowDown.moveAnim.source.y = arrowDown.frame.y;
+        }
+    }
+    {
+        pauseButton.show = true;
+        pauseButton.sprite = sprPauseButton;
+        pauseButton.frame.w = fpcrtl_round((*SpritesData[sprPauseButton].Texture).w * buttonScale);
+        pauseButton.frame.h = fpcrtl_round((*SpritesData[sprPauseButton].Texture).h * buttonScale);
+        pauseButton.frame.x = (cScreenWidth / 2) - pauseButton.frame.w;
+        pauseButton.frame.y = 0;
+        pauseButton.active.x = pauseButton.frame.x;
+        pauseButton.active.y = pauseButton.frame.y;
+        pauseButton.active.w = pauseButton.frame.w;
+        pauseButton.active.h = pauseButton.frame.h;
+    }
+    {
+        utilityWidget.show = false;
+        utilityWidget.sprite = sprTimerButton;
+        utilityWidget.frame.w = fpcrtl_round((*SpritesData[utilityWidget.sprite].Texture).w * buttonScale);
+        utilityWidget.frame.h = fpcrtl_round((*SpritesData[utilityWidget.sprite].Texture).h * buttonScale);
+        utilityWidget.frame.x = arrowLeft.frame.x;
+        utilityWidget.frame.y = arrowLeft.frame.y - fpcrtl_round(utilityWidget.frame.h * 1.25);
+        utilityWidget.active.x = utilityWidget.frame.x;
+        utilityWidget.active.y = utilityWidget.frame.y;
+        utilityWidget.active.w = utilityWidget.frame.w;
+        utilityWidget.active.h = utilityWidget.frame.h;
+        {
+            utilityWidget.moveAnim.target.x = utilityWidget.frame.x;
+            utilityWidget.moveAnim.target.y = utilityWidget.frame.y;
+            utilityWidget.moveAnim.source.x = utilityWidget.frame.x;
+            utilityWidget.moveAnim.source.y = utilityWidget.frame.y;
+        }
+    }
+    {
+        utilityWidget2.show = false;
+        utilityWidget2.sprite = sprBounceButton;
+        utilityWidget2.frame.w = fpcrtl_round((*SpritesData[utilityWidget2.sprite].Texture).w * buttonScale);
+        utilityWidget2.frame.h = fpcrtl_round((*SpritesData[utilityWidget2.sprite].Texture).h * buttonScale);
+        utilityWidget2.frame.x = utilityWidget.frame.x + fpcrtl_round(utilityWidget2.frame.w * 1.25);
+        utilityWidget2.frame.y = arrowLeft.frame.y - fpcrtl_round(utilityWidget2.frame.h * 1.25);
+        utilityWidget2.active.x = utilityWidget2.frame.x;
+        utilityWidget2.active.y = utilityWidget2.frame.y;
+        utilityWidget2.active.w = utilityWidget2.frame.w;
+        utilityWidget2.active.h = utilityWidget2.frame.h;
+        {
+            utilityWidget2.moveAnim.target.x = utilityWidget2.frame.x;
+            utilityWidget2.moveAnim.target.y = utilityWidget2.frame.y;
+            utilityWidget2.moveAnim.source.x = utilityWidget2.frame.x;
+            utilityWidget2.moveAnim.source.y = utilityWidget2.frame.y;
+        }
+    }
 };
 void uworld_ResetWorldTex()
 {
@@ -247,9 +396,9 @@ PTexture uworld_GetAmmoMenuTexture(PHHAmmo Ammo)
                                    ++SlotsNum;
                                }
                            } while(i++ != i__end__);}
-    SlotsNumX = cMaxSlotAmmoIndex + 1;
-    SlotsNumY = SlotsNum + 1;
-    ++SlotsNumX;
+    SlotsNumX = SlotsNum;
+    SlotsNumY = cMaxSlotAmmoIndex + 2;
+    ++SlotsNumY;
     AmmoRect.w = ((BORDERSIZE * 2) + (SlotsNumX * AMSlotSize)) + (SlotsNumX - 1);
     AmmoRect.h = ((BORDERSIZE * 2) + (SlotsNumY * AMSlotSize)) + (SlotsNumY - 1);
     amSurface = SDL_CreateRGBSurface(SDL_SWSURFACE, AmmoRect.w, AmmoRect.h, 32, RMask, GMask, BMask, AMask);
@@ -266,7 +415,7 @@ PTexture uworld_GetAmmoMenuTexture(PHHAmmo Ammo)
      if (i <= i__end__) do {
                                if((i != cHiddenSlotIndex) && ((*Ammo)[i][0].Count > 0))
                                {
-                                   x = AMRect.x;
+                                   y = AMRect.y;
                                    if(usesDefaultSlotKeys)
                                    {
                                        tmpsurf = TTF_RenderUTF8_Blended(Fontz[fnt16].Handle, uutils_Str2PChar(_strprepend(0x46, uutils_IntToStr(i + 1))), cWhiteColorChannels);
@@ -277,7 +426,7 @@ PTexture uworld_GetAmmoMenuTexture(PHHAmmo Ammo)
                                    }
                                    urenderutils_copyToXY(tmpsurf, amSurface, ((x + AMSlotPadding) + (AMSlotSize >> 1)) - (tmpsurf->w >> 1), ((y + AMSlotPadding) + (AMSlotSize >> 1)) - (tmpsurf->h >> 1));
                                    SDL_FreeSurface(tmpsurf);
-                                   x = (AMRect.x + AMSlotSize) + 1;
+                                   y = (AMRect.y + AMSlotSize) + 1;
                                    {t = 0;
                                     LongInt t__end__ = cMaxSlotAmmoIndex;
                                     if (t <= t__end__) do {
@@ -297,10 +446,10 @@ PTexture uworld_GetAmmoMenuTexture(PHHAmmo Ammo)
                                                                   {
                                                                       urenderutils_DrawSpriteFrame2Surf(sprAMAmmos, amSurface, x + AMSlotPadding, y + AMSlotPadding, AMFrame);
                                                                   }
-                                                                  x += AMSlotSize + 1;
+                                                                  y += AMSlotSize + 1;
                                                               }
                                                           } while(t++ != t__end__);}
-                                   y += AMSlotSize + 1;
+                                   x += AMSlotSize + 1;
                                }
                            } while(i++ != i__end__);}
     {i = 1;
@@ -371,8 +520,16 @@ void uworld_ShowAmmoMenu()
         AmmoMenuInvalidated = false;
         utextures_FreeAndNilTexture(&(AmmoMenuTex));
         AmmoMenuTex = uworld_GetAmmoMenuTexture(Ammo);
-        AmmoRect.x = ((cScreenWidth >> 1) - AmmoRect.w) - AMSlotSize;
-        AmmoRect.y = cScreenHeight - (AmmoRect.h + AMSlotSize);
+        if(uutils_isPhone())
+        {
+            AmmoRect.x = -(AmmoRect.w >> 1);
+            AmmoRect.y = (cScreenHeight >> 1) - (AmmoRect.h >> 1);
+        }
+        else
+        {
+            AmmoRect.x = -(AmmoRect.w >> 1);
+            AmmoRect.y = cScreenHeight - (AmmoRect.h + AMSlotSize);
+        }
         if(AMState != AMShowing)
         {
             AMShiftTargetX = (cScreenWidth >> 1) - AmmoRect.x;
@@ -482,14 +639,14 @@ void uworld_ShowAmmoMenu()
                                     if (t <= t__end__) do {
                                                               if(((*Ammo)[i][t].Count > 0) && ((*Ammo)[i][t].AmmoType != amNothing))
                                                               {
-                                                                  if((((CursorPoint.y <= ((cScreenHeight - AmmoRect.y) - (c * (AMSlotSize + 1)))) && (CursorPoint.y > ((cScreenHeight - AmmoRect.y) - ((c + 1) * (AMSlotSize + 1))))) && (CursorPoint.x > (AmmoRect.x + (g * (AMSlotSize + 1))))) && (CursorPoint.x <= (AmmoRect.x + ((g + 1) * (AMSlotSize + 1)))))
+                                                                  if((((CursorPoint.y <= ((cScreenHeight - AmmoRect.y) - (g * (AMSlotSize + 1)))) && (CursorPoint.y > ((cScreenHeight - AmmoRect.y) - ((g + 1) * (AMSlotSize + 1))))) && (CursorPoint.x > (AmmoRect.x + (c * (AMSlotSize + 1))))) && (CursorPoint.x <= (AmmoRect.x + ((c + 1) * (AMSlotSize + 1)))))
                                                                   {
                                                                       Slot = i;
                                                                       Pos = t;
                                                                       STurns = ((int64_t) (Ammoz[(*Ammo)[i][t].AmmoType].SkipTurns)) - ((int64_t) ((*CurrentTeam->Clan).TurnNumber));
                                                                       if(((STurns < 0) && (AMShiftX == 0)) && (AMShiftY == 0))
                                                                       {
-                                                                          urender_DrawSprite_4(sprAMSlot, ((AmmoRect.x + BORDERSIZE) + (g * (AMSlotSize + 1))) + AMSlotPadding, (((AmmoRect.y + BORDERSIZE) + (c * (AMSlotSize + 1))) + AMSlotPadding) - 1, 0);
+                                                                          urender_DrawSprite_4(sprAMSlot, ((AmmoRect.x + BORDERSIZE) + (c * (AMSlotSize + 1))) + AMSlotPadding, (((AmmoRect.y + BORDERSIZE) + (g * (AMSlotSize + 1))) + AMSlotPadding) - 1, 0);
                                                                       }
                                                                   }
                                                                   ++g;
@@ -531,13 +688,12 @@ void uworld_ShowAmmoMenu()
     }
     if(((WeaponTooltipTex != NULL) && (AMShiftX == 0)) && (AMShiftY == 0))
     {
-        ustore_ShowWeaponTooltip((AmmoRect.x - WeaponTooltipTex->w) - 3, uutils_Min(AmmoRect.y + 1, (cScreenHeight - WeaponTooltipTex->h) - 40));
+        if(!uutils_isPhone())
+        {
+            ustore_ShowWeaponTooltip(-WeaponTooltipTex->w / 2, (AmmoRect.y - WeaponTooltipTex->h) - AMSlotSize);
+        }
     }
     bSelected = false;
-    if((AMShiftX == 0) && (AMShiftY == 0))
-    {
-        urender_DrawSprite_4(sprArrow, CursorPoint.x, cScreenHeight - CursorPoint.y, (RealTicks >> 6) % 8);
-    }
 };
 void uworld_DrawRepeated(TSprite spr,TSprite sprL,TSprite sprR,LongInt Shift,LongInt OffsetY)
 {
@@ -697,15 +853,8 @@ void uworld_DrawWorld(LongInt Lag)
     }
     if(cStereoMode == smNone)
     {
-        urender_RenderClear_0();
+        urender_RenderClear();
         uworld_DrawWorldStereo(Lag, rmDefault);
-    }
-    else
-    {
-        urender_RenderClear_1(rmLeftEye);
-        uworld_DrawWorldStereo(Lag, rmLeftEye);
-        urender_RenderClear_1(rmRightEye);
-        uworld_DrawWorldStereo(0, rmRightEye);
     }
     urender_FinishRender();
 };
@@ -1251,7 +1400,7 @@ void uworld_DrawWorldStereo(LongInt Lag,TRenderMode RM)
     }
     if((UIDisplay != uiNone) && isNotHiddenByCinematic)
     {
-        offsetX = 48;
+        offsetX = cScreenHeight - 13;
         offsetY = cOffsetY;
         if(((TurnTimeLeft != 0) && (TurnTimeLeft < 999000)) || (ReadyTimeLeft != 0))
         {
@@ -1318,6 +1467,7 @@ void uworld_DrawWorldStereo(LongInt Lag,TRenderMode RM)
     {
         t = 11;
         i = t;
+        i = (t + pauseButton.frame.y) + pauseButton.frame.h;
         t += (*CurrentHedgehog->HealthTagTex).h;
         cDemoClockFPSOffsetY = t;
         if((GameFlags & gfInvulnerable) == 0)
@@ -1391,8 +1541,8 @@ void uworld_DrawWorldStereo(LongInt Lag,TRenderMode RM)
     }
     if((UIDisplay != uiNone) && isNotHiddenByCinematic)
     {
-        offsetX = 30;
-        offsetY = 180;
+        offsetX = cScreenHeight - 13;
+        offsetY = (cScreenWidth >> 1) + 74;
         urender_DrawSprite_4(sprWindBar, (cScreenWidth >> 1) - offsetY, cScreenHeight - offsetX, 0);
         if(WindBarWidth > 0)
         {
@@ -1416,19 +1566,19 @@ void uworld_DrawWorldStereo(LongInt Lag,TRenderMode RM)
     }
     if((UIDisplay != uiNone) && isNotHiddenByCinematic)
     {
-        offsetX = 45;
-        offsetY = 51;
+        offsetX = (cScreenWidth >> 1) - 95;
+        offsetY = cScreenHeight - 21;
         if(ufloat_hwFloat_hwFloat_op_eq(cDamageModifier, _1_5))
         {
             urender_DrawTextureF(ropeIconTex, 1, (cScreenWidth >> 1) - offsetX, cScreenHeight - offsetY, 0, 1, 32, 32);
             urender_DrawTextureF(SpritesData[sprAMAmmos].Texture, 0.9, (cScreenWidth >> 1) - offsetX, cScreenHeight - offsetY, (amExtraDamage) - 1, 1, 32, 32);
-            offsetX = offsetX + 33;
+            offsetX = offsetX - 33;
         }
         if(cLowGravity || ((GameFlags & gfLowGravity) != 0))
         {
             urender_DrawTextureF(ropeIconTex, 1, (cScreenWidth >> 1) - offsetX, cScreenHeight - offsetY, 0, 1, 32, 32);
             urender_DrawTextureF(SpritesData[sprAMAmmos].Texture, 0.9, (cScreenWidth >> 1) - offsetX, cScreenHeight - offsetY, (amLowGravity) - 1, 1, 32, 32);
-            offsetX = offsetX + 33;
+            offsetX = offsetX - 33;
         }
         if(cLaserSighting)
         {
@@ -1447,6 +1597,16 @@ void uworld_DrawWorldStereo(LongInt Lag,TRenderMode RM)
         r.y = ViewBottomY - r.h;
         urender_DrawRect(r, 0, 0, 0, 0xff, true);
     }
+    urender_DrawScreenWidget(&(arrowLeft));
+    urender_DrawScreenWidget(&(arrowRight));
+    urender_DrawScreenWidget(&(arrowUp));
+    urender_DrawScreenWidget(&(arrowDown));
+    urender_DrawScreenWidget(&(firebutton));
+    urender_DrawScreenWidget(&(jumpWidget));
+    urender_DrawScreenWidget(&(AMWidget));
+    urender_DrawScreenWidget(&(utilityWidget));
+    urender_DrawScreenWidget(&(utilityWidget2));
+    urender_DrawScreenWidget(&(pauseButton));
     if(UIDisplay != uiNone)
     {
         ucaptions_DrawCaptions();
@@ -1525,7 +1685,7 @@ void uworld_DrawWorldStereo(LongInt Lag,TRenderMode RM)
     {
         urender_DrawSprite_4(sprArrow, CursorPoint.x, cScreenHeight - CursorPoint.y, (RealTicks >> 6) % 8);
     }
-    offsetY = cDemoClockFPSOffsetY + 10;
+    offsetY = ((cDemoClockFPSOffsetY + 10) + pauseButton.frame.y) + pauseButton.frame.h;
     offsetX = cOffsetY;
     if((RM == rmDefault) || (RM == rmRightEye))
     {
@@ -1956,27 +2116,97 @@ void uworld_updateCursorVisibility()
 {
     if((isPaused || isAFK) || (GameState == gsConfirm))
     {
-        SDL_SetRelativeMouseMode(SDL_FALSE);
         if(SDL_ShowCursor(SDL_QUERY) == SDL_DISABLE)
         {
             ucursor_resetPosition();
-            SDL_ShowCursor(SDL_ENABLE);
         }
     }
     else
     {
         ucursor_resetPositionDelta();
-        SDL_ShowCursor(SDL_DISABLE);
-        SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 };
 void uworld_updateTouchWidgets(TAmmoType ammoType)
 {
-    UNUSED (ammoType);
+    if((Ammoz[ammoType].Ammo.Propz & ammoprop_NeedUpDown) != 0)
+    {
+        if(!arrowUp.show)
+        {
+            uworld_animateWidget(&(arrowUp), true, true);
+            uworld_animateWidget(&(arrowDown), true, true);
+        }
+    }
+    else
+    {
+        if(arrowUp.show)
+        {
+            uworld_animateWidget(&(arrowUp), true, false);
+            uworld_animateWidget(&(arrowDown), true, false);
+        }
+    }
+    uworld_SetUtilityWidgetState(ammoType);
 };
 void uworld_SetUtilityWidgetState(TAmmoType ammoType)
 {
-    UNUSED (ammoType);
+    if(ammoType == amNothing)
+    {
+        ammoType = CurrentHedgehog->CurAmmoType;
+    }
+    if(CurrentHedgehog != NULL)
+    {
+        if(((Ammoz[ammoType].Ammo.Propz & ammoprop_Timerable) != 0) && (ammoType != amDrillStrike))
+        {
+            utilityWidget.sprite = sprTimerButton;
+            if(!utilityWidget.show)
+            {
+                uworld_animateWidget(&(utilityWidget), true, true);
+            }
+        }
+        else
+        {
+            if((Ammoz[ammoType].Ammo.Propz & ammoprop_NeedTarget) != 0)
+            {
+                utilityWidget.sprite = sprTargetButton;
+                if(!utilityWidget.show)
+                {
+                    uworld_animateWidget(&(utilityWidget), true, true);
+                }
+            }
+            else
+            {
+                if(ammoType == amSwitch)
+                {
+                    utilityWidget.sprite = sprSwitchButton;
+                    if(!utilityWidget.show)
+                    {
+                        uworld_animateWidget(&(utilityWidget), true, true);
+                    }
+                }
+                else
+                {
+                    if(utilityWidget.show)
+                    {
+                        uworld_animateWidget(&(utilityWidget), true, false);
+                    }
+                }
+            }
+        }
+    }
+    if((Ammoz[ammoType].Ammo.Propz & ammoprop_SetBounce) != 0)
+    {
+        utilityWidget2.sprite = sprBounceButton;
+        if(!utilityWidget2.show)
+        {
+            uworld_animateWidget(&(utilityWidget2), true, true);
+        }
+    }
+    else
+    {
+        if(utilityWidget2.show)
+        {
+            uworld_animateWidget(&(utilityWidget2), true, false);
+        }
+    }
 };
 void uworld_animateWidget(POnScreenWidget widget,boolean fade,boolean showWidget)
 {

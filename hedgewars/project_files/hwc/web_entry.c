@@ -320,3 +320,9 @@ void __wrap_hwengine_MainLoop(void) {
     // fps=0 means use requestAnimationFrame, simulate_infinite_loop=1
     emscripten_set_main_loop(mainloop_frame, 0, 1);
 }
+
+// Mobile device detection - called from JS before engine start
+extern boolean cMobileDevice;
+EMSCRIPTEN_KEEPALIVE void hw_set_mobile_device(int is_mobile) {
+    cMobileDevice = is_mobile ? 1 : 0;
+}

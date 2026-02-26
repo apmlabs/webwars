@@ -12,6 +12,7 @@
 #include "uStore.h"
 #include "uTypes.h"
 #include "uScript.h"
+#include "uWorld.h"
 void uteams_initModule();
 void uteams_freeModule();
 PTeam uteams_AddTeam(LongWord TeamColor);

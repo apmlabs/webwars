@@ -39,15 +39,13 @@ void urender_DrawHedgehog(LongInt X,LongInt Y,LongInt Dir,LongWord Pos,LongWord 
 void urender_DrawScreenWidget(POnScreenWidget widget);
 void urender_DrawWater(Byte Alpha,LongInt OffsetY,LongInt OffsetX);
 void urender_DrawWaves(LongInt Dir,LongInt dX,LongInt dY,LongInt oX,Byte tnt);
-void urender_RenderClear_0();
-void urender_RenderClear_1(TRenderMode mode);
+void urender_RenderClear();
 void urender_RenderSetClearColor(real r,real g,real b,real a);
 void urender_Tint_4(Byte r,Byte g,Byte b,Byte a);
 void urender_Tint_1(LongWord c);
 void urender_untint();
 void urender_setTintAdd(boolean enable);
 void urender_FinishRender();
-void urender_FlushBatch();
 boolean urender_isAreaOffscreen(LongInt X,LongInt Y,LongInt Width,LongInt Height);
 boolean urender_isCircleOffscreen(LongInt X,LongInt Y,LongInt RadiusSquared);
 LongInt urender_isDxAreaOffscreen(LongInt X,LongInt Width);

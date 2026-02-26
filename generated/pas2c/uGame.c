@@ -15,6 +15,7 @@
 #include "uConsts.h"
 #include "uVisualGearsList.h"
 #include "uUtils.h"
+#include "uTouch.h"
 #include "uDebug.h"
 static const string255 __str0 = STRINIT("End of input, halting now");
 void ugame_DoGameTick(LongInt Lag)
@@ -153,6 +154,7 @@ void ugame_DoGameTick(LongInt Lag)
                 uai_ProcessBot();
             }
             ugears_ProcessGears();
+            utouch_ProcessTouch();
         }
         else
         {

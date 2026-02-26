@@ -567,19 +567,7 @@ void uinputhandler_InitKbdKeyTable()
 boolean uinputhandler_CheckDefaultSlotKeys()
 {
     boolean checkdefaultslotkeys_result;
-    LongInt i;
-    LongInt code;
-    {i = 1;
-     LongInt i__end__ = cMaxSlotIndex;
-     if (i <= i__end__) do {
-                               code = uinputhandler_KeyNameToCode_1(_strprepend(0x66, uutils_IntToStr(i)));
-                               if(_strncompare(CurrentBinds.binds[CurrentBinds.indices[code]], _strappend(__str79, ((char)i + 48))))
-                               {
-                                   checkdefaultslotkeys_result = false;
-                                   return checkdefaultslotkeys_result;
-                               }
-                           } while(i++ != i__end__);}
-    checkdefaultslotkeys_result = true;
+    checkdefaultslotkeys_result = false;
     return checkdefaultslotkeys_result;
 };
 void uinputhandler_SetBinds(TBinds (*binds))

@@ -434,7 +434,7 @@ void uchat_DrawChat()
         visibleCount = 0;
     }
     left = 4 - (cScreenWidth / 2);
-    i = 10;
+    i = 55;
     top = i + (visibleCount * ClHeight);
     if(top > ((cScreenHeight - ClHeight) - 60))
     {

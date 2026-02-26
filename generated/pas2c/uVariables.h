@@ -9,7 +9,6 @@
 #include "uConsts.h"
 #include "Math.h"
 #include "uUtils.h"
-#include "uMatrix.h"
 void uvariables_initScreenSpaceVars();
 extern LongInt cMinScreenWidth;
 extern LongInt cMinScreenHeight;
@@ -45,6 +44,7 @@ extern string255 recordFileName;
 extern LongWord cReadyDelay;
 extern TStereoMode cStereoMode;
 extern boolean cOnlyStats;
+extern boolean cMobileDevice;
 extern string255 cMapName;
 extern LongInt syncedPixelDigest;
 extern boolean isCursorVisible;
@@ -238,6 +238,18 @@ extern TMobileRecord mobileRecord;
 extern LongInt MaxTextureSize;
 extern PSDL_Window SDLwindow;
 extern PSDL_GLContext SDLGLcontext;
+extern GLfloat buttonScale;
+extern boolean bounceButtonPressed;
+extern TOnScreenWidget arrowUp;
+extern TOnScreenWidget arrowDown;
+extern TOnScreenWidget arrowLeft;
+extern TOnScreenWidget arrowRight;
+extern TOnScreenWidget firebutton;
+extern TOnScreenWidget jumpWidget;
+extern TOnScreenWidget AMWidget;
+extern TOnScreenWidget pauseButton;
+extern TOnScreenWidget utilityWidget;
+extern TOnScreenWidget utilityWidget2;
 typedef string255 cPathz_tt[26];
 extern cPathz_tt cPathz;
 typedef string255 cPathzInit_tt[26];
@@ -246,9 +258,9 @@ typedef THHFont Fontz_tt[4];
 extern Fontz_tt Fontz;
 typedef THHFont FontzInit_tt[4];
 extern FontzInit_tt FontzInit;
-typedef TSpriteData SpritesData_tt[220];
+typedef TSpriteData SpritesData_tt[232];
 extern SpritesData_tt SpritesData;
-typedef TSpriteData SpritesDataInit_tt[220];
+typedef TSpriteData SpritesDataInit_tt[232];
 extern SpritesDataInit_tt SpritesDataInit;
 typedef struct __Wavez_tt {
             TSprite Sprite;

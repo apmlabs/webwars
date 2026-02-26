@@ -262,6 +262,7 @@ end;
 procedure InitTouchInterface;
 begin
 {$IFDEF USE_TOUCH_INTERFACE}
+if not cMobileDevice then exit;
 
 //positioning of the buttons
 buttonScale:= 1 / cDefaultZoomLevel;

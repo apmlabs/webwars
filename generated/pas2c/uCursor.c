@@ -8,7 +8,6 @@ void ucursor_init()
 {
     SDL_ShowCursor(SDL_DISABLE);
     ucursor_resetPosition();
-    SDL_SetRelativeMouseMode(SDL_TRUE);
 };
 void ucursor_resetPosition()
 {
