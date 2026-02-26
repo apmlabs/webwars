@@ -212,13 +212,31 @@ window.writeAndProbe = function() {
 // Auto-run probe once engine is running (poll until _malloc exists)
 (function pollProbe(){ if(Module._malloc && Module._physfs_probe_open) writeAndProbe(); else setTimeout(pollProbe, 500); })();
 
-// When engine exits (game over), return to menu
+// When engine exits (game over), show stats then return to menu
+var _lastStats=null;
+window._webwars_gameStats=function(stats){_lastStats=stats};
 window._webwars_roundFinished=function(){
   var p=document.getElementById('click-prompt');
-  p.querySelector('.label').textContent='Game Over — Returning to menu...';
-  p.querySelector('.sub').textContent='';
+  var label=p.querySelector('.label');
+  var sub=p.querySelector('.sub');
+  label.textContent='Game Over';
+  // Build stats display
+  var html='';
+  if(_lastStats&&_lastStats.length){
+    var statNames={r:'Rounds',D:'Damage dealt',k:'Kills',K:'Killed',H:'Health crate',T:'Turn skipped',P:'Poison damage',s:'Self damage',B:'Best shot',S:'Clan health'};
+    _lastStats.forEach(function(s){
+      if(s.type==='k'||s.type==='D'||s.type==='r'||s.type==='B'||s.type==='K')
+        html+='<div style="font-size:12px;color:#8892b0;margin:2px 0">'+(statNames[s.type]||s.type)+': '+s.data+'</div>';
+    });
+  }
+  sub.innerHTML=html||'';
+  var btn=document.createElement('div');
+  btn.textContent='Return to Menu';
+  btn.style.cssText='margin-top:16px;padding:8px 20px;background:linear-gradient(135deg,#4fc3f7,#66bb6a);color:#0a0e1a;border-radius:6px;cursor:pointer;font-weight:600;font-size:13px';
+  btn.onclick=function(){location.href='play.html'};
+  sub.appendChild(btn);
   p.style.display='flex';
-  setTimeout(function(){ location.href='play.html'; },1500);
+  p.style.cursor='default';
 };
 </script>
 <script src="gameconfig.js"></script>
@@ -240,6 +258,7 @@ window._webwars_roundFinished=function(){
     var weaponsName=p.get('weapons')||'Default';
     var styleName=p.get('style')||'Normal';
     var themeName=p.get('theme')||'Random';
+    var mapType=p.get('map')||'random';
     var parts=[];
     if(styleName!=='Normal') parts.push(styleName);
     if(schemeName!=='Default') parts.push(schemeName);
@@ -252,7 +271,8 @@ window._webwars_roundFinished=function(){
         scheme: GameConfig.findScheme(schemeName),
         weapon: GameConfig.findWeapon(weaponsName),
         style: styleName,
-        theme: themeName
+        theme: themeName,
+        mapType: mapType
       };
     };
   }

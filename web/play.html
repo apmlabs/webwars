@@ -34,6 +34,10 @@ body{background:#0a0e1a;color:#e0e0e0;font-family:'Segoe UI',system-ui,-apple-sy
 .btn-secondary:hover{border-color:#4fc3f7;color:#4fc3f7}
 select:disabled{opacity:.5;cursor:not-allowed}
 .tab-btn.active-tab{border-color:#4fc3f7;color:#4fc3f7}
+.team-col{flex:1;min-width:200px}
+.team-col h4{font-size:13px;font-weight:600;margin-bottom:8px}
+.team-col input{background:#0a0e1a;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:4px 8px;font-size:12px;width:100%;margin-bottom:4px}
+.team-col input:focus{outline:none;border-color:#4fc3f7}
 
 .footer{margin-top:auto;padding:24px;font-size:11px;color:#3d4560;text-align:center}
 .footer a{color:#4a5270;text-decoration:none}
@@ -86,6 +90,18 @@ select:disabled{opacity:.5;cursor:not-allowed}
   <h3>Custom Game Setup</h3>
 
   <div class="cfg-row">
+    <label>Map</label>
+    <div class="cfg-right">
+      <select id="cfg-map" onchange="onMapChange()">
+        <option value="random">Random</option>
+        <option value="maze">Maze</option>
+        <option value="perlin">Perlin</option>
+        <option value="forts">Forts</option>
+      </select>
+      <div class="cfg-desc" id="desc-map">Randomly generated terrain.</div>
+    </div>
+  </div>
+  <div class="cfg-row">
     <label>Theme</label>
     <div class="cfg-right">
       <select id="cfg-theme" onchange="onThemeChange()"></select>
@@ -118,6 +134,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
   <div class="btn-row">
     <button class="btn btn-primary" onclick="launchCustom()">▶ Start Game</button>
     <button class="btn btn-secondary" onclick="hideCustom()">Cancel</button>
+    <button class="btn btn-secondary" onclick="toggleTeamEditor()" id="btn-teams">✏️ Teams</button>
+  </div>
+  <div id="team-editor" style="display:none;margin-top:16px;border-top:1px solid #1e2744;padding-top:16px">
+    <div style="display:flex;gap:20px;flex-wrap:wrap">
+      <div class="team-col" id="team-0-col"></div>
+      <div class="team-col" id="team-1-col"></div>
+    </div>
   </div>
 </div>
 
@@ -154,7 +177,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
   onWeaponsChange();
 })();
 
-function onThemeChange(){
+function onMapChange(){
+  var descs={random:'Randomly generated terrain.',maze:'Maze-like tunnels and corridors.',perlin:'Smooth, organic terrain using Perlin noise.',forts:'Two forts facing each other across a gap.'};
+  document.getElementById('desc-map').textContent=descs[document.getElementById('cfg-map').value]||'';
+}function onThemeChange(){
   var t=GameConfig.findTheme(document.getElementById('cfg-theme').value);
   document.getElementById('desc-theme').textContent=t.desc||'';
 }
@@ -220,11 +246,14 @@ function hideCustom(){
   document.getElementById('custom-card').style.borderColor='';
 }
 function launchCustom(){
+  var m=document.getElementById('cfg-map').value;
   var t=document.getElementById('cfg-theme').value;
   var s=document.getElementById('cfg-scheme').value;
   var w=document.getElementById('cfg-weapons').value;
   var g=document.getElementById('cfg-style').value;
-  window.location.href='index.html?theme='+encodeURIComponent(t)+'&scheme='+encodeURIComponent(s)+'&weapons='+encodeURIComponent(w)+'&style='+encodeURIComponent(g);
+  var url='index.html?theme='+encodeURIComponent(t)+'&scheme='+encodeURIComponent(s)+'&weapons='+encodeURIComponent(w)+'&style='+encodeURIComponent(g);
+  if(m!=='random') url+='&map='+encodeURIComponent(m);
+  window.location.href=url;
 }
 
 // ── Missions panel ──
@@ -287,6 +316,42 @@ function showCampaignMissions(c){
     list.appendChild(d);
   });
 }
+
+// ── Team editor ──
+var HATS=['NoHat','Santa','Viking','Cowboy','crown','Samurai','WizardHat','pirate_hat','knight','Rambo','Einstein','chef','constructor','angel','Evil','Skull','Zombi','clown','jester','Sniper','Glasses','Sunglasses','cap_blue','cap_red','sm_mario','sm_luigi','sth_Sonic'];
+var _defaultTeams=[
+  {name:'Red Team',hogs:['Hog A1','Hog A2','Hog A3','Hog A4'],hat:'NoHat'},
+  {name:'Blue Team',hogs:['Hog B1','Hog B2','Hog B3','Hog B4'],hat:'NoHat'}
+];
+function loadTeams(){try{var t=JSON.parse(localStorage.getItem('hw_teams'));if(t&&t[0]&&t[1])return t}catch(e){}return JSON.parse(JSON.stringify(_defaultTeams))}
+function saveTeams(teams){localStorage.setItem('hw_teams',JSON.stringify(teams))}
+function toggleTeamEditor(){
+  var el=document.getElementById('team-editor');
+  if(el.style.display==='none'){el.style.display='block';buildTeamEditor()}
+  else el.style.display='none';
+}
+function buildTeamEditor(){
+  var teams=loadTeams();
+  var colors=['#ff4c4c','#4c9aff'];
+  for(var t=0;t<2;t++){
+    var col=document.getElementById('team-'+t+'-col');
+    col.innerHTML='<h4 style="color:'+colors[t]+'">Team '+(t+1)+'</h4>';
+    var ni=document.createElement('input');ni.placeholder='Team name';ni.value=teams[t].name;ni.dataset.team=t;ni.dataset.field='name';ni.oninput=onTeamInput;
+    col.appendChild(ni);
+    var sel=document.createElement('select');sel.style.cssText='background:#0a0e1a;color:#e0e0e0;border:1px solid #2a3352;border-radius:4px;padding:4px 8px;font-size:12px;width:100%;margin-bottom:8px';
+    sel.dataset.team=t;sel.onchange=function(){var tm=loadTeams();tm[this.dataset.team].hat=this.value;saveTeams(tm)};
+    HATS.forEach(function(h){var o=document.createElement('option');o.value=h;o.textContent=h;if(h===teams[t].hat)o.selected=true;sel.appendChild(o)});
+    col.appendChild(sel);
+    for(var i=0;i<4;i++){
+      var hi=document.createElement('input');hi.placeholder='Hedgehog '+(i+1);hi.value=teams[t].hogs[i]||'';hi.dataset.team=t;hi.dataset.hog=i;hi.oninput=onTeamInput;
+      col.appendChild(hi);
+    }
+  }
+}
+function onTeamInput(){
+  var teams=loadTeams();var t=this.dataset.team;
+  if(this.dataset.field==='name')teams[t].name=this.value;
+  else if(this.dataset.hog!==undefined)teams[t].hogs[this.dataset.hog]=this.value;
+  saveTeams(teams);
+}
 </script>
-</body>
-</html>
