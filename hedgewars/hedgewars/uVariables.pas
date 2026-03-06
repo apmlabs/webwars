@@ -2730,7 +2730,7 @@ begin
     cAltDamage      := false;
     cHolidaySilliness := true;
     cTimerInterval  := 8;
-    cReducedQuality := {$IFDEF EMSCRIPTEN}rqAntiBoom{$ELSE}rqNone{$ENDIF};
+    cReducedQuality := rqNone;
     cLanguageFName  := 'en.txt';
     cFullScreen     := false;
 
@@ -2743,7 +2743,7 @@ begin
     PathPrefix      := './';
     GameType        := gmtLocal;
     cOnlyStats      := False;
-    cMobileDevice   := False;
+    // cMobileDevice: not reset here — set by JS via hw_set_mobile_device() before engine init
     cScriptName     := '';
     cScriptParam    := '';
     cTestLua        := False;

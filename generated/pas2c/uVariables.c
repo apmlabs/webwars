@@ -6030,7 +6030,7 @@ void uvariables_preInitModule()
     cAltDamage = false;
     cHolidaySilliness = true;
     cTimerInterval = 8;
-    cReducedQuality = rqAntiBoom;
+    cReducedQuality = rqNone;
     cLanguageFName = __str0;
     cFullScreen = false;
     UserPathPrefix = fpcrtl_str2astr(__str1);
@@ -6042,7 +6042,6 @@ void uvariables_preInitModule()
     PathPrefix = fpcrtl_str2astr(__str2);
     GameType = gmtLocal;
     cOnlyStats = false;
-    cMobileDevice = false;
     cScriptName = __str1;
     cScriptParam = __str1;
     cTestLua = false;

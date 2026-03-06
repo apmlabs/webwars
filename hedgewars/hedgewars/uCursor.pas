@@ -19,9 +19,8 @@ procedure init;
 begin
     SDL_ShowCursor(SDL_DISABLE);
     resetPosition();
-{$IFNDEF USE_TOUCH_INTERFACE}
-    SDL_SetRelativeMouseMode(SDL_TRUE);
-{$ENDIF}
+    if not cMobileDevice then
+        SDL_SetRelativeMouseMode(SDL_TRUE);
 end;
 
 procedure resetPosition;

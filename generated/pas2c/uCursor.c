@@ -8,6 +8,10 @@ void ucursor_init()
 {
     SDL_ShowCursor(SDL_DISABLE);
     ucursor_resetPosition();
+    if(!cMobileDevice)
+    {
+        SDL_SetRelativeMouseMode(SDL_TRUE);
+    }
 };
 void ucursor_resetPosition()
 {

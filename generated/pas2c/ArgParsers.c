@@ -199,8 +199,22 @@ string255 argparsers_parseNick(string255 nick)
 void argparsers_setStereoMode(LongInt tmp)
 {
     GrayScale = false;
-    UNUSED (tmp);
-    cStereoMode = smNone;
+    if((tmp > 6) && (tmp < 13))
+    {
+        GrayScale = true;
+        cStereoMode = ((TStereoMode)uutils_Max(0, uutils_Min((8), tmp - 6)));
+    }
+    else
+    {
+        if(tmp <= 6)
+        {
+            cStereoMode = ((TStereoMode)uutils_Max(0, uutils_Min((8), tmp)));
+        }
+        else
+        {
+            cStereoMode = ((TStereoMode)uutils_Max(0, uutils_Min((8), tmp - 6)));
+        }
+    }
 };
 void argparsers_startVideoRecording(LongInt (*paramIndex))
 {

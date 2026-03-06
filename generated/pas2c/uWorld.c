@@ -694,6 +694,10 @@ void uworld_ShowAmmoMenu()
         }
     }
     bSelected = false;
+    if((!cMobileDevice && (AMShiftX == 0)) && (AMShiftY == 0))
+    {
+        urender_DrawSprite_4(sprArrow, CursorPoint.x, cScreenHeight - CursorPoint.y, (RealTicks >> 6) % 8);
+    }
 };
 void uworld_DrawRepeated(TSprite spr,TSprite sprL,TSprite sprR,LongInt Shift,LongInt OffsetY)
 {
@@ -853,8 +857,15 @@ void uworld_DrawWorld(LongInt Lag)
     }
     if(cStereoMode == smNone)
     {
-        urender_RenderClear();
+        urender_RenderClear_0();
         uworld_DrawWorldStereo(Lag, rmDefault);
+    }
+    else
+    {
+        urender_RenderClear_1(rmLeftEye);
+        uworld_DrawWorldStereo(Lag, rmLeftEye);
+        urender_RenderClear_1(rmRightEye);
+        uworld_DrawWorldStereo(0, rmRightEye);
     }
     urender_FinishRender();
 };
@@ -2116,14 +2127,27 @@ void uworld_updateCursorVisibility()
 {
     if((isPaused || isAFK) || (GameState == gsConfirm))
     {
+        if(!cMobileDevice)
+        {
+            SDL_SetRelativeMouseMode(SDL_FALSE);
+        }
         if(SDL_ShowCursor(SDL_QUERY) == SDL_DISABLE)
         {
             ucursor_resetPosition();
+            if(!cMobileDevice)
+            {
+                SDL_ShowCursor(SDL_ENABLE);
+            }
         }
     }
     else
     {
         ucursor_resetPositionDelta();
+        if(!cMobileDevice)
+        {
+            SDL_ShowCursor(SDL_DISABLE);
+            SDL_SetRelativeMouseMode(SDL_TRUE);
+        }
     }
 };
 void uworld_updateTouchWidgets(TAmmoType ammoType)

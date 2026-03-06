@@ -17,8 +17,10 @@ Module.onRuntimeInitialized = async function() {
 
     console.log('[HW] Calling hwengine_RunEngine_internal()');
 
-    // Detect mobile/touch device and tell the engine
-    var isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    // Detect mobile/touch device — pointer:coarse without pointer:fine means touch-primary (phone/tablet)
+    // Touchscreen laptops have both fine (mouse) and coarse (touch), so they won't match
+    var isMobile = window.matchMedia('(pointer: coarse)').matches
+                && !window.matchMedia('(pointer: fine)').matches;
     if (Module._hw_set_mobile_device) {
         Module._hw_set_mobile_device(isMobile ? 1 : 0);
         console.log('[HW] Mobile device:', isMobile);

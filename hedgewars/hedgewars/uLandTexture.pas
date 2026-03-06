@@ -69,7 +69,6 @@ procedure UpdateLandTexture(X, Width, Y, Height: LongInt; landAdded: boolean);
 var tx, ty: Longword;
     tSize : LongInt;
 begin
-    if cOnlyStats then exit;
     if (Width <= 0) or (Height <= 0) then
         exit;
     checkFails((X >= 0) and (X < LAND_WIDTH), 'UpdateLandTexture: wrong X parameter', true);

@@ -62,10 +62,6 @@ void ulandtexture_UpdateLandTexture(LongInt X,LongInt Width,LongInt Y,LongInt He
     LongWord tx;
     LongWord ty;
     LongInt tSize;
-    if(cOnlyStats)
-    {
-        return;
-    }
     if((Width <= 0) || (Height <= 0))
     {
         return;

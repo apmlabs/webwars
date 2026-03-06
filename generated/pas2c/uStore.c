@@ -1057,7 +1057,7 @@ void ustore_AddProgress()
     {
         return;
     }
-    urender_RenderClear();
+    urender_RenderClear_0();
     if(Step < numsquares)
     {
         r.x = 0;
@@ -1385,7 +1385,7 @@ void ustore_chFullScr(string255 (*s))
     ustore_SetupOpenGL();
     if(reinit)
     {
-        urender_RenderClear();
+        urender_RenderClear_0();
         if(SuddenDeathDmg)
         {
             ustore_SetSkyColor((SDSkyColor.r * (SDTint.r /(float) 255)) /(float) 255, (SDSkyColor.g * (SDTint.g /(float) 255)) /(float) 255, (SDSkyColor.b * (SDTint.b /(float) 255)) /(float) 255);

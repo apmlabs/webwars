@@ -122,10 +122,10 @@ var HWEngine = {
     //            Jetpack Molotov Birdy PortalGun Piano GasBomb SineGun Flamethrower
     //            SMine Hammer Resurrector DrillStrike Snowball Tardis LandGun IceGun
     //            Knife Rubber AirMine Creeper Minigun Sentry
-    defaultAmmo: '939192919291929192919191919191919191919191919191919191919191',
+    defaultAmmo: '999999999999999999999999999999999999999999999999999999999999',
     zeroAmmo:    '000000000000000000000000000000000000000000000000000000000000',
-    defaultProb: '040504050405040504050404040404040404040404040404040404040404',
-    defaultDelay:'000000000000020000000000000000000000000000000000000000000000',
+    defaultProb: '000000000000000000000000000000000000000000000000000000000000',
+    defaultDelay:'000000000000000000000000000000000000000000000000000000000000',
     defaultReinf:'000000000000000000000000000000000000000000000000000000000000',
 
     // Map → theme mapping (from each map's map.cfg line 1)
@@ -323,8 +323,8 @@ var HWEngine = {
         var teams = null;
         try { teams = JSON.parse(localStorage.getItem('hw_teams')); } catch(e) {}
         if (!teams || !teams[0]) teams = [{name:'Red Team',hogs:['Hog A1','Hog A2','Hog A3','Hog A4'],hat:'NoHat'},{name:'Blue Team',hogs:['Hog B1','Hog B2','Hog B3','Hog B4'],hat:'NoHat'}];
-        this._sendHotseatTeam('x', '4980735', teams[0].name, teams[0].hogs, initHealth, ammoStr, teams[0].hat);
-        this._sendHotseatTeam('x', '16776960', teams[1].name, teams[1].hogs, initHealth, ammoStr, teams[1].hat);
+        this._sendHotseatTeam('x', '4294836740', teams[0].name, teams[0].hogs, initHealth, ammoStr, teams[0].hat);
+        this._sendHotseatTeam('x', '4283695297', teams[1].name, teams[1].hogs, initHealth, ammoStr, teams[1].hat);
 
         // Start
         this.sendMessage('TL');

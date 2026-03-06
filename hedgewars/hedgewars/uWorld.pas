@@ -818,10 +818,8 @@ c:= -1;
 {$ENDIF}
 
     bSelected:= false;
-{$IFNDEF USE_TOUCH_INTERFACE}
-   if (AMShiftX = 0) and (AMShiftY = 0) then
+   if (not cMobileDevice) and (AMShiftX = 0) and (AMShiftY = 0) then
         DrawSprite(sprArrow, CursorPoint.X, cScreenHeight - CursorPoint.Y, (RealTicks shr 6) mod 8);
-{$ENDIF}
 end;
 
 procedure DrawRepeated(spr, sprL, sprR: TSprite; Shift, OffsetY: LongInt);
@@ -2176,24 +2174,23 @@ procedure updateCursorVisibility;
 begin
     if isPaused or isAFK or (GameState = gsConfirm) then
         begin
-{$IFNDEF USE_TOUCH_INTERFACE}
-        SDL_SetRelativeMouseMode(SDL_FALSE);
-{$ENDIF}
+        if not cMobileDevice then
+            SDL_SetRelativeMouseMode(SDL_FALSE);
         if SDL_ShowCursor(SDL_QUERY) = SDL_DISABLE then
             begin
             uCursor.resetPosition;
-{$IFNDEF USE_TOUCH_INTERFACE}
-            SDL_ShowCursor(SDL_ENABLE);
-{$ENDIF}
+            if not cMobileDevice then
+                SDL_ShowCursor(SDL_ENABLE);
             end;
         end
     else
         begin
         uCursor.resetPositionDelta;
-{$IFNDEF USE_TOUCH_INTERFACE}
-        SDL_ShowCursor(SDL_DISABLE);
-        SDL_SetRelativeMouseMode(SDL_TRUE);
-{$ENDIF}
+        if not cMobileDevice then
+            begin
+            SDL_ShowCursor(SDL_DISABLE);
+            SDL_SetRelativeMouseMode(SDL_TRUE);
+            end;
         end;
 end;
 
