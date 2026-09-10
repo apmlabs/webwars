@@ -175,3 +175,8 @@ python3 app.py          # runs on port 5052
 ## License
 
 GPL v2 (same as [Hedgewars](https://hedgewars.org/))
+
+
+## Codex development
+
+Start Codex in this directory. [AGENTS.md](AGENTS.md) defines the project role; [PROGRESS.md](PROGRESS.md) is the current handover and work log; [.codex/knowledge/INDEX.md](.codex/knowledge/INDEX.md) indexes detailed inherited knowledge. Original history and Kiro skills remain preserved.

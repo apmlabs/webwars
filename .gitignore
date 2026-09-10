@@ -60,3 +60,19 @@ AmazonQ.md
 admin/__pycache__/
 GAP_ANALYSIS.md
 hedgewars/rust/hedgewars-server/target/
+
+# Codex adoption: preserve private migration sources locally
+.codex/legacy/
+.codex/migration-manifest.json
+.agents/skills/**/.env
+.agents/skills/**/activation.json
+.agents/skills/**/.*state*.json
+
+# Private development knowledge belongs in webwars-agent, not game publication
+PROGRESS.md
+.codex/
+.agents/
+
+# Private MCP credentials and local migration evidence
+.codex/private/
+.codex/validation.json
